@@ -8,6 +8,8 @@ import org.springframework.data.repository.query.Param;
 
 public interface AppointmentRepository extends JpaRepository<Appointment, UUID> {
 
+	java.util.List<Appointment> findByCustomerIdOrderByStartsAtDesc(UUID customerId);
+
 	/**
 	 * Há agendamento ativo (não cancelado) do prestador que se sobreponha a {@code [start, end)}?
 	 * Mesma condição de TimeRange.overlaps: {@code a < d} e {@code c < b}. Esta checagem só serve para dar uma
