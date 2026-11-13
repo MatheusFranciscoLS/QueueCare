@@ -1,6 +1,7 @@
 package com.queuecare.scheduling.application;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -208,6 +209,26 @@ class BookingServiceIntegrationTest extends BookingIntegrationTestBase {
 				rejectedReason(new BookingRequest(providerSp, serviceSp, UUID.randomUUID(), LocalDateTime.of(2026, 11, 17, 10, 0))));
 		assertEquals(Reason.CUSTOMER_NOT_FOUND_OR_INACTIVE,
 				rejectedReason(new BookingRequest(providerSp, serviceSp, inactiveCustomer, LocalDateTime.of(2026, 11, 17, 10, 0))));
+	}
+
+	@Test
+	void falhaAoGravarOEventoDesfazTambemOAgendamentoEOErroNaoViraConflito() {
+		// Gatilho de teste que faz o INSERT em appointment_events falhar, depois do INSERT do agendamento.
+		jdbc.execute("CREATE FUNCTION test_fail_event() RETURNS trigger AS $$ BEGIN RAISE EXCEPTION 'falha simulada'; END; $$ LANGUAGE plpgsql");
+		jdbc.execute("CREATE TRIGGER test_fail_event_trg BEFORE INSERT ON appointment_events FOR EACH ROW EXECUTE FUNCTION test_fail_event()");
+		try {
+			RuntimeException error = assertThrows(RuntimeException.class, () -> bookingService.book(sp(17, 10, 0)));
+
+			assertFalse(error instanceof BookingConflictException, "falha do evento não é conflito de horário: " + error);
+			assertEquals(0, count("SELECT count(*) FROM appointments"), "o agendamento deve sofrer rollback junto");
+			assertEquals(0, count("SELECT count(*) FROM appointment_events"));
+		} finally {
+			jdbc.execute("DROP TRIGGER test_fail_event_trg ON appointment_events");
+			jdbc.execute("DROP FUNCTION test_fail_event()");
+		}
+		// Depois de remover o gatilho, o mesmo horário volta a poder ser agendado (nada ficou preso).
+		bookingService.book(sp(17, 10, 0));
+		assertEquals(1, count("SELECT count(*) FROM appointments"));
 	}
 
 	@Test

@@ -14,7 +14,7 @@ Até aqui existiam as regras isoladas (R1, R2, R5) e o banco. Este PR **liga tud
 
 ## O que os testes provam (Spring completo + PostgreSQL 16 real)
 - Esquema do banco confere com as entidades (`ddl-auto: validate`).
-- Caminho feliz, consecutivos aceitos, conflito (igual e parcial), cancelado libera, outro prestador, T2, almoço, passado, antecedência (limite exato aceito), horário de verão (inexistente e ambíguo em Nova York), UTC correto, dados inválidos e que um pedido recusado não grava nada.
+- Caminho feliz, consecutivos aceitos, conflito (igual e parcial), cancelado libera, outro prestador, T2, almoço, passado, antecedência (limite exato aceito), horário de verão (inexistente e ambíguo em Nova York), UTC correto, dados inválidos, que um pedido recusado não grava nada e que uma falha ao gravar o evento desfaz também o agendamento (atomicidade).
 - **Concorrência pelo serviço:** 2 e 8 requisições simultâneas ao mesmo horário: uma vence, as outras recebem só `BookingConflictException`, e o banco fica com uma reserva (repetido 20 rodadas).
 - O detector de conflito, com erros reais do PostgreSQL passando por Spring e Hibernate.
 
@@ -24,7 +24,7 @@ A configuração `hibernate.jdbc.time_zone: UTC` deslocava as colunas `time` das
 ## Onde está
 - `backend/src/main/java/com/queuecare/scheduling/application/`: `BookingService`, `BookingRequest`, `BookingRejectedException`, `BookingConflictException`, `SchedulingConflictDetector`, `ClockConfig`
 - `backend/src/main/java/com/queuecare/scheduling/persistence/`: entidades JPA e repositórios
-- Testes: `BookingServiceIntegrationTest` (21), `BookingConcurrencyIntegrationTest` (2), `SchedulingConflictDetectorIntegrationTest` (4)
+- Testes: `BookingServiceIntegrationTest` (22), `BookingConcurrencyIntegrationTest` (2), `SchedulingConflictDetectorIntegrationTest` (4)
 
 ## 3 perguntas de entrevista (responda com as suas palavras)
 1. Por que o serviço faz uma checagem de sobreposição antes de gravar se o banco já garante a exclusividade?
