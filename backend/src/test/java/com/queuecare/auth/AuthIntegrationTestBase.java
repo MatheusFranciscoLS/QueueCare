@@ -73,6 +73,10 @@ abstract class AuthIntegrationTestBase {
 				UUID.class, email, passwordEncoder.encode(PASSWORD), role, active);
 	}
 
+	long count(String sql, Object... args) {
+		return jdbc.queryForObject(sql, Long.class, args);
+	}
+
 	/** JSON simples a partir de pares chave, valor (com escape de aspas e barras). */
 	static String json(String... keyValues) {
 		StringBuilder sb = new StringBuilder("{");
