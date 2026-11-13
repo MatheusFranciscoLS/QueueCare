@@ -28,6 +28,7 @@ Teste: T5.
 ## R5. Fuso e antecedência
 Rejeitar agendamento no passado e respeitar a antecedência mínima configurada. Guardar `timestamptz` (UTC); o prestador tem fuso IANA (ex.: `America/Sao_Paulo`). Tratar horário local inexistente ou ambíguo (mudança de horário de verão).
 Observação: o Brasil não tem horário de verão desde 2019, então `America/Sao_Paulo` não sofre esse problema hoje; a regra continua valendo porque o fuso é configurável por prestador (ex.: `America/New_York`) e os testes T6 devem usar um fuso que tenha mudança de horário.
+Detalhes definidos na implementação (`BookingTimeRules` e `LocalTimeResolver`, ver `docs/estudo/r5-fuso-antecedencia.md`): o início conta contra o momento atual e a antecedência mínima (igual ao limite é permitido); horário local inexistente ou ambíguo não é adivinhado: é devolvido como tal e a API decide.
 Teste: T6.
 
 ## Testes que precisam existir
