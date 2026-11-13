@@ -15,7 +15,21 @@
 	<description>API do QueueCare: agendamento e fila de atendimento</description>
 	<properties>
 		<java.version>21</java.version>
+		<!-- PostgreSQL embutido usado nos testes de banco: mesma versão principal do CI (16). -->
+		<embedded-postgres.version>2.2.2</embedded-postgres.version>
+		<embedded-postgres-binaries.version>16.15.0</embedded-postgres-binaries.version>
 	</properties>
+	<dependencyManagement>
+		<dependencies>
+			<dependency>
+				<groupId>io.zonky.test.postgres</groupId>
+				<artifactId>embedded-postgres-binaries-bom</artifactId>
+				<version>${embedded-postgres-binaries.version}</version>
+				<type>pom</type>
+				<scope>import</scope>
+			</dependency>
+		</dependencies>
+	</dependencyManagement>
 	<dependencies>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
@@ -88,6 +102,13 @@
 		<dependency>
 			<groupId>com.h2database</groupId>
 			<artifactId>h2</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<!-- PostgreSQL REAL (processo de verdade, sem Docker) para provar constraints e concorrência (ADR 0002, T3). -->
+		<dependency>
+			<groupId>io.zonky.test</groupId>
+			<artifactId>embedded-postgres</artifactId>
+			<version>${embedded-postgres.version}</version>
 			<scope>test</scope>
 		</dependency>
 	</dependencies>
