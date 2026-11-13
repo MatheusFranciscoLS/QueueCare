@@ -42,5 +42,5 @@ A1 vê a agenda de A e cancela agendamentos de A.   A1 NÃO vê nem cancela nada
    *Pista: FK composta (usuário, perfil) e UNIQUE por atendente.*
 
 ## Limitações e o que ainda falta
-- Atendente em um único prestador; ainda **não existe criação de usuários PROVIDER/ATTENDANT** (próximo PR); sem auditoria detalhada; sem rate limit.
+- Atendente em um único prestador; ainda **não existe criação de usuários PROVIDER/ATTENDANT** (próximo PR); sem auditoria detalhada.
 - O atendente ainda não agenda em nome de cliente; check-in e fila (M4) vêm depois.
