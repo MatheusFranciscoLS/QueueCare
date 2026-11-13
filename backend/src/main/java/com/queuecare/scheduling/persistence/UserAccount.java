@@ -6,9 +6,14 @@ import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import java.time.Instant;
+import java.util.Objects;
 import java.util.UUID;
 
-/** Usuário (identidade e login). Nesta etapa a aplicação só lê; o cadastro vem com a autenticação (ADR 0003). */
+/**
+ * Usuário (identidade e login). O e-mail é guardado normalizado (sem espaços externos, em minúsculas) e a senha
+ * somente como hash BCrypt. O hash nunca deve sair em respostas nem em logs.
+ */
 @Entity
 @Table(name = "users")
 public class UserAccount {
@@ -17,17 +22,51 @@ public class UserAccount {
 	private UUID id;
 
 	@Column(nullable = false)
+	private String name;
+
+	@Column(nullable = false)
+	private String email;
+
+	@Column(name = "password_hash", nullable = false)
+	private String passwordHash;
+
+	@Column(nullable = false)
 	@Enumerated(EnumType.STRING)
 	private UserRole role;
 
 	@Column(nullable = false)
 	private boolean active;
 
+	@Column(name = "created_at", nullable = false)
+	private Instant createdAt;
+
 	protected UserAccount() {
+	}
+
+	public UserAccount(String name, String email, String passwordHash, UserRole role, Instant createdAt) {
+		this.id = UUID.randomUUID();
+		this.name = Objects.requireNonNull(name);
+		this.email = Objects.requireNonNull(email);
+		this.passwordHash = Objects.requireNonNull(passwordHash);
+		this.role = Objects.requireNonNull(role);
+		this.createdAt = Objects.requireNonNull(createdAt);
+		this.active = true;
 	}
 
 	public UUID getId() {
 		return id;
+	}
+
+	public String getName() {
+		return name;
+	}
+
+	public String getEmail() {
+		return email;
+	}
+
+	public String getPasswordHash() {
+		return passwordHash;
 	}
 
 	public UserRole getRole() {
@@ -36,5 +75,9 @@ public class UserAccount {
 
 	public boolean isActive() {
 		return active;
+	}
+
+	public Instant getCreatedAt() {
+		return createdAt;
 	}
 }
