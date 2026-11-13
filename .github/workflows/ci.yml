@@ -45,3 +45,14 @@ jobs:
       - run: npm ci
       - run: npm run lint
       - run: npm run build
+
+  segredos:
+    name: Segredos (Gitleaks)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # examina também o histórico, não só os arquivos atuais
+      - uses: gitleaks/gitleaks-action@v2.3.9
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
