@@ -8,6 +8,8 @@ import com.queuecare.scheduling.application.ProviderExceptions.InvalidConfigurat
 import com.queuecare.scheduling.application.ProviderExceptions.ProviderAlreadyConfiguredException;
 import com.queuecare.scheduling.application.ProviderExceptions.ProviderNotConfiguredException;
 import com.queuecare.scheduling.application.ProviderExceptions.ServiceNotFoundException;
+import com.queuecare.scheduling.application.ProviderExceptions.StaffAlreadyAssignedException;
+import com.queuecare.scheduling.application.ProviderExceptions.StaffNotFoundException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -58,6 +60,16 @@ class SchedulingExceptionHandler {
 	@ExceptionHandler(ServiceNotFoundException.class)
 	ProblemDetail serviceNotFound(ServiceNotFoundException e) {
 		return problem(HttpStatus.NOT_FOUND, "SERVICE_NOT_FOUND", "serviço não encontrado");
+	}
+
+	@ExceptionHandler(StaffNotFoundException.class)
+	ProblemDetail staffNotFound(StaffNotFoundException e) {
+		return problem(HttpStatus.NOT_FOUND, "STAFF_NOT_FOUND", "atendente não encontrado");
+	}
+
+	@ExceptionHandler(StaffAlreadyAssignedException.class)
+	ProblemDetail staffAlreadyAssigned(StaffAlreadyAssignedException e) {
+		return problem(HttpStatus.CONFLICT, "STAFF_ALREADY_ASSIGNED", "atendente já vinculado");
 	}
 
 	@ExceptionHandler(InvalidConfigurationException.class)
