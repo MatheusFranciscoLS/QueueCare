@@ -67,8 +67,11 @@ class ConcurrentBookingT3Test extends DatabaseTestBase {
 			}
 			List<Attempt> attempts = new ArrayList<>();
 			for (Future<Attempt> future : pool.invokeAll(tasks, 60, TimeUnit.SECONDS)) {
+				// Timeout cancela as tarefas pendentes: isso reprova o teste em vez de contar uma disputa incompleta.
+				assertTrue(!future.isCancelled(), "uma tentativa não terminou no prazo (cancelada por timeout)");
 				attempts.add(future.get());
 			}
+			assertEquals(contenders, attempts.size(), "todas as tentativas precisam ter terminado");
 			return attempts;
 		} finally {
 			pool.shutdownNow();
@@ -142,7 +145,7 @@ class ConcurrentBookingT3Test extends DatabaseTestBase {
 	}
 
 	@Test
-	void comTransacoesExplicitasOSegundoEsperaOPrimeiroConfirmarEDepoisFalha() throws Exception {
+	void comTransacoesExplicitasApenasUmaConfirmaEAsDemaisSaoRecusadas() throws Exception {
 		for (int round = 0; round < 10; round++) {
 			Instant start = at("08:00").plusSeconds(round * 7200L);
 			List<Attempt> attempts = race(2, start, start.plusSeconds(3600), true);
