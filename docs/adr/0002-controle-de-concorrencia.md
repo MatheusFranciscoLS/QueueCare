@@ -2,7 +2,7 @@
 
 - **Status:** Accepted
 - **Data:** 2026-11-13
-- **Quem decidiu:** o Matheus delegou a escolha; a alternativa foi proposta por Claude e revisada pelo ChatGPT (revisor independente). O Matheus deve explicar esta decisão com as próprias palavras antes de implementar a R2.
+- **Quem decidiu:** o Matheus delegou a escolha; a alternativa foi proposta por Claude e revisada pelo ChatGPT (revisor independente). O Matheus deve conseguir explicar esta decisão com as próprias palavras (ver `docs/estudo/`).
 
 ## Contexto
 Dois clientes podem tentar reservar o mesmo horário ao mesmo tempo, e serviços têm durações diferentes (60 min às 10h e 30 min às 10h30 se sobrepõem). A garantia precisa existir no banco, não só na aplicação (R2 em `docs/regras.md`; cenários em `docs/cenarios-r2.md`).
@@ -18,7 +18,7 @@ Dois clientes podem tentar reservar o mesmo horário ao mesmo tempo, e serviços
 - A aplicação valida antes (dentro de uma transação) para dar mensagem clara e **HTTP 409**.
 - O PostgreSQL é a garantia final: mesmo que duas requisições passem pela validação ao mesmo tempo, o banco recusa a segunda.
 
-Forma da solução (a migration real é escrita pelo Matheus):
+Forma da solução (a migration real será escrita e validada em PostgreSQL real, junto com o teste T3):
 ```sql
 CREATE EXTENSION IF NOT EXISTS btree_gist;
 

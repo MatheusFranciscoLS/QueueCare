@@ -1,6 +1,6 @@
 # Regras de negócio do QueueCare
 
-Estas regras são o coração do projeto. **O Matheus escreve a implementação e os testes de cada uma.** Mudou uma regra? Atualize este arquivo e, se for decisão de arquitetura, crie um ADR.
+Estas regras são o coração do projeto. A implementação e os testes de cada regra são feitos por Claude e revisados pelo ChatGPT (ver `CLAUDE.md`, seção 2). Mudou uma regra? Atualize este arquivo e, se for decisão de arquitetura, crie um ADR.
 
 ## R1. Disponibilidade
 Um agendamento só pode ocorrer dentro do horário de atendimento do prestador (`availability_windows`) e deve caber inteiro, respeitando a duração do serviço.
