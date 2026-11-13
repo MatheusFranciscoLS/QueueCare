@@ -51,8 +51,12 @@ class RateLimitPropertiesValidationTest {
 
 	@Test
 	void esperaDoBloqueioDoPrestadorPrecisaEstarEntre1msE60s() {
-		for (Duration invalid : new Duration[] {Duration.ZERO, Duration.ofSeconds(-1), Duration.ofSeconds(61)}) {
+		for (Duration invalid : new Duration[] {Duration.ZERO, Duration.ofNanos(1), Duration.ofNanos(500_000), Duration.ofNanos(999_999), Duration.ofSeconds(-1),
+				Duration.ofSeconds(60).plusNanos(1), Duration.ofSeconds(61)}) {
 			assertThrows(IllegalArgumentException.class, () -> new ProviderAdminService(null, null, null, null, invalid), invalid.toString());
+		}
+		for (Duration valid : new Duration[] {Duration.ofMillis(1), Duration.ofMillis(400), Duration.ofSeconds(3), Duration.ofSeconds(60)}) {
+			assertNotNull(new ProviderAdminService(null, null, null, null, valid), valid.toString());
 		}
 	}
 }

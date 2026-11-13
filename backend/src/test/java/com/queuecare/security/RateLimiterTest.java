@@ -310,4 +310,68 @@ class RateLimiterTest {
 		}
 		assertEquals(100, small.size());
 	}
+
+	/** O cenário da 3ª revisão: só UMA chave expulsável; cada chave nova não pode provocar uma varredura completa. */
+	@Test
+	void varreduraCompletaAcontecePorNoMaximoUmaVezPorSegundoMesmoQuandoLiberaEspaco() {
+		RateLimiter small = new RateLimiter(clock, 100);
+		Duration window = Duration.ofMinutes(15);
+		for (int k = 0; k < 99; k++) {
+			for (int i = 0; i < 6; i++) {
+				small.tryAcquire("b-" + k, 5, window); // 99 bloqueios vivos
+			}
+		}
+		small.tryAcquire("expulsavel", 5, window); // a única chave não bloqueada
+		assertEquals(100, small.size());
+		long before = small.fullScans();
+
+		assertTrue(small.tryAcquire("nova-0", 5, window), "a primeira varredura libera a chave expulsável e admite a nova");
+		for (int i = 1; i <= 1_000; i++) {
+			small.tryAcquire("nova-" + i, 5, window); // cheio de novo; dentro do intervalo, recusa sem varrer
+		}
+
+		assertEquals(before + 1, small.fullScans(), "uma única varredura para as 1001 chaves novas");
+		assertTrue(small.size() <= 100);
+
+		clock.advance(Duration.ofSeconds(1));
+		small.tryAcquire("depois-do-intervalo", 5, window);
+		assertEquals(before + 2, small.fullScans(), "passado 1 s, outra varredura é permitida");
+	}
+
+	@Test
+	void retryAfterDeRecusaPorCapacidadeEhOTempoAteOPrimeiroBloqueioVencer() {
+		RateLimiter small = new RateLimiter(clock, 100);
+		Duration window = Duration.ofMinutes(15);
+		for (int k = 0; k < 100; k++) {
+			for (int i = 0; i < 6; i++) {
+				small.tryAcquire("b-" + k, 5, window);
+			}
+			if (k == 0) {
+				clock.advance(Duration.ofMinutes(1)); // o primeiro bloqueio começou 1 minuto antes dos demais
+			}
+		}
+		clock.advance(Duration.ofMinutes(4)); // 5 minutos desde o primeiro bloqueio
+
+		assertFalse(small.tryAcquire("novo", 5, window), "mapa cheio de bloqueios vivos");
+		assertEquals(600, small.retryAfterSeconds("novo", window), "o primeiro bloqueio vence em 10 minutos, não em 1 segundo");
+
+		clock.advance(Duration.ofMinutes(10));
+		assertTrue(small.tryAcquire("novo", 5, window), "venceu: admite");
+	}
+
+	@Test
+	void retryAfterDentroDoIntervaloDeVarreduraEhDeAteUmSegundo() {
+		RateLimiter small = new RateLimiter(clock, 100);
+		Duration window = Duration.ofMinutes(15);
+		for (int k = 0; k < 99; k++) {
+			for (int i = 0; i < 6; i++) {
+				small.tryAcquire("b-" + k, 5, window);
+			}
+		}
+		small.tryAcquire("expulsavel", 5, window);
+		small.tryAcquire("nova-0", 5, window); // varredura bem-sucedida
+		small.tryAcquire("nova-1", 5, window); // cheio de novo: recusada pelo intervalo
+
+		assertEquals(1, small.retryAfterSeconds("nova-2", window));
+	}
 }

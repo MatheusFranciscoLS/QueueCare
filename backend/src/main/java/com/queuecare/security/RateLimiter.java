@@ -17,7 +17,12 @@ import java.util.concurrent.ConcurrentHashMap;
  * janelas vencidas (cada uma com a SUA duração) e depois, se preciso, as janelas vivas que NÃO estão bloqueadas (contagem
  * abaixo do limite), as de menor contagem primeiro, até sobrar 90% do espaço. Uma janela BLOQUEADA (contagem no limite) viva
  * NUNCA é descartada para dar lugar a outra chave. Se o mapa estiver cheio só de bloqueios vivos, a chave nova é RECUSADA
- * (devolve {@code false}, ou seja, 429): o sistema fecha em vez de abrir, e a varredura cara só se repete a cada segundo.
+ * (devolve {@code false}, ou seja, 429): o sistema fecha em vez de abrir.
+ *
+ * <p><b>Custo limitado.</b> Abrir espaço exige varrer o mapa, então QUALQUER varredura (com sucesso ou não) só pode acontecer
+ * uma vez por segundo; dentro desse intervalo, chave nova com o mapa cheio é recusada. Assim, nem mesmo um mapa cheio de
+ * bloqueios com uma única chave expulsável consegue provocar varreduras repetidas. O {@code Retry-After} de uma recusa por
+ * capacidade é o tempo até o próximo bloqueio vencer (ou o fim do intervalo da varredura), não um "1 segundo" fixo.
  * Para encher o mapa assim seria preciso levar 100 mil chaves distintas até o limite dentro da mesma janela.
  *
  * <p>O bloqueio por tentativas de login usa uma instância PRÓPRIA, para que o tráfego comum jamais dispute espaço com ele.
@@ -54,7 +59,10 @@ public final class RateLimiter {
 	private final ConcurrentHashMap<String, Window> windows = new ConcurrentHashMap<>();
 	/** Trava de admissão: TODA chave nova entra aqui, então o tamanho nunca passa de maxKeys. */
 	private final Object admissionLock = new Object();
-	private long nextFullScanAllowedAtMillis; // protegido por admissionLock
+	private volatile long nextFullScanAllowedAtMillis; // escrito sob admissionLock
+	/** Quando o primeiro bloqueio vivo vence, se a última varredura não liberou espaço (0 se não se aplica). */
+	private volatile long capacityFreeAtMillis;
+	private long fullScans; // só para testes; escrito sob admissionLock
 
 	public RateLimiter(Clock clock) {
 		this(clock, DEFAULT_MAX_KEYS);
@@ -123,16 +131,26 @@ public final class RateLimiter {
 
 	/** Segundos até a janela da chave terminar (mínimo 1), para o cabeçalho Retry-After. */
 	public long retryAfterSeconds(String key, Duration window) {
+		long now = clock.millis();
 		Window current = windows.get(key);
 		if (current == null) {
-			return 1;
+			// Chave recusada por falta de capacidade (nunca foi guardada): quando algo puder ser liberado.
+			long remainingMillis = Math.max(nextFullScanAllowedAtMillis, capacityFreeAtMillis) - now;
+			return Math.max(1, (remainingMillis + 999) / 1000);
 		}
-		long remainingMillis = current.startMillis() + current.windowMillis() - clock.millis();
+		long remainingMillis = current.startMillis() + current.windowMillis() - now;
 		return Math.max(1, (remainingMillis + 999) / 1000);
 	}
 
 	int size() {
 		return windows.size();
+	}
+
+	/** Quantas varreduras completas já aconteceram (para testes). */
+	long fullScans() {
+		synchronized (admissionLock) {
+			return fullScans;
+		}
 	}
 
 	/** Garante espaço para UMA chave nova (chamado sob {@code admissionLock}); {@code false} se não for possível. */
@@ -141,8 +159,11 @@ public final class RateLimiter {
 			return true;
 		}
 		if (now < nextFullScanAllowedAtMillis) {
-			return false; // acabamos de varrer e não havia o que liberar: não repetir a varredura a cada chamada
+			return false; // varremos há menos de 1 s: não repetir o trabalho caro, mesmo que a última tenha liberado algo
 		}
+		fullScans++;
+		nextFullScanAllowedAtMillis = now + FULL_SCAN_COOLDOWN_MILLIS;
+		capacityFreeAtMillis = 0;
 		windows.entrySet().removeIf(e -> e.getValue().expired(now));
 		if (windows.size() < maxKeys) {
 			return true;
@@ -164,7 +185,12 @@ public final class RateLimiter {
 		if (windows.size() < maxKeys) {
 			return true;
 		}
-		nextFullScanAllowedAtMillis = now + FULL_SCAN_COOLDOWN_MILLIS;
+		// Nada a liberar: só os bloqueios vivos vencendo abrem espaço. Guarda quando o primeiro vence (para o Retry-After).
+		long earliest = Long.MAX_VALUE;
+		for (Window w : windows.values()) {
+			earliest = Math.min(earliest, w.startMillis() + w.windowMillis());
+		}
+		capacityFreeAtMillis = earliest == Long.MAX_VALUE ? 0 : earliest;
 		return false;
 	}
 }
