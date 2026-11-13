@@ -74,7 +74,7 @@ class AppointmentController {
 		if (page < 0 || size < 1 || size > MAX_PAGE_SIZE) {
 			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "paginação inválida");
 		}
-		PageRequest pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "startsAt"));
+		PageRequest pageable = PageRequest.of(page, size, Sort.by(Sort.Order.desc("startsAt"), Sort.Order.desc("id")));
 		return appointments.findByCustomerId(userId(jwt), pageable).stream().map(AppointmentResponse::from).toList();
 	}
 
