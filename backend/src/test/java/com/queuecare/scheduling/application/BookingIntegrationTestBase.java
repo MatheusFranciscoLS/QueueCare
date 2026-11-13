@@ -28,6 +28,8 @@ abstract class BookingIntegrationTestBase {
 		registry.add("spring.datasource.password", () -> "teste");
 		registry.add("spring.flyway.enabled", () -> "true");
 		registry.add("spring.jpa.hibernate.ddl-auto", () -> "validate");
+		registry.add("queuecare.jwt.secret", () -> "dGVzdGUtZXhjbHVzaXZvLWRlLXRlc3RlLTMyLWJ5dGVzLSEh");
+		registry.add("queuecare.security.bcrypt-strength", () -> "4");
 	}
 
 	@Autowired

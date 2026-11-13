@@ -28,9 +28,10 @@ Pequenos prestadores de serviço (oficina, clínica, barbearia) recebem agendame
 | R5 fuso e antecedência (`BookingTimeRules`, `LocalTimeResolver`) | Pronta como função pura, com 30 testes (ver `docs/estudo/r5-fuso-antecedencia.md`). Sem ligação com API e banco ainda. |
 | Banco (migration V1) e teste de concorrência T3 | Prontos e provados num PostgreSQL 16 real embutido, com 35 testes de banco (ver `docs/estudo/banco-e-t3.md`). Falta ligar a aplicação (JPA e serviço). |
 | Serviço de agendamento (`BookingService`: R5 + R1 + R2 + persistência, conflito como exceção de domínio) | Pronto, com testes de integração em PostgreSQL real, inclusive concorrência (ver `docs/estudo/servico-de-agendamento.md`). Sem API HTTP ainda. |
-| Autenticação (R4), API HTTP com 409 e cancelamento (R3) | A fazer (ADR 0003 ainda é proposta). |
+| Autenticação e autorização por perfil (cadastro, login JWT, `/api/me`; ADR 0003 aceito) | Pronta, com 41 testes (ver `docs/estudo/autenticacao.md`). |
+| API de agendar e cancelar (HTTP 409, R3, R4 por dono) | A fazer (próximo PR). |
 
 ## Limites honestos por enquanto
 - Ainda não há API de agendamento, banco com tabelas nem tela de agendamento.
-- A proteção contra reserva dupla está **provada no banco** (T3) e **pelo serviço de agendamento** (concorrência), mas ainda não há API HTTP, autenticação nem tela.
+- A proteção contra reserva dupla está **provada no banco** (T3) e **pelo serviço de agendamento** (concorrência), mas ainda não há API de agendamento nem tela.
 - O projeto foi desenvolvido com assistência substancial de IA (ver README).

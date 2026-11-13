@@ -26,3 +26,11 @@ management:
   endpoint:
     health:
       show-details: never
+
+queuecare:
+  jwt:
+    # Segredo HS256 em Base64, com pelo menos 32 bytes. Gere com: openssl rand -base64 32
+    # SEM valor padrão: a aplicação não sobe sem JWT_SECRET (ADR 0003).
+    secret: ${JWT_SECRET}
+  cors:
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173}

@@ -1,0 +1,16 @@
+# Configuração do Gitleaks (job "Segredos" do CI).
+# Mantém TODAS as regras padrão e libera somente valores EXATOS de teste, que não são segredos reais:
+#  - o segredo JWT exclusivo de teste (32 bytes em Base64; nunca vale fora dos testes) e
+#  - a senha fictícia usada nos testes de autenticação.
+# Qualquer outro valor com cara de segredo continua reprovando o PR.
+title = "QueueCare"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Valores fictícios usados apenas em testes"
+regexes = [
+  '''dGVzdGUtZXhjbHVzaXZvLWRlLXRlc3RlLTMyLWJ5dGVzLSEh''',
+  '''senha-forte-123''',
+]

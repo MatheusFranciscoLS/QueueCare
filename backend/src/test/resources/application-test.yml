@@ -10,3 +10,10 @@ spring:
       ddl-auto: none
   flyway:
     enabled: false
+
+queuecare:
+  jwt:
+    # Segredo EXCLUSIVO de teste (32 bytes em Base64). Nunca usar fora dos testes.
+    secret: dGVzdGUtZXhjbHVzaXZvLWRlLXRlc3RlLTMyLWJ5dGVzLSEh
+  security:
+    bcrypt-strength: 4
