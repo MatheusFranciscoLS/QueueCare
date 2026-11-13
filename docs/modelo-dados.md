@@ -3,7 +3,7 @@
 Rascunho de partida. O Matheus modela as entidades e relacionamentos e atualiza este arquivo (junto com as migrations Flyway).
 
 - `users` (id, name, email, password_hash, role, active). `role`: PROVIDER, ATTENDANT, CUSTOMER.
-- `providers` ou dados do prestador (id, user_id, nome do negócio, **time_zone IANA**, antecedência mínima, prazo de cancelamento). Decisão a registrar: tabela própria ou colunas em `users`.
+- `providers` (id, user_id **único**, nome do negócio, **time_zone IANA**, antecedência mínima, prazo de cancelamento). **Decisão (13/11/2026): tabela própria, relação 1:1 com `users`.** Motivo: `users` representa identidade e login; `providers` guarda as configurações do negócio (fuso, antecedência, prazo de cancelamento) e pode crescer sem inflar `users`. Recomendado por Claude e pelo ChatGPT (revisor independente); aprovado pelo Matheus.
 - `services` (id, provider_id, name, duration_minutes, active).
 - `availability_windows` (id, provider_id, day_of_week, start_time, end_time). Horários locais do prestador.
 - `appointments` (id, provider_id, service_id, customer_id, starts_at, ends_at, status, created_at). Entidade central. `starts_at`/`ends_at` em `timestamptz`.
