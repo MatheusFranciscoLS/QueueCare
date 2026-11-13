@@ -24,7 +24,7 @@ A1 vê a agenda de A e cancela agendamentos de A.   A1 NÃO vê nem cancela nada
 - **A agenda mostra só o necessário**: do cliente, id e nome (nada de e-mail).
 - A **data** da agenda é o dia no fuso do prestador: de 00:00 local até 00:00 do dia seguinte, correto também em dias de horário de verão (dia de 23 h e de 25 h).
 
-## O que os testes provam (42 novos; 260 no total)
+## O que os testes provam (43 novos; 261 no total)
 - **Banco (6):** só ATTENDANT vincula; 1 prestador por atendente; mudar perfil ou apagar vinculado é recusado; prestador com equipe não é apagado.
 - **StaffAccess (8):** dono, atendente vinculado e sem vínculo, cliente, inativo; **mudanças no banco valem na chamada seguinte**.
 - **Matriz adversária por HTTP (22 + os demais):** cada um dos 7 atores tenta ver e cancelar o que é do outro prestador; depois de TODAS as tentativas nada mudou; `providerId` ignorado; desvincular tira o acesso com o mesmo token; trocar de prestador muda o contexto; atendente desativado perde o acesso; vínculo repetido e e-mails sem enumeração; só o prestador gerencia a equipe; **concorrência** (dois prestadores vinculando o mesmo atendente; vincular × desvincular; dois cancelamentos); agenda sem cancelados, ordenada, sem outros dias e **em dias de horário de verão**.

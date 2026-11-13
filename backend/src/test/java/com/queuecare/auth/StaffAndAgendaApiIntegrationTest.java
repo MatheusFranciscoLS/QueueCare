@@ -202,6 +202,13 @@ class StaffAndAgendaApiIntegrationTest extends AuthIntegrationTestBase {
 		agenda(s, day(7)).andExpect(status().isForbidden());
 	}
 
+	@Test
+	void agendaMantemONomeHistoricoDeClienteDesativado() throws Exception {
+		jdbc.update("UPDATE users SET active = false WHERE id = ?", userC1);
+
+		agenda(a1, day(7)).andExpect(status().isOk()).andExpect(jsonPath("$[0].customerName").value("Fulano de Teste")).andExpect(jsonPath("$[0].customerEmail").doesNotExist());
+	}
+
 	// ---------- cancelamento: o isolamento entre prestadores ----------
 
 	@Test
