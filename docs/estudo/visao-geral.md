@@ -9,7 +9,7 @@ Pequenos prestadores de serviço (oficina, clínica, barbearia) recebem agendame
 1. O **cliente** escolhe um serviço e um horário.
 2. O sistema deverá conferir se o horário está **dentro do expediente** do prestador (R1) e se respeita a **antecedência mínima** e o **fuso** (R5).
 3. O sistema deverá conferir se o horário **não se sobrepõe** a outro agendamento ativo do mesmo prestador (R2). A conta de sobreposição **já existe** na classe `TimeRange`.
-4. O agendamento deverá ser **gravado** no PostgreSQL. A trava prevista no ADR 0002 (restrição de exclusão) deverá **recusar sobreposição** mesmo sob requisições simultâneas, e a API deverá traduzir esse conflito específico em **HTTP 409**. Isso só será considerado pronto depois de implementado e provado pelo teste T3 com PostgreSQL real.
+4. O agendamento deverá ser **gravado** no PostgreSQL. A trava do ADR 0002 (restrição de exclusão) **já existe e foi provada pelo teste T3** com PostgreSQL real: recusa sobreposição mesmo sob requisições simultâneas. Falta a API traduzir os erros `23P01` e `40P01` em **HTTP 409**.
 5. O cliente deverá poder **cancelar** dentro do prazo (R3). O horário volta a ficar livre e o evento fica registrado.
 6. Cada perfil só deverá acessar o que pode (R4): cliente só os próprios agendamentos; atendente administra a agenda; prestador configura serviços e horários.
 
@@ -26,10 +26,10 @@ Pequenos prestadores de serviço (oficina, clínica, barbearia) recebem agendame
 | R2 pura (`TimeRange`, sobreposição de intervalos) | Pronta, com 14 testes (ver `docs/estudo/r2-time-range.md`). |
 | R1 disponibilidade (`AvailabilityPolicy`) | Pronta como função pura, com 37 testes (ver `docs/estudo/r1-disponibilidade.md`). Sem ligação com banco e API ainda. |
 | R5 fuso e antecedência (`BookingTimeRules`, `LocalTimeResolver`) | Pronta como função pura, com 30 testes (ver `docs/estudo/r5-fuso-antecedencia.md`). Sem ligação com API e banco ainda. |
-| Entidades e migrations, teste de concorrência T3 | A fazer, depende de PostgreSQL real. |
+| Banco (migration V1) e teste de concorrência T3 | Prontos e provados num PostgreSQL 16 real embutido, com 35 testes de banco (ver `docs/estudo/banco-e-t3.md`). Falta ligar a aplicação (JPA e serviço). |
 | Autenticação e endpoints | A fazer (ADR 0003 ainda é proposta). |
 
 ## Limites honestos por enquanto
 - Ainda não há API de agendamento, banco com tabelas nem tela de agendamento.
-- Nenhuma proteção contra reserva dupla no banco foi **comprovada** ainda (falta o T3 com PostgreSQL real).
+- A proteção contra reserva dupla está **provada no banco** (T3), mas a aplicação ainda não a usa: não há JPA, serviço de agendamento nem API.
 - O projeto foi desenvolvido com assistência substancial de IA (ver README).

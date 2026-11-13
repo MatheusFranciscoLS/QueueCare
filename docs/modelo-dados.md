@@ -19,3 +19,6 @@ Pontos de integridade a considerar nas migrations:
 - `appointments`: CHECK `ends_at > starts_at`; chaves estrangeiras para prestador, serviço e cliente.
 - `availability_windows`: CHECK `end_time > start_time` e `day_of_week` entre 1 e 7; sem janelas sobrepostas no mesmo dia do mesmo prestador.
 - `providers.user_id` único (relação 1:1 com `users`, se a tabela própria for adotada).
+
+## Esquema real
+A fonte da verdade é a migration `backend/src/main/resources/db/migration/V1__schema_inicial.sql` (chaves UUID, `timestamptz`, `NOT NULL` explícito, exclusão restrita em chaves estrangeiras, FK composta serviço/prestador e a restrição de exclusão do ADR 0002). Explicação em `docs/estudo/banco-e-t3.md`.
