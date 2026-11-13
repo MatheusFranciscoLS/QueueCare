@@ -48,7 +48,7 @@ A API lê `DB_URL`, `DB_USER` e `DB_PASSWORD` do ambiente (veja `.env.example`).
 Estado atual (marco M1): estrutura, CI e teste de arranque. As regras de negócio ainda não foram implementadas.
 
 ## Autoria
-Projeto de portfólio de Matheus Francisco, desenvolvido sob a direção do dono do produto e **com assistência substancial de IA**: Claude (implementação) e ChatGPT (revisão independente) decidem e implementam as partes técnicas, incluindo regras de negócio e testes; o Matheus define o produto, aprova o rumo e recebe resumos de cada entrega. Não é uma demonstração de implementação individual. O processo está em [`CLAUDE.md`](CLAUDE.md) e o material de estudo em [`docs/estudo/`](docs/estudo/).
+Projeto de portfólio de Matheus Francisco, desenvolvido sob a direção do dono do produto e **com assistência substancial de IA**: Claude implementa as partes técnicas (incluindo regras de negócio e testes) e o ChatGPT faz a revisão independente de cada mudança; o Matheus define o produto, aprova o rumo e recebe resumos de cada entrega. Não é uma demonstração de implementação individual. O processo está em [`CLAUDE.md`](CLAUDE.md) e o material de estudo em [`docs/estudo/`](docs/estudo/).
 
 ## Licença
 [MIT](LICENSE).

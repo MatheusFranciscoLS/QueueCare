@@ -5,13 +5,13 @@ Atualizado a cada PR. Escrito em linguagem simples; leia nesta ordem e tente con
 ## O que o sistema faz
 Pequenos prestadores de serviço (oficina, clínica, barbearia) recebem agendamentos de clientes e organizam o atendimento do dia.
 
-## O fluxo principal
+## O fluxo principal (planejado; só o passo 3 existe hoje, e apenas a conta de sobreposição)
 1. O **cliente** escolhe um serviço e um horário.
-2. O sistema confere se o horário está **dentro do expediente** do prestador (R1) e se respeita a **antecedência mínima** e o **fuso** (R5).
-3. O sistema confere se o horário **não se sobrepõe** a outro agendamento ativo do mesmo prestador (R2). Esse cálculo é feito pela classe `TimeRange`.
-4. O agendamento é **gravado** no PostgreSQL. O banco tem uma trava que **recusa sobreposição**, mesmo se duas pessoas tentarem ao mesmo tempo (ADR 0002). Se isso acontecer, a API responde **409**.
-5. O cliente pode **cancelar** dentro do prazo (R3). O horário volta a ficar livre e o evento fica registrado.
-6. Cada perfil só acessa o que pode (R4): cliente só os próprios agendamentos; atendente administra a agenda; prestador configura serviços e horários.
+2. O sistema deverá conferir se o horário está **dentro do expediente** do prestador (R1) e se respeita a **antecedência mínima** e o **fuso** (R5).
+3. O sistema deverá conferir se o horário **não se sobrepõe** a outro agendamento ativo do mesmo prestador (R2). A conta de sobreposição **já existe** na classe `TimeRange`.
+4. O agendamento deverá ser **gravado** no PostgreSQL. A trava prevista no ADR 0002 (restrição de exclusão) deverá **recusar sobreposição** mesmo sob requisições simultâneas, e a API deverá traduzir esse conflito específico em **HTTP 409**. Isso só será considerado pronto depois de implementado e provado pelo teste T3 com PostgreSQL real.
+5. O cliente deverá poder **cancelar** dentro do prazo (R3). O horário volta a ficar livre e o evento fica registrado.
+6. Cada perfil só deverá acessar o que pode (R4): cliente só os próprios agendamentos; atendente administra a agenda; prestador configura serviços e horários.
 
 ## Peças técnicas
 - **React + TypeScript** (`frontend/`): telas.

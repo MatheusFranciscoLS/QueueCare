@@ -11,7 +11,7 @@ Monólito modular Spring Boot (sem microsserviços, sem RabbitMQ no MVP). Não a
 Leia antes de qualquer tarefa: `docs/regras.md`, `docs/modelo-dados.md`, `docs/arquitetura.md` e os ADRs em `docs/adr/`. O repositório é a fonte oficial das decisões, não a memória da conversa.
 
 ## 2. Regra de autoria (a mais importante; atualizada em 13/11/2026)
-O Matheus é o dono do projeto e decidiu, em 13/11/2026, **delegar a implementação ao Claude e ao ChatGPT**: os dois decidem o que implementar e implementam (inclusive as regras centrais: disponibilidade, sobreposição, cancelamento, autorização, fuso e antecedência, e os testes). Ele define o produto, aprova o rumo e recebe resumos em linguagem simples. (Antes disso, a regra era que ele escrevesse essas partes; foi substituída por esta.)
+O Matheus é o dono do projeto e decidiu, em 13/11/2026, **delegar a implementação ao Claude e a revisão ao ChatGPT**: o Claude implementa (inclusive as regras centrais: disponibilidade, sobreposição, cancelamento, autorização, fuso e antecedência, e os testes) e o ChatGPT revisa de forma independente; os dois decidem juntos o que fazer primeiro. Ele define o produto, aprova o rumo e recebe resumos em linguagem simples. (Antes disso, a regra era que ele escrevesse essas partes; foi substituída por esta.)
 
 Condições combinadas com o ChatGPT (revisor independente):
 - **Autoria honesta:** o README declara que o projeto foi desenvolvido com assistência substancial de IA, sob a direção do dono. Nunca afirmar que o Matheus escreveu o que ele não escreveu.
