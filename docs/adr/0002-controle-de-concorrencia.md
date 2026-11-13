@@ -32,6 +32,8 @@ ALTER TABLE appointments
 ```
 Em palavras: "no banco, dois agendamentos do mesmo prestador, não cancelados, não podem ter intervalos que se sobreponham".
 
+Cuidado: a coluna `status` deve ser `NOT NULL`. Com `status` nulo, a condição `status <> 'CANCELLED'` não é verdadeira e a linha escaparia da proteção. Também convém um CHECK `ends_at > starts_at`.
+
 ## Por que não as outras
 - Alternativa 1 e 2 exigem horários fixos e deixam brechas ou mais código para manter.
 - Alternativa 4 não protege a criação de um intervalo novo.
