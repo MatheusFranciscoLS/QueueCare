@@ -1,0 +1,12 @@
+# Perfil usado só no teste de arranque (sem Docker e sem PostgreSQL).
+# H2 não substitui o PostgreSQL: constraints, concorrência e transações são testados com PostgreSQL real.
+spring:
+  datasource:
+    url: jdbc:h2:mem:queuecare;MODE=PostgreSQL;DB_CLOSE_DELAY=-1
+    username: sa
+    password: ""
+  jpa:
+    hibernate:
+      ddl-auto: none
+  flyway:
+    enabled: false
