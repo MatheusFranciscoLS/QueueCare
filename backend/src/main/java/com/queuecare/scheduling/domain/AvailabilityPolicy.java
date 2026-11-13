@@ -72,7 +72,7 @@ public final class AvailabilityPolicy {
 			return false;
 		}
 		ZonedDateTime start = range.startsAt().atZone(zone);
-		LocalDateTime end = localEnd(range, start);
+		LocalDateTime end = localEnd(range);
 		if (!start.toLocalDate().equals(end.toLocalDate())) {
 			return false;
 		}
@@ -90,16 +90,14 @@ public final class AvailabilityPolicy {
 	}
 
 	/**
-	 * Data e hora locais do fim do intervalo. Se não há mudança de offset dentro do intervalo, o fim é lido com o
-	 * mesmo offset do início (um intervalo que termina exatamente no instante da volta do relógio ainda pertence à
-	 * primeira passagem). Se há avanço do relógio no meio, usa-se o fuso, que dá o relógio local resultante.
+	 * Data e hora locais do fim do intervalo, lidas com o offset vigente IMEDIATAMENTE ANTES do fim: como o fim
+	 * é exclusivo, um intervalo que termina exatamente no instante de uma transição ainda pertence ao offset
+	 * anterior (por exemplo, a primeira passagem de uma hora repetida). Se houve avanço do relógio no meio do
+	 * intervalo, o offset vigente antes do fim já é o novo, e o resultado é o relógio local resultante.
 	 */
-	private LocalDateTime localEnd(TimeRange range, ZonedDateTime start) {
-		ZoneOffset lastOffset = zone.getRules().getOffset(range.endsAt().minusNanos(1));
-		if (lastOffset.equals(start.getOffset())) {
-			return range.endsAt().atOffset(start.getOffset()).toLocalDateTime();
-		}
-		return range.endsAt().atZone(zone).toLocalDateTime();
+	private LocalDateTime localEnd(TimeRange range) {
+		ZoneOffset offsetBeforeEnd = zone.getRules().getOffset(range.endsAt().minusNanos(1));
+		return range.endsAt().atOffset(offsetBeforeEnd).toLocalDateTime();
 	}
 
 	/**

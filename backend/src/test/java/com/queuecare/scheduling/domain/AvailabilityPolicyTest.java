@@ -276,6 +276,17 @@ class AvailabilityPolicyTest {
 	}
 
 	@Test
+	void primaveraIntervaloQueTerminaExatamenteNoAvancoDoRelogioUsaOOffsetAnterior() {
+		// O relógio avança às 07:00 UTC (02:00 EST -> 03:00 EDT). Um intervalo 01:00-02:00 EST termina exatamente nesse
+		// instante e deve ser lido como 01:00-02:00 (offset anterior), não como 01:00-03:00 (offset posterior).
+		Instant avanco = ZonedDateTime.of(2026, 3, 8, 3, 0, 0, 0, NEW_YORK).toInstant();
+		TimeRange range = new TimeRange(avanco.minusSeconds(3600), avanco);
+		AvailabilityPolicy ate0200 = new AvailabilityPolicy(NEW_YORK, List.of(window(DayOfWeek.SUNDAY, "00:00", "02:00")));
+
+		assertTrue(ate0200.allows(range));
+	}
+
+	@Test
 	void outonoIntervaloNormalDepoisDaTransicaoEhPermitido() {
 		TimeRange range = new TimeRange(
 				ZonedDateTime.of(2026, 11, 1, 3, 0, 0, 0, NEW_YORK).toInstant(),
