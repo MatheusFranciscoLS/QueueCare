@@ -16,6 +16,7 @@ Teste: T3 (concorrência com PostgreSQL real, duas threads, uma vence).
 
 ## R3. Cancelamento e liberação
 O cliente só cancela dentro do prazo definido pelo prestador. Ao cancelar, o horário volta a ficar livre e o evento é registrado em `appointment_events`.
+Detalhes definidos na implementação (`CancellationPolicy`, `CancellationService`, ver `docs/estudo/api-agendamento.md`): o cliente cancela só o próprio e até o prazo do prestador (exatamente no limite ainda pode); o prestador dono cancela sem prazo; agendamento de outra pessoa responde 404.
 Teste: T4.
 
 ## R4. Autorização por perfil (na API)

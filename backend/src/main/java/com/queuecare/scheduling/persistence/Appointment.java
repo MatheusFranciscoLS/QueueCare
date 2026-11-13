@@ -62,6 +62,11 @@ public class Appointment {
 		this.status = AppointmentStatus.SCHEDULED;
 	}
 
+	/** Cancela o agendamento (libera o horário no banco: a restrição de exclusão ignora CANCELLED). */
+	public void cancel() {
+		this.status = AppointmentStatus.CANCELLED;
+	}
+
 	public UUID getId() {
 		return id;
 	}

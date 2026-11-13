@@ -14,6 +14,9 @@ public class Provider {
 	@Id
 	private UUID id;
 
+	@Column(name = "user_id", nullable = false)
+	private UUID userId;
+
 	@Column(name = "time_zone", nullable = false)
 	private String timeZone;
 
@@ -28,6 +31,11 @@ public class Provider {
 
 	public UUID getId() {
 		return id;
+	}
+
+	/** Usuário (login) dono deste negócio. */
+	public UUID getUserId() {
+		return userId;
 	}
 
 	public String getTimeZone() {
