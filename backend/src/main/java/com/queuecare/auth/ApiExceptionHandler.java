@@ -3,6 +3,9 @@ package com.queuecare.auth;
 import com.queuecare.auth.AuthExceptions.EmailAlreadyRegisteredException;
 import com.queuecare.auth.AuthExceptions.InvalidCredentialsException;
 import com.queuecare.auth.AuthExceptions.InvalidPasswordException;
+import com.queuecare.auth.AuthExceptions.TooManyLoginAttemptsException;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseEntity;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import org.springframework.http.HttpStatus;
@@ -43,6 +46,13 @@ class ApiExceptionHandler {
 	@ExceptionHandler(EmailAlreadyRegisteredException.class)
 	ProblemDetail emailAlreadyRegistered(EmailAlreadyRegisteredException e) {
 		return ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, "e-mail já cadastrado");
+	}
+
+	@ExceptionHandler(TooManyLoginAttemptsException.class)
+	ResponseEntity<ProblemDetail> tooManyAttempts(TooManyLoginAttemptsException e) {
+		// Mesma resposta para e-mail existente ou não: o bloqueio conta TODA falha, então não revela contas.
+		return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).header(HttpHeaders.RETRY_AFTER, Long.toString(e.retryAfterSeconds()))
+				.body(ProblemDetail.forStatusAndDetail(HttpStatus.TOO_MANY_REQUESTS, "muitas tentativas; tente novamente mais tarde"));
 	}
 
 	@ExceptionHandler(InvalidCredentialsException.class)

@@ -22,12 +22,20 @@ import org.springframework.security.oauth2.jwt.JwtEncoderParameters;
 import org.springframework.security.oauth2.jwt.NimbusJwtEncoder;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 
 /**
  * Base dos testes de segurança: aplicação Spring completa (MockMvc, filtros do Spring Security reais) com PostgreSQL real
  * embutido. O segredo JWT abaixo é EXCLUSIVO de teste.
  */
+/** Limites de requisição BEM altos por padrão (os testes fazem muitas chamadas do mesmo endereço); testes específicos os reduzem. */
+@TestPropertySource(properties = {
+		"queuecare.rate-limit.login-per-minute=100000",
+		"queuecare.rate-limit.register-per-minute=100000",
+		"queuecare.rate-limit.slots-per-minute=100000",
+		"queuecare.rate-limit.login-failures-per-email-and-ip=100000"
+})
 @SpringBootTest
 @AutoConfigureMockMvc
 abstract class AuthIntegrationTestBase {
@@ -61,8 +69,19 @@ abstract class AuthIntegrationTestBase {
 	@Autowired
 	PasswordEncoder passwordEncoder;
 
+	@Autowired
+	@org.springframework.beans.factory.annotation.Qualifier(com.queuecare.security.RateLimiter.REQUEST_LIMITER)
+	com.queuecare.security.RateLimiter requestLimiter;
+
+	@Autowired
+	@org.springframework.beans.factory.annotation.Qualifier(com.queuecare.security.RateLimiter.LOGIN_LOCKOUT_LIMITER)
+	com.queuecare.security.RateLimiter loginLockoutLimiter;
+
 	@BeforeEach
 	void cleanUsers() {
+		// Os limitadores são em memória e compartilhados pelo contexto: cada teste começa do zero.
+		requestLimiter.clearAll();
+		loginLockoutLimiter.clearAll();
 		jdbc.execute("TRUNCATE appointment_events, appointments, availability_windows, services, providers, users CASCADE");
 	}
 

@@ -28,6 +28,15 @@ cliente --GET /api/me + Bearer token--> API (valida token, consulta usuário no 
 - **Token e acesso (16 testes):** os casos de recusa acima, usuário desativado depois de logado, usuário inexistente, cada perfil só nas rotas permitidas (rotas de prova só de teste), rotas públicas, padrão "tudo fechado", CORS, sem cookie.
 - **Configuração (4 testes):** segredo ausente, não-Base64 ou com menos de 32 bytes impede a aplicação de subir.
 
+## Limite de tentativas (força bruta)
+- Login e cadastro têm limite por minuto e por endereço; horários livres, por usuário. Excedeu: **429** com `Retry-After`.
+- O par **e-mail + endereço** tem **5 tentativas sem sucesso** em 15 minutos; a seguinte recebe 429 (mesmo com a senha certa). A tentativa é **reservada de forma atômica antes** de conferir a senha: com 40 requisições simultâneas, só 3 (no teste, com limite 3) chegam a conferir. Toda tentativa conta, inclusive e-mail inexistente, então o bloqueio **não revela quais contas existem**. Em outro endereço a dona da conta entra normalmente.
+- Memória limitada de forma **rígida**: o mapa nunca passa de 100 mil chaves e **nunca expulsa um bloqueio vivo**. Ao encher saem as janelas vencidas e depois as vivas NÃO bloqueadas (menor contagem primeiro); se só sobrarem bloqueios vivos, a chave nova é recusada (429), fechando em vez de abrir. Varrer o mapa é caro, então qualquer varredura só acontece 1 vez por segundo (recusa direta dentro do intervalo), e o `Retry-After` dessa recusa é o tempo até o primeiro bloqueio vencer. Contagem igual não basta para proteger: o que protege é estar **bloqueada** (contagem no limite). O bloqueio tem limitador próprio, separado do de requisições.
+- **Entradas limitadas:** e-mail (254) e senha (256) de login e cadastro são validados antes de virarem chave (400); o corpo de qualquer requisição tem teto de 64 KB (413). Configuração fora da faixa (janela negativa, limite zero) impede a aplicação de subir.
+- **Risco aceito:** quem divide o mesmo endereço público com a vítima (empresa, Wi-Fi público) pode bloqueá-la por até 15 minutos; a alternativa (chave só por e-mail) é pior. Ver ADR 0003.
+- **Proxy:** por padrão o endereço é o da conexão e cabeçalhos `X-Forwarded-For`/`Forwarded` do cliente são ignorados (teste). Só ativar `server.forward-headers-strategy` com proxy que SUBSTITUI esses cabeçalhos.
+- Testes: `RateLimiterTest` (relógio controlado, memória rígida sob concorrência, atomicidade, inundação de chaves também bloqueadas não apaga bloqueio), `RequestSizeLimitFilterTest`, `RequestLimitsIntegrationTest`, `RateLimitPropertiesValidationTest`, `RateLimitEndpointsIntegrationTest`, `RateLimitPathVariantsIntegrationTest` (variações de caminho e cabeçalhos de proxy) e `LoginLockoutIntegrationTest` (inclui 40 tentativas simultâneas).
+
 ## Onde está
 - `backend/src/main/java/com/queuecare/security/`: `JwtProperties`, `JwtConfig`, `SecurityConfig`, `ActiveUserJwtConverter`
 - `backend/src/main/java/com/queuecare/auth/`: `AuthService`, `AuthController`, `MeController`, DTOs, exceções e `ApiExceptionHandler`
@@ -42,7 +51,7 @@ cliente --GET /api/me + Bearer token--> API (valida token, consulta usuário no 
    *Pista: token enviado no cabeçalho, sem cookie de autenticação.*
 
 ## Limitações e o que ainda falta
-- Sem limite de tentativas (rate limit) nos endpoints públicos; sem refresh token (login a cada 15 min); rotação do segredo é manual.
+- O limite de tentativas é em memória e por instância (ver ADR 0003); sem refresh token (login a cada 15 min); rotação do segredo é manual.
 - PROVIDER e ATTENDANT ainda não têm cadastro; só CUSTOMER se cadastra.
 - Ainda não há endpoints de agendar e cancelar (próximo PR): o `customerId` virá do token.
 - `JWT_SECRET` é obrigatório para rodar a aplicação (veja `.env.example` e o README).

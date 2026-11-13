@@ -11,13 +11,16 @@ import java.util.UUID;
  */
 final class AuthDtos {
 
+	/** Folga generosa sobre o limite real de 72 bytes do BCrypt (que continua validado no serviço). */
+	static final int MAX_PASSWORD_CHARACTERS = 256;
+
 	private AuthDtos() {
 	}
 
 	record RegisterRequest(
 			@NotBlank @Size(max = 120) String name,
 			@NotBlank @Email @Size(max = 254) String email,
-			@NotBlank String password) {
+			@NotBlank @Size(max = MAX_PASSWORD_CHARACTERS) String password) {
 		/** Remove espaços externos ANTES da validação, para "  ana@exemplo.test " ser aceito e normalizado. */
 		RegisterRequest {
 			name = name == null ? null : name.trim();
@@ -25,7 +28,10 @@ final class AuthDtos {
 		}
 	}
 
-	record LoginRequest(@NotBlank String email, @NotBlank String password) {
+	/** Tamanhos máximos validados ANTES de qualquer uso (inclusive da chave do bloqueio de login): entrada não cresce sem limite. */
+	record LoginRequest(
+			@NotBlank @Size(max = 254) String email,
+			@NotBlank @Size(max = MAX_PASSWORD_CHARACTERS) String password) {
 	}
 
 	record UserResponse(UUID id, String name, String email, String role) {

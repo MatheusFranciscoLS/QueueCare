@@ -178,7 +178,9 @@ class AuthEndpointsIntegrationTest extends AuthIntegrationTestBase {
 	void senhaGiganteNoLoginEhRecusadaSemErro500() throws Exception {
 		seedUser("maria@exemplo.test", "CUSTOMER", true);
 
-		login("maria@exemplo.test", "a".repeat(5000)).andExpect(status().isUnauthorized());
+		// Acima de 256 caracteres a validação de tamanho recusa (400) antes de qualquer uso; entre 73 bytes e 256: 401 (ver RequestLimitsIntegrationTest).
+		login("maria@exemplo.test", "a".repeat(5000)).andExpect(status().isBadRequest());
+		login("maria@exemplo.test", "a".repeat(200)).andExpect(status().isUnauthorized());
 	}
 
 	@Test

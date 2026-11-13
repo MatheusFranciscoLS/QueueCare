@@ -5,6 +5,7 @@ import com.queuecare.auth.AuthDtos.RegisterRequest;
 import com.queuecare.auth.AuthDtos.TokenResponse;
 import com.queuecare.auth.AuthDtos.UserResponse;
 import com.queuecare.scheduling.persistence.UserAccount;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -32,8 +33,8 @@ class AuthController {
 	}
 
 	@PostMapping("/login")
-	TokenResponse login(@Valid @RequestBody LoginRequest request) {
-		AuthService.IssuedToken token = authService.login(request.email(), request.password());
+	TokenResponse login(@Valid @RequestBody LoginRequest request, HttpServletRequest http) {
+		AuthService.IssuedToken token = authService.login(request.email(), request.password(), http.getRemoteAddr());
 		return new TokenResponse(token.accessToken(), "Bearer", token.expiresInSeconds());
 	}
 

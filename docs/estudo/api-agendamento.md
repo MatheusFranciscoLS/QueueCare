@@ -46,4 +46,4 @@ Até aqui o agendamento existia por dentro (serviço + banco) e o login existia 
 - Atendente sem vínculo com prestador (precisa de uma coluna/tabela no modelo); sem painel do dia, check-in e fila (M4).
 - Sem consulta de horários livres para a tela (disponibilidade como lista); sem tela.
 - `/mine` é paginado (`page` a partir de 0, `size` de 1 a 50, padrão 20, mais recentes primeiro); fora desses limites responde 400.
-- Sem limite de tentativas nos endpoints públicos.
+- O limite de tentativas é em memória e por instância (ver ADR 0003).

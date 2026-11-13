@@ -20,6 +20,20 @@ final class AuthExceptions {
 		}
 	}
 
+	/** Falhas de login demais para este e-mail neste endereço: bloqueio temporário (HTTP 429 com Retry-After). */
+	static class TooManyLoginAttemptsException extends RuntimeException {
+		private final long retryAfterSeconds;
+
+		TooManyLoginAttemptsException(long retryAfterSeconds) {
+			super("muitas tentativas");
+			this.retryAfterSeconds = retryAfterSeconds;
+		}
+
+		long retryAfterSeconds() {
+			return retryAfterSeconds;
+		}
+	}
+
 	/** A senha não cumpre a política (HTTP 400). */
 	static class InvalidPasswordException extends RuntimeException {
 		InvalidPasswordException(String message) {
