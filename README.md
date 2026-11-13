@@ -49,3 +49,6 @@ Estado atual (marco M1): estrutura, CI e teste de arranque. As regras de negóci
 
 ## Autoria
 Projeto individual de Matheus Francisco, desenvolvido com apoio de IA para estrutura, revisão e documentação; as regras de negócio centrais, a autorização e os testes críticos são escritos e explicados por ele (ver [`CLAUDE.md`](CLAUDE.md)).
+
+## Licença
+[MIT](LICENSE).
