@@ -11,9 +11,9 @@ spring:
     hibernate:
       # O esquema do banco só muda por migration Flyway; o Hibernate apenas confere.
       ddl-auto: validate
-    properties:
-      # Horários guardados como instantes UTC (timestamptz).
-      hibernate.jdbc.time_zone: UTC
+    # Instantes (Instant) são gravados como timestamptz em UTC sem nenhuma configuração de fuso do JDBC.
+    # Atenção: NÃO definir hibernate.jdbc.time_zone: ela desloca as colunas "time" (janelas de atendimento,
+    # em horário LOCAL do prestador), como o teste de integração do agendamento comprovou.
   flyway:
     enabled: true
     locations: classpath:db/migration
