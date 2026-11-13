@@ -25,6 +25,14 @@ import org.junit.jupiter.api.Test;
  */
 class ConcurrentBookingT3Test extends DatabaseTestBase {
 
+	/**
+	 * SQLSTATE aceitos para quem perde a disputa. Quando duas transações inserem intervalos conflitantes ao mesmo tempo,
+	 * cada uma espera a outra e o PostgreSQL pode abortar uma delas por deadlock (40P01) em vez de exclusion_violation
+	 * (23P01). Nos dois casos o banco impediu a reserva dupla; a aplicação deve traduzir AMBOS em conflito (HTTP 409).
+	 * Qualquer outro erro (conexão, sintaxe, etc.) continua reprovando o teste.
+	 */
+	private static final java.util.Set<String> LOSER_SQLSTATES = java.util.Set.of(EXCLUSION_VIOLATION, "40P01");
+
 	/** Resultado de uma tentativa: sucesso (sqlState nulo) ou o SQLSTATE devolvido pelo banco. */
 	private record Attempt(String sqlState) {
 		boolean won() {
@@ -72,8 +80,8 @@ class ConcurrentBookingT3Test extends DatabaseTestBase {
 		List<String> losers = attempts.stream().filter(a -> !a.won()).map(Attempt::sqlState).toList();
 		assertEquals(1, winners, "exatamente uma reserva deve vencer: " + attempts);
 		assertEquals(contenders - 1, losers.size());
-		assertTrue(losers.stream().allMatch(EXCLUSION_VIOLATION::equals),
-				"as perdedoras devem receber exclusion_violation (23P01), e não outro erro: " + losers);
+		assertTrue(losers.stream().allMatch(LOSER_SQLSTATES::contains),
+				"as perdedoras devem receber 23P01 (exclusion_violation) ou 40P01 (deadlock_detected), e não outro erro: " + losers);
 	}
 
 	@Test

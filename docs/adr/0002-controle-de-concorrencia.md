@@ -41,5 +41,6 @@ Cuidado: a coluna `status` deve ser `NOT NULL`. Com `status` nulo, a condição 
 ## Consequências
 - Migration com `CREATE EXTENSION btree_gist` (disponível no PostgreSQL padrão; H2 não tem, então esta regra só se testa com PostgreSQL real).
 - A violação da constraint de exclusão deve ser traduzida para **HTTP 409** **só quando for essa constraint** (não qualquer `DataIntegrityViolationException`), e depois do rollback: no PostgreSQL a transação que falhou fica abortada. Com JPA, o erro pode aparecer no `flush()` ou no `commit`, não necessariamente no `save()`.
+- **Dois códigos de erro para quem perde a disputa (provado no T3):** quando duas transações inserem intervalos conflitantes ao mesmo tempo, o PostgreSQL devolve `23P01` (exclusion_violation) ou, se elas se esperam mutuamente, aborta uma por deadlock com `40P01` (deadlock_detected). Nos dois casos só uma reserva é gravada. A aplicação deve traduzir **ambos** em HTTP 409 (e nenhum outro erro de banco).
 - Teste T3 com PostgreSQL real (Testcontainers ou PostgreSQL nativo, mesma versão principal do CI): duas threads, conexões independentes, **sem** `@Transactional` envolvendo o teste inteiro; no fim, só um agendamento ativo no banco.
 - Vale também para o CI: o PostgreSQL será um serviço do GitHub Actions quando o T3 existir.
