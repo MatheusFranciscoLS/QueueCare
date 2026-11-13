@@ -88,12 +88,9 @@ public class SlotService {
 		List<TimeRange> taken = takenRanges(providerId, dayStart, dayEnd);
 
 		List<Slot> slots = new ArrayList<>();
-		for (AvailabilityWindowEntity window : entities) {
-			if (window.dayOfWeek() != date.getDayOfWeek()) {
-				continue;
-			}
-			LocalTime time = window.getStartTime();
-			while (fits(time, duration, window.getEndTime())) {
+		for (LocalTime[] block : continuousBlocks(entities, date.getDayOfWeek())) {
+			LocalTime time = block[0];
+			while (fits(time, duration, block[1])) {
 				LocalDateTime local = date.atTime(time);
 				if (resolver.resolve(local) instanceof ResolvedLocalTime.Resolved resolved) {
 					TimeRange range = new TimeRange(resolved.instant(), resolved.instant().plus(duration));
@@ -110,6 +107,22 @@ public class SlotService {
 		}
 		slots.sort(Comparator.comparing(Slot::startsAt));
 		return slots;
+	}
+
+	/** Blocos contínuos de expediente do dia: janelas coladas (uma termina quando a outra começa) formam um só bloco, como em AvailabilityPolicy. */
+	private static List<LocalTime[]> continuousBlocks(List<AvailabilityWindowEntity> entities, java.time.DayOfWeek day) {
+		List<AvailabilityWindowEntity> ofDay = entities.stream().filter(w -> w.dayOfWeek() == day)
+				.sorted(Comparator.comparing(AvailabilityWindowEntity::getStartTime)).toList();
+		List<LocalTime[]> blocks = new ArrayList<>();
+		for (AvailabilityWindowEntity w : ofDay) {
+			LocalTime[] last = blocks.isEmpty() ? null : blocks.get(blocks.size() - 1);
+			if (last != null && last[1].equals(w.getStartTime())) {
+				last[1] = w.getEndTime();
+			} else {
+				blocks.add(new LocalTime[] {w.getStartTime(), w.getEndTime()});
+			}
+		}
+		return blocks;
 	}
 
 	/** O serviço que começa em {@code time} termina até o fim da janela, sem passar da meia-noite? */

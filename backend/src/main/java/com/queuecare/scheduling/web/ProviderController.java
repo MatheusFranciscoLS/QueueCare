@@ -49,7 +49,11 @@ class ProviderController {
 		}
 	}
 
-	record ServiceRequest(@NotNull String name, @NotNull Integer durationMinutes, Boolean active) {
+	record ServiceRequest(@NotNull String name, @NotNull Integer durationMinutes) {
+	}
+
+	/** No PUT, active é obrigatório: omitir o campo não pode reativar um serviço desativado sem querer. */
+	record ServiceUpdateRequest(@NotNull String name, @NotNull Integer durationMinutes, @NotNull Boolean active) {
 	}
 
 	record ServiceResponse(UUID id, String name, int durationMinutes, boolean active) {
@@ -99,8 +103,8 @@ class ProviderController {
 	}
 
 	@PutMapping("/services/{id}")
-	ServiceResponse updateService(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID id, @Valid @RequestBody ServiceRequest r) {
-		return ServiceResponse.from(admin.updateService(userId(jwt), id, r.name(), r.durationMinutes(), r.active() == null || r.active()));
+	ServiceResponse updateService(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID id, @Valid @RequestBody ServiceUpdateRequest r) {
+		return ServiceResponse.from(admin.updateService(userId(jwt), id, r.name(), r.durationMinutes(), r.active()));
 	}
 
 	// --- janelas de atendimento ---
@@ -110,7 +114,10 @@ class ProviderController {
 		return admin.getAvailability(userId(jwt)).stream().map(WindowResponse::from).toList();
 	}
 
-	/** Substitui todas as janelas pela lista enviada (lista vazia = não atende). */
+	/**
+	 * Substitui TODAS as janelas pela lista enviada (o cliente precisa enviar o conjunto completo; lista vazia = não atende).
+	 * Dois PUTs simultâneos: vale o último a confirmar (last writer wins); o resultado é sempre um conjunto válido.
+	 */
 	@PutMapping("/availability")
 	List<WindowResponse> replaceAvailability(@AuthenticationPrincipal Jwt jwt, @RequestBody List<@Valid WindowRequest> windows) {
 		List<WindowInput> inputs = windows.stream().map(w -> new WindowInput(w.dayOfWeek(), w.start(), w.end())).toList();

@@ -152,8 +152,10 @@ class ProviderSetupApiIntegrationTest extends AuthIntegrationTestBase {
 		send(get("/api/provider/services"), provider1, null).andExpect(status().isOk()).andExpect(jsonPath("$.length()").value(1));
 		send(get("/api/provider/services"), provider2, null).andExpect(status().isOk()).andExpect(jsonPath("$.length()").value(0));
 		// O prestador 2 não enxerga nem altera o serviço do prestador 1 (mesma resposta de "não existe").
-		send(put("/api/provider/services/" + id), provider2, "{\"name\":\"Roubado\",\"durationMinutes\":10}").andExpect(status().isNotFound());
-		send(put("/api/provider/services/" + UUID.randomUUID()), provider1, "{\"name\":\"X\",\"durationMinutes\":10}").andExpect(status().isNotFound());
+		send(put("/api/provider/services/" + id), provider2, "{\"name\":\"Roubado\",\"durationMinutes\":10,\"active\":true}").andExpect(status().isNotFound());
+		send(put("/api/provider/services/" + UUID.randomUUID()), provider1, "{\"name\":\"X\",\"durationMinutes\":10,\"active\":true}").andExpect(status().isNotFound());
+		// Omitir active no PUT não reativa nada: é erro de validação.
+		send(put("/api/provider/services/" + id), provider1, "{\"name\":\"Alinhamento 3D\",\"durationMinutes\":60}").andExpect(status().isBadRequest());
 		assertEquals("Alinhamento 3D", jdbc.queryForObject("SELECT name FROM services WHERE id = ?::uuid", String.class, id));
 	}
 
@@ -275,5 +277,31 @@ class ProviderSetupApiIntegrationTest extends AuthIntegrationTestBase {
 			send(post("/api/appointments"), customer,
 					"{\"providerId\":\"" + ids[0] + "\",\"serviceId\":\"" + ids[1] + "\",\"localStart\":\"" + start + "\"}").andExpect(status().isCreated());
 		}
+	}
+
+	@Test
+	void janelasColadasPermitemServicoQueAtravessaOLimiteDaPrimeiraJanela() throws Exception {
+		UUID[] ids = setUpProvider1(0, 0, 90);
+		send(put("/api/provider/availability"), provider1, "[" + window("MONDAY", "08:00", "12:00") + "," + window("MONDAY", "12:00", "18:00") + "]").andExpect(status().isOk());
+		String monday = LocalDate.now(SP).with(java.time.temporal.TemporalAdjusters.next(java.time.DayOfWeek.MONDAY)).toString();
+
+		List<String> starts = slotStarts(ids[0], ids[1], monday);
+
+		assertTrue(starts.contains(monday + "T11:00:00"), "11:00 a 12:30 cabe no bloco contínuo 08:00-18:00");
+		assertTrue(starts.contains(monday + "T16:30:00"), "16:30 a 18:00 é o último");
+		assertFalse(starts.contains(monday + "T16:45:00"));
+		send(post("/api/appointments"), customer, "{\"providerId\":\"" + ids[0] + "\",\"serviceId\":\"" + ids[1] + "\",\"localStart\":\"" + monday + "T11:00:00\"}")
+				.andExpect(status().isCreated());
+	}
+
+	@Test
+	void janelaProximaDaMeiaNoiteNaoGeraHorarioQueAtravessaODia() throws Exception {
+		UUID[] ids = setUpProvider1(0, 0, 60);
+		send(put("/api/provider/availability"), provider1, "[" + window("TUESDAY", "22:00", "23:59") + "]").andExpect(status().isOk());
+		String tuesday = LocalDate.now(SP).with(java.time.temporal.TemporalAdjusters.next(java.time.DayOfWeek.TUESDAY)).toString();
+
+		List<String> starts = slotStarts(ids[0], ids[1], tuesday);
+
+		assertEquals(List.of(tuesday + "T22:00:00", tuesday + "T22:15:00", tuesday + "T22:30:00", tuesday + "T22:45:00"), starts, "o último início possível é 22:45 (termina 23:45)");
 	}
 }
