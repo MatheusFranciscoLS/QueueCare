@@ -1,0 +1,60 @@
+# Java / Maven / Gradle
+target/
+build/
+.gradle/
+*.class
+*.log
+hs_err_pid*
+
+# Node
+node_modules/
+dist/
+.vite/
+coverage/
+playwright-report/
+test-results/
+
+# IDEs e sistema
+.idea/
+.vscode/
+*.iml
+.DS_Store
+Thumbs.db
+
+# Segredos e ambiente (nunca versionar)
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
+*.keystore
+id_rsa*
+id_ed25519*
+secrets/
+application-local.*
+application-secret*.*
+*.tfstate
+*.tfstate.*
+.terraform/
+*.tfvars
+!*.tfvars.example
+crash.log
+
+# Dumps de banco e backups locais
+*.dump
+*.bak
+*.bundle
+
+# Configuração local do Claude Code e notas privadas (ficam fora do repositório)
+.claude/settings.local.json
+.local/
+
+# Outros IDEs
+.classpath
+.project
+.settings/
+out/
+HELP.md

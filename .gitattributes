@@ -1,0 +1,16 @@
+# Normaliza fins de linha: o repositório guarda LF (combina com o .editorconfig).
+* text=auto eol=lf
+
+# Scripts de shell e o Maven Wrapper precisam de LF mesmo no Windows.
+*.sh text eol=lf
+mvnw text eol=lf
+
+# Scripts do Windows usam CRLF.
+*.cmd text eol=crlf
+*.bat text eol=crlf
+
+# Binários: não converter.
+*.jar binary
+*.png binary
+*.jpg binary
+*.ico binary
