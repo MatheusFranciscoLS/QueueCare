@@ -8,7 +8,7 @@ import org.springframework.data.repository.query.Param;
 
 public interface AppointmentRepository extends JpaRepository<Appointment, UUID> {
 
-	java.util.List<Appointment> findByCustomerIdOrderByStartsAtDesc(UUID customerId);
+	java.util.List<Appointment> findByCustomerId(UUID customerId, org.springframework.data.domain.Pageable pageable);
 
 	/**
 	 * Há agendamento ativo (não cancelado) do prestador que se sobreponha a {@code [start, end)}?

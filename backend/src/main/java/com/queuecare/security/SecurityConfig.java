@@ -39,7 +39,9 @@ class SecurityConfig {
 						.requestMatchers("/api/auth/**").permitAll()
 						.requestMatchers("/actuator/health", "/actuator/health/**").permitAll()
 						.anyRequest().authenticated())
-				.oauth2ResourceServer(oauth2 -> oauth2.jwt(jwt -> jwt.jwtAuthenticationConverter(jwtConverter)));
+				.oauth2ResourceServer(oauth2 -> oauth2
+						.bearerTokenResolver(new SingleAuthorizationHeaderResolver())
+						.jwt(jwt -> jwt.jwtAuthenticationConverter(jwtConverter)));
 		return http.build();
 	}
 

@@ -11,7 +11,11 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
+import org.springframework.web.server.ResponseStatusException;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
@@ -30,6 +34,9 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/appointments")
 class AppointmentController {
+
+	/** Limite de itens por página em /mine. */
+	static final int MAX_PAGE_SIZE = 50;
 
 	private final BookingService bookingService;
 	private final CancellationService cancellationService;
@@ -62,8 +69,13 @@ class AppointmentController {
 
 	@GetMapping("/mine")
 	@PreAuthorize("hasRole('CUSTOMER')")
-	List<AppointmentResponse> mine(@AuthenticationPrincipal Jwt jwt) {
-		return appointments.findByCustomerIdOrderByStartsAtDesc(userId(jwt)).stream().map(AppointmentResponse::from).toList();
+	List<AppointmentResponse> mine(@AuthenticationPrincipal Jwt jwt, @RequestParam(defaultValue = "0") int page,
+			@RequestParam(defaultValue = "20") int size) {
+		if (page < 0 || size < 1 || size > MAX_PAGE_SIZE) {
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "paginação inválida");
+		}
+		PageRequest pageable = PageRequest.of(page, size, Sort.by(Sort.Order.desc("startsAt"), Sort.Order.desc("id")));
+		return appointments.findByCustomerId(userId(jwt), pageable).stream().map(AppointmentResponse::from).toList();
 	}
 
 	@PostMapping("/{id}/cancel")
