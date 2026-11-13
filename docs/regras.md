@@ -21,7 +21,7 @@ Teste: T4.
 
 ## R4. Autorização por perfil (na API)
 - Cliente: consulta e cancela só os próprios agendamentos.
-- Atendente: administra a agenda do prestador.
+- Atendente: administra a agenda do prestador em que está vinculado (cancela sem prazo e vê a agenda do dia; ADR 0004).
 - Prestador: configura serviços e horários.
 Não basta esconder botões no React; a API valida.
 Teste: T5.

@@ -10,6 +10,12 @@ public interface AppointmentRepository extends JpaRepository<Appointment, UUID> 
 
 	java.util.List<Appointment> findByCustomerId(UUID customerId, org.springframework.data.domain.Pageable pageable);
 
+	/** Agenda do dia: agendamentos NÃO cancelados do prestador que COMEÇAM em [start, end), por início e depois por id (ordem estável). */
+	@Query("select a from Appointment a where a.providerId = :providerId and a.status <> "
+			+ "com.queuecare.scheduling.persistence.AppointmentStatus.CANCELLED and a.startsAt >= :start and a.startsAt < :end "
+			+ "order by a.startsAt asc, a.id asc")
+	java.util.List<Appointment> findDayAgenda(@Param("providerId") UUID providerId, @Param("start") Instant start, @Param("end") Instant end);
+
 	/** Agendamentos ATIVOS (não cancelados) do prestador que se sobrepõem a [start, end): base da consulta de horários livres. */
 	@Query("select a from Appointment a where a.providerId = :providerId and a.status <> "
 			+ "com.queuecare.scheduling.persistence.AppointmentStatus.CANCELLED and a.startsAt < :end and a.endsAt > :start")

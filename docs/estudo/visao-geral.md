@@ -31,7 +31,8 @@ Pequenos prestadores de serviço (oficina, clínica, barbearia) recebem agendame
 | Autenticação e autorização por perfil (cadastro, login JWT, `/api/me`; ADR 0003 aceito) | Pronta, com 41 testes (ver `docs/estudo/autenticacao.md`). |
 | API de agendar e cancelar (HTTP 409, R3 prazo de cancelamento, R4 por dono) | Pronta, com 23 testes (ver `docs/estudo/api-agendamento.md`). Sem tela. |
 | Configuração do prestador (negócio, serviços, janelas) e consulta de horários livres | Pronta, com 14 testes (ver `docs/estudo/configuracao-e-horarios-livres.md`). |
-| Telas (React), painel do dia, check-in e fila, vínculo do atendente ao prestador, criação de usuários PROVIDER | A fazer. |
+| Vínculo atendente-prestador, cancelamento pela equipe e agenda do dia (ADR 0004) | Pronto, com testes adversários (ver `docs/estudo/vinculo-atendente-e-agenda.md`). |
+| Criação controlada de usuários PROVIDER/ATTENDANT, check-in e fila, telas (React) | A fazer. |
 
 ## Limites honestos por enquanto
 - Ainda não há API de agendamento, banco com tabelas nem tela de agendamento.
