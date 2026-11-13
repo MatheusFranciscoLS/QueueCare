@@ -22,7 +22,7 @@ Regras que a classe aplica:
 ## Onde está o código
 - `backend/src/main/java/com/queuecare/scheduling/domain/AvailabilityWindow.java`
 - `backend/src/main/java/com/queuecare/scheduling/domain/AvailabilityPolicy.java`
-- `backend/src/test/java/com/queuecare/scheduling/domain/AvailabilityPolicyTest.java` (27 testes, incluindo o T2 e o horário de verão de `America/New_York`)
+- `backend/src/test/java/com/queuecare/scheduling/domain/AvailabilityPolicyTest.java` (31 testes, incluindo o T2 e o horário de verão de `America/New_York`)
 
 ## 3 perguntas de entrevista (responda com as suas palavras)
 1. Por que converter o instante para o fuso do prestador antes de decidir o dia da semana?

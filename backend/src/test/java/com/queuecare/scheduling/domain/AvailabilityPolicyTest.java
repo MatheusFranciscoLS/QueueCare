@@ -228,6 +228,50 @@ class AvailabilityPolicyTest {
 		assertTrue(domingo.allows(range));
 	}
 
+	@Test
+	void janelasColadasAtravessandoATransicaoDeVeraoSaoContinuas() {
+		// 08/03/2026 em Nova York: 01:00-02:00 colada com 02:00-06:00 (o relógio pula de 02:00 para 03:00).
+		AvailabilityPolicy domingo = new AvailabilityPolicy(NEW_YORK, List.of(
+				window(DayOfWeek.SUNDAY, "01:00", "02:00"),
+				window(DayOfWeek.SUNDAY, "02:00", "06:00")));
+		TimeRange range = new TimeRange(
+				ZonedDateTime.of(2026, 3, 8, 1, 30, 0, 0, NEW_YORK).toInstant(),
+				ZonedDateTime.of(2026, 3, 8, 4, 0, 0, 0, NEW_YORK).toInstant());
+
+		assertTrue(domingo.allows(range));
+	}
+
+	@Test
+	void comecarExatamenteNoFimDaUltimaJanelaEhRejeitado() {
+		assertFalse(politica.allows(monday(SAO_PAULO, 18, 0, 19, 0)));
+	}
+
+	@Test
+	void segundosENanossegundosNoLimiteContam() {
+		Instant inicio = local(SAO_PAULO, 16, 17, 0);
+		TimeRange ateOFim = new TimeRange(inicio, local(SAO_PAULO, 16, 18, 0));
+		TimeRange umNanoAlemDoFim = new TimeRange(inicio, local(SAO_PAULO, 16, 18, 0).plusNanos(1));
+		TimeRange umNanoAntesDoInicio = new TimeRange(local(SAO_PAULO, 16, 14, 0).minusNanos(1), local(SAO_PAULO, 16, 15, 0));
+
+		assertAll(
+				() -> assertTrue(politica.allows(ateOFim)),
+				() -> assertFalse(politica.allows(umNanoAlemDoFim)),
+				() -> assertFalse(politica.allows(umNanoAntesDoInicio)));
+	}
+
+	@Test
+	void janelaDeDomingoNaoValeQuandoOInstanteEhSegundaNoFusoDoPrestador() {
+		// 01:00-02:00 UTC de segunda é domingo 22:00-23:00 em São Paulo (UTC-3).
+		Instant inicio = Instant.parse("2026-11-16T01:00:00Z");
+		TimeRange range = new TimeRange(inicio, inicio.plusSeconds(3600));
+		AvailabilityPolicy soSegunda = new AvailabilityPolicy(SAO_PAULO, List.of(window(DayOfWeek.MONDAY, "00:00", "06:00")));
+		AvailabilityPolicy domingoNoite = new AvailabilityPolicy(SAO_PAULO, List.of(window(DayOfWeek.SUNDAY, "20:00", "23:30")));
+
+		assertAll(
+				() -> assertFalse(soSegunda.allows(range)),
+				() -> assertTrue(domingoNoite.allows(range)));
+	}
+
 	// --- validação da configuração ---
 
 	@Test
