@@ -4,6 +4,10 @@ import com.queuecare.scheduling.application.AppointmentExceptions.AppointmentNot
 import com.queuecare.scheduling.application.AppointmentExceptions.CancellationRejectedException;
 import com.queuecare.scheduling.application.BookingConflictException;
 import com.queuecare.scheduling.application.BookingRejectedException;
+import com.queuecare.scheduling.application.ProviderExceptions.InvalidConfigurationException;
+import com.queuecare.scheduling.application.ProviderExceptions.ProviderAlreadyConfiguredException;
+import com.queuecare.scheduling.application.ProviderExceptions.ProviderNotConfiguredException;
+import com.queuecare.scheduling.application.ProviderExceptions.ServiceNotFoundException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -39,6 +43,28 @@ class SchedulingExceptionHandler {
 	ProblemDetail cancellationRejected(CancellationRejectedException e) {
 		HttpStatus status = e.reason() == CancellationRejectedException.Reason.TOO_LATE ? HttpStatus.UNPROCESSABLE_ENTITY : HttpStatus.CONFLICT;
 		return problem(status, e.reason().name(), "cancelamento recusado");
+	}
+
+	@ExceptionHandler(ProviderAlreadyConfiguredException.class)
+	ProblemDetail providerAlreadyConfigured(ProviderAlreadyConfiguredException e) {
+		return problem(HttpStatus.CONFLICT, "PROVIDER_ALREADY_CONFIGURED", "o prestador já tem um negócio cadastrado");
+	}
+
+	@ExceptionHandler(ProviderNotConfiguredException.class)
+	ProblemDetail providerNotConfigured(ProviderNotConfiguredException e) {
+		return problem(HttpStatus.NOT_FOUND, "PROVIDER_NOT_CONFIGURED", "negócio ainda não cadastrado");
+	}
+
+	@ExceptionHandler(ServiceNotFoundException.class)
+	ProblemDetail serviceNotFound(ServiceNotFoundException e) {
+		return problem(HttpStatus.NOT_FOUND, "SERVICE_NOT_FOUND", "serviço não encontrado");
+	}
+
+	@ExceptionHandler(InvalidConfigurationException.class)
+	ProblemDetail invalidConfiguration(InvalidConfigurationException e) {
+		ProblemDetail problem = problem(HttpStatus.BAD_REQUEST, "INVALID_CONFIGURATION", "dados inválidos");
+		problem.setProperty("errors", e.errors());
+		return problem;
 	}
 
 	private static ProblemDetail problem(HttpStatus status, String reason, String detail) {

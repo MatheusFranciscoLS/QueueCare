@@ -30,7 +30,8 @@ Pequenos prestadores de serviço (oficina, clínica, barbearia) recebem agendame
 | Serviço de agendamento (`BookingService`: R5 + R1 + R2 + persistência, conflito como exceção de domínio) | Pronto, com testes de integração em PostgreSQL real, inclusive concorrência (ver `docs/estudo/servico-de-agendamento.md`). Sem API HTTP ainda. |
 | Autenticação e autorização por perfil (cadastro, login JWT, `/api/me`; ADR 0003 aceito) | Pronta, com 41 testes (ver `docs/estudo/autenticacao.md`). |
 | API de agendar e cancelar (HTTP 409, R3 prazo de cancelamento, R4 por dono) | Pronta, com 23 testes (ver `docs/estudo/api-agendamento.md`). Sem tela. |
-| Telas (React), painel do dia, check-in e fila, vínculo do atendente ao prestador | A fazer. |
+| Configuração do prestador (negócio, serviços, janelas) e consulta de horários livres | Pronta, com 14 testes (ver `docs/estudo/configuracao-e-horarios-livres.md`). |
+| Telas (React), painel do dia, check-in e fila, vínculo do atendente ao prestador, criação de usuários PROVIDER | A fazer. |
 
 ## Limites honestos por enquanto
 - Ainda não há API de agendamento, banco com tabelas nem tela de agendamento.

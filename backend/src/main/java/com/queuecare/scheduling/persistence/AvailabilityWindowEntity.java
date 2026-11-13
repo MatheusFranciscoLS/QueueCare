@@ -6,6 +6,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.time.DayOfWeek;
 import java.time.LocalTime;
+import java.util.Objects;
 import java.util.UUID;
 
 /** Janela semanal de atendimento em horário local (tabela availability_windows). day_of_week segue ISO: 1 = segunda. */
@@ -29,6 +30,14 @@ public class AvailabilityWindowEntity {
 	private LocalTime endTime;
 
 	protected AvailabilityWindowEntity() {
+	}
+
+	public AvailabilityWindowEntity(UUID providerId, DayOfWeek dayOfWeek, LocalTime startTime, LocalTime endTime) {
+		this.id = UUID.randomUUID();
+		this.providerId = Objects.requireNonNull(providerId);
+		this.dayOfWeek = (short) dayOfWeek.getValue();
+		this.startTime = Objects.requireNonNull(startTime);
+		this.endTime = Objects.requireNonNull(endTime);
 	}
 
 	public UUID getProviderId() {
