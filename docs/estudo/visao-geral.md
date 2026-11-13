@@ -24,7 +24,7 @@ Pequenos prestadores de serviço (oficina, clínica, barbearia) recebem agendame
 |---|---|
 | Estrutura (backend, frontend, CI, Docker Compose) | Pronta. O Docker Compose ainda não foi testado (Docker precisa de reinício do PC). |
 | R2 pura (`TimeRange`, sobreposição de intervalos) | Pronta, com 14 testes (ver `docs/estudo/r2-time-range.md`). |
-| R1 disponibilidade (`AvailabilityPolicy`) | Pronta como função pura, com 31 testes (ver `docs/estudo/r1-disponibilidade.md`). Sem ligação com banco e API ainda. |
+| R1 disponibilidade (`AvailabilityPolicy`) | Pronta como função pura, com 36 testes (ver `docs/estudo/r1-disponibilidade.md`). Sem ligação com banco e API ainda. |
 | R5 fuso e antecedência (passado, antecedência mínima, horários locais inexistentes ou ambíguos) | A fazer. |
 | Entidades e migrations, teste de concorrência T3 | A fazer, depende de PostgreSQL real. |
 | Autenticação e endpoints | A fazer (ADR 0003 ainda é proposta). |

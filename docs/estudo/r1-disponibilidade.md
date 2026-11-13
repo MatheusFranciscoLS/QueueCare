@@ -17,12 +17,12 @@ Regras que a classe aplica:
 - Início e fim precisam cair no **mesmo dia local**. Terminar exatamente à meia-noite conta como dia seguinte (rejeitado).
 - **Janelas coladas** (08:00-12:00 e 12:00-18:00) contam como um expediente contínuo; **qualquer lacuna** (até de 1 minuto) interrompe.
 - Janelas sobrepostas no mesmo dia são uma configuração inválida (rejeitada no construtor). Lista vazia é válida e significa "não atende".
-- No horário de verão, o intervalo é avaliado pelo relógio local resultante. Se o intervalo cruza a **volta** do horário de verão (o mesmo horário local acontece duas vezes), o sistema **rejeita por segurança**.
+- No **início** do horário de verão (relógio avança), o intervalo é avaliado pelo relógio local resultante. Se o intervalo atravessa a **volta** do horário de verão (o mesmo horário local acontece duas vezes), o sistema **rejeita por segurança**, detectando a transição pelas regras do fuso (`ZoneRules`) em vez de comparar só os horários locais. Um erro desse tipo foi apontado na revisão do ChatGPT e virou teste.
 
 ## Onde está o código
 - `backend/src/main/java/com/queuecare/scheduling/domain/AvailabilityWindow.java`
 - `backend/src/main/java/com/queuecare/scheduling/domain/AvailabilityPolicy.java`
-- `backend/src/test/java/com/queuecare/scheduling/domain/AvailabilityPolicyTest.java` (31 testes, incluindo o T2 e o horário de verão de `America/New_York`)
+- `backend/src/test/java/com/queuecare/scheduling/domain/AvailabilityPolicyTest.java` (36 testes, incluindo o T2 e o horário de verão de `America/New_York`)
 
 ## 3 perguntas de entrevista (responda com as suas palavras)
 1. Por que converter o instante para o fuso do prestador antes de decidir o dia da semana?

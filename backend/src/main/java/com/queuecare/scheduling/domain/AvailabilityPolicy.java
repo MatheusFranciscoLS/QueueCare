@@ -1,9 +1,13 @@
 package com.queuecare.scheduling.domain;
 
 import java.time.DayOfWeek;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
+import java.time.zone.ZoneOffsetTransition;
+import java.time.zone.ZoneRules;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -58,13 +62,17 @@ public final class AvailabilityPolicy {
 	 * Janelas coladas (uma termina quando a outra começa) formam um bloco contínuo; uma lacuna de qualquer
 	 * tamanho interrompe o bloco.
 	 *
-	 * <p>Se o relógio local do fim não for posterior ao do início (acontece quando o intervalo cruza a volta
-	 * do horário de verão), o intervalo é rejeitado por segurança.
+	 * <p>Se durante o intervalo o relógio local volta para trás (fim do horário de verão), o intervalo é
+	 * rejeitado por segurança, pois o mesmo horário local aconteceria duas vezes. O avanço do relógio (início
+	 * do horário de verão) é permitido e o intervalo é avaliado pelo relógio local resultante.
 	 */
 	public boolean allows(TimeRange range) {
 		Objects.requireNonNull(range, "range não pode ser nulo");
+		if (crossesClocksGoingBack(range)) {
+			return false;
+		}
 		ZonedDateTime start = range.startsAt().atZone(zone);
-		ZonedDateTime end = range.endsAt().atZone(zone);
+		LocalDateTime end = localEnd(range, start);
 		if (!start.toLocalDate().equals(end.toLocalDate())) {
 			return false;
 		}
@@ -77,6 +85,36 @@ public final class AvailabilityPolicy {
 			if (!localStart.isBefore(block.start()) && !localEnd.isAfter(block.end())) {
 				return true;
 			}
+		}
+		return false;
+	}
+
+	/**
+	 * Data e hora locais do fim do intervalo. Se não há mudança de offset dentro do intervalo, o fim é lido com o
+	 * mesmo offset do início (um intervalo que termina exatamente no instante da volta do relógio ainda pertence à
+	 * primeira passagem). Se há avanço do relógio no meio, usa-se o fuso, que dá o relógio local resultante.
+	 */
+	private LocalDateTime localEnd(TimeRange range, ZonedDateTime start) {
+		ZoneOffset lastOffset = zone.getRules().getOffset(range.endsAt().minusNanos(1));
+		if (lastOffset.equals(start.getOffset())) {
+			return range.endsAt().atOffset(start.getOffset()).toLocalDateTime();
+		}
+		return range.endsAt().atZone(zone).toLocalDateTime();
+	}
+
+	/**
+	 * Diz se, durante o intervalo, o relógio local do prestador volta para trás (fim do horário de verão).
+	 * Nesse caso o mesmo horário local acontece duas vezes e a comparação por relógio local não é confiável,
+	 * então o intervalo é rejeitado por segurança. O avanço do relógio (início do horário de verão) não é problema.
+	 */
+	private boolean crossesClocksGoingBack(TimeRange range) {
+		ZoneRules rules = zone.getRules();
+		ZoneOffsetTransition transition = rules.nextTransition(range.startsAt());
+		while (transition != null && transition.getInstant().isBefore(range.endsAt())) {
+			if (transition.isOverlap()) {
+				return true;
+			}
+			transition = rules.nextTransition(transition.getInstant());
 		}
 		return false;
 	}

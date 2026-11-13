@@ -219,6 +219,63 @@ class AvailabilityPolicyTest {
 	}
 
 	@Test
+	void outonoIntervaloComHorariosLocaisCrescentesQueCruzaAVoltaEhRejeitado() {
+		// Caso apontado na revisão: janela 01:45-02:15; agendamento 01:50 EDT até 02:10 EST.
+		// O relógio local vai de 01:50 a 02:10 (crescente), mas em tempo real são 80 minutos:
+		// 01:50 EDT -> (volta) 01:00 EST -> 02:10 EST, passando por 01:00-01:45 EST, fora da janela.
+		ZonedDateTime inicio = ZonedDateTime.of(2026, 11, 1, 1, 50, 0, 0, NEW_YORK).withEarlierOffsetAtOverlap();
+		ZonedDateTime fim = ZonedDateTime.of(2026, 11, 1, 2, 10, 0, 0, NEW_YORK);
+		TimeRange range = new TimeRange(inicio.toInstant(), fim.toInstant());
+		AvailabilityPolicy janelaEstreita = new AvailabilityPolicy(NEW_YORK, List.of(window(DayOfWeek.SUNDAY, "01:45", "02:15")));
+
+		assertAll(
+				() -> assertEquals(80, java.time.Duration.between(inicio, fim).toMinutes()),
+				() -> assertTrue(inicio.toLocalTime().isBefore(fim.toLocalTime())),
+				() -> assertFalse(janelaEstreita.allows(range)));
+	}
+
+	@Test
+	void outonoIntervaloDentroDaPrimeiraPassagemDaHoraRepetidaEhPermitido() {
+		ZonedDateTime inicio = ZonedDateTime.of(2026, 11, 1, 1, 10, 0, 0, NEW_YORK).withEarlierOffsetAtOverlap();
+		ZonedDateTime fim = ZonedDateTime.of(2026, 11, 1, 1, 50, 0, 0, NEW_YORK).withEarlierOffsetAtOverlap();
+		TimeRange range = new TimeRange(inicio.toInstant(), fim.toInstant());
+		AvailabilityPolicy domingo = new AvailabilityPolicy(NEW_YORK, List.of(window(DayOfWeek.SUNDAY, "01:00", "02:00")));
+
+		assertTrue(domingo.allows(range));
+	}
+
+	@Test
+	void outonoIntervaloDentroDaSegundaPassagemDaHoraRepetidaEhPermitido() {
+		ZonedDateTime inicio = ZonedDateTime.of(2026, 11, 1, 1, 10, 0, 0, NEW_YORK).withLaterOffsetAtOverlap();
+		ZonedDateTime fim = ZonedDateTime.of(2026, 11, 1, 1, 50, 0, 0, NEW_YORK).withLaterOffsetAtOverlap();
+		TimeRange range = new TimeRange(inicio.toInstant(), fim.toInstant());
+		AvailabilityPolicy domingo = new AvailabilityPolicy(NEW_YORK, List.of(window(DayOfWeek.SUNDAY, "01:00", "02:00")));
+
+		assertTrue(domingo.allows(range));
+	}
+
+	@Test
+	void primaveraIntervaloQueAtravessaATransicaoMasNaoCabeNaJanelaEhRejeitado() {
+		// 01:30 a 03:30 locais em 08/03/2026; a janela só vai até 03:00.
+		TimeRange range = new TimeRange(
+				ZonedDateTime.of(2026, 3, 8, 1, 30, 0, 0, NEW_YORK).toInstant(),
+				ZonedDateTime.of(2026, 3, 8, 3, 30, 0, 0, NEW_YORK).toInstant());
+		AvailabilityPolicy janelaCurta = new AvailabilityPolicy(NEW_YORK, List.of(window(DayOfWeek.SUNDAY, "01:00", "03:00")));
+
+		assertFalse(janelaCurta.allows(range));
+	}
+
+	@Test
+	void intervaloQueTerminaExatamenteNaVoltaDoRelogioNaoCruzaATransicao() {
+		// A volta acontece às 06:00 UTC (02:00 EDT -> 01:00 EST). Um intervalo que termina nesse instante ainda não a atravessou.
+		Instant volta = ZonedDateTime.of(2026, 11, 1, 1, 0, 0, 0, NEW_YORK).withLaterOffsetAtOverlap().toInstant();
+		TimeRange range = new TimeRange(volta.minusSeconds(1800), volta);
+		AvailabilityPolicy domingo = new AvailabilityPolicy(NEW_YORK, List.of(window(DayOfWeek.SUNDAY, "00:00", "06:00")));
+
+		assertTrue(domingo.allows(range));
+	}
+
+	@Test
 	void outonoIntervaloNormalDepoisDaTransicaoEhPermitido() {
 		TimeRange range = new TimeRange(
 				ZonedDateTime.of(2026, 11, 1, 3, 0, 0, 0, NEW_YORK).toInstant(),
