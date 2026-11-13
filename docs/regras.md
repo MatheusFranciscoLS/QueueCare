@@ -5,6 +5,7 @@ Estas regras são o coração do projeto. A implementação e os testes de cada 
 ## R1. Disponibilidade
 Um agendamento só pode ocorrer dentro do horário de atendimento do prestador (`availability_windows`) e deve caber inteiro, respeitando a duração do serviço.
 Exemplo: serviço de 60 min não pode começar às 17h30 se o expediente termina às 18h.
+Detalhes definidos na implementação (`AvailabilityPolicy`, ver `docs/estudo/r1-disponibilidade.md`): início e fim no mesmo dia local do prestador; janelas coladas contam como expediente contínuo e qualquer lacuna interrompe; janelas sobrepostas são configuração inválida.
 Teste: T2 (fora do expediente).
 
 ## R2. Sem reserva dupla e sem sobreposição
