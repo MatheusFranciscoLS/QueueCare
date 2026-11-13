@@ -304,4 +304,60 @@ class AppointmentApiIntegrationTest extends AuthIntegrationTestBase {
 		}
 		assertEquals(1L, jdbc.queryForObject("SELECT count(*) FROM appointment_events WHERE event_type = 'CANCELLED'", Long.class), "um único evento de cancelamento");
 	}
+
+	@Test
+	void meusAgendamentosSaoPaginadosComLimiteMaximo() throws Exception {
+		String c1 = tokenOf("c1@exemplo.test");
+		bookAndGetId(c1, slot(7, 9));
+		bookAndGetId(c1, slot(7, 10));
+		bookAndGetId(c1, slot(7, 11));
+
+		mvc.perform(get("/api/appointments/mine").param("size", "2").header(HttpHeaders.AUTHORIZATION, c1)).andExpect(status().isOk()).andExpect(jsonPath("$.length()").value(2));
+		mvc.perform(get("/api/appointments/mine").param("size", "2").param("page", "1").header(HttpHeaders.AUTHORIZATION, c1)).andExpect(status().isOk()).andExpect(jsonPath("$.length()").value(1));
+		mvc.perform(get("/api/appointments/mine").header(HttpHeaders.AUTHORIZATION, c1)).andExpect(status().isOk()).andExpect(jsonPath("$.length()").value(3));
+		mvc.perform(get("/api/appointments/mine").param("size", "0").header(HttpHeaders.AUTHORIZATION, c1)).andExpect(status().isBadRequest());
+		mvc.perform(get("/api/appointments/mine").param("size", "51").header(HttpHeaders.AUTHORIZATION, c1)).andExpect(status().isBadRequest());
+		mvc.perform(get("/api/appointments/mine").param("page", "-1").header(HttpHeaders.AUTHORIZATION, c1)).andExpect(status().isBadRequest());
+	}
+
+	@Test
+	void prestadorDonoCancelandoAlgoJaCanceladoRecebeAlreadyCancelled() throws Exception {
+		String id = bookAndGetId(tokenOf("c1@exemplo.test"), slot(7, 10));
+		String provider = tokenOf("prestador@exemplo.test");
+		cancel(provider, id).andExpect(status().isOk());
+
+		cancel(provider, id).andExpect(status().isConflict()).andExpect(jsonPath("$.reason").value("ALREADY_CANCELLED"));
+	}
+
+	@Test
+	void cancelamentoConcorrendoComNovaReservaDoMesmoHorarioFicaConsistente() throws Exception {
+		String c1 = tokenOf("c1@exemplo.test");
+		String c2 = tokenOf("c2@exemplo.test");
+		for (int round = 0; round < 5; round++) {
+			String when = slot(7 + round, 10);
+			String id = bookAndGetId(c1, when);
+			ExecutorService pool = Executors.newFixedThreadPool(2);
+			CyclicBarrier startTogether = new CyclicBarrier(2);
+			try {
+				Future<Integer> cancelling = pool.submit(() -> {
+					startTogether.await(10, TimeUnit.SECONDS);
+					return cancel(c1, id).andReturn().getResponse().getStatus();
+				});
+				Future<Integer> rebooking = pool.submit(() -> {
+					startTogether.await(10, TimeUnit.SECONDS);
+					return book(c2, when).andReturn().getResponse().getStatus();
+				});
+				int cancelStatus = cancelling.get(60, TimeUnit.SECONDS);
+				int bookStatus = rebooking.get(60, TimeUnit.SECONDS);
+
+				assertEquals(200, cancelStatus, "o cancelamento do dono sempre vence");
+				assertTrue(bookStatus == 201 || bookStatus == 409, "a nova reserva vence depois do cancelamento (201) ou chega antes dele (409), nunca 500: " + bookStatus);
+				long active = jdbc.queryForObject("SELECT count(*) FROM appointments WHERE status <> 'CANCELLED' AND id <> ?::uuid AND starts_at = "
+						+ "(SELECT starts_at FROM appointments WHERE id = ?::uuid)", Long.class, id, id);
+				assertEquals(bookStatus == 201 ? 1L : 0L, active, "estado final coerente com o resultado da nova reserva");
+			} finally {
+				pool.shutdownNow();
+			}
+		}
+	}
 }

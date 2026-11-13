@@ -15,7 +15,7 @@ React (SPA) conversando com uma API Spring Boot, três perfis (PROVIDER, ATTENDA
 ## Decisão
 **Alternativa 2**, implementada com **Spring Security Resource Server + Nimbus** (sem filtro próprio):
 - **Token:** JWT **HS256** (só esse algoritmo), validade de **15 minutos**, **sem refresh token** no MVP. Claims: `iss`, `aud`, `sub` (UUID do usuário), `role`, `iat`, `exp`. Nada de dados pessoais ou senha no token.
-- **Validação:** assinatura, **emissor** e **audiência** (`queuecare-api`), `exp` obrigatório e não expirado (tolerância de relógio de **30 s**), `sub` precisa ser UUID. `alg: none` e assinatura de outra chave são recusados.
+- **Validação:** assinatura, **emissor** e **audiência** (`queuecare-api`), `exp` obrigatório e não expirado (tolerância de relógio de **30 s**), `iat` coerente (não no futuro além da tolerância e não depois de `exp`), `sub` precisa ser UUID. `alg: none` e assinatura de outra chave são recusados. Mais de um cabeçalho `Authorization` é recusado (401), esquema que não seja Bearer e token na query string não autenticam.
 - **Segredo:** variável de ambiente `JWT_SECRET`, em **Base64**, com **pelo menos 32 bytes (256 bits)** depois de decodificar (gerar com `openssl rand -base64 32`). **Sem valor padrão**: a aplicação não sobe sem ele. Os testes usam um segredo exclusivo de teste.
 - **Perfil e usuário ativo vêm do BANCO**, não do token: a cada requisição o usuário é consultado; usuário inexistente ou inativo recebe 401 na hora (desativar vale sem esperar o token expirar). O `role` do token é só informativo.
 - **Senha:** BCrypt (custo 12 por padrão, calibrável), mínimo de **10 caracteres** e máximo de **72 bytes em UTF-8** (limite do BCrypt; recusada, nunca truncada).

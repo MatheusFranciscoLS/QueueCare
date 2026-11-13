@@ -20,7 +20,7 @@ cliente --GET /api/me + Bearer token--> API (valida token, consulta usuário no 
 - Senhas: mínimo de 10 caracteres; máximo de 72 bytes (limite do BCrypt), recusadas em vez de cortadas em silêncio.
 - Token recusado se: expirado, assinatura de outra chave, adulterado, **sem assinatura (`alg: none`)**, emissor ou audiência errados, sem `exp`, `sub` que não é UUID.
 - Sem sessão e sem cookie: por isso não precisa de proteção CSRF; CORS só aceita a origem do front configurada.
-- Detalhe do framework: o Spring preenche `iat` sozinho quando o token não o traz; o que protege é exigir e validar o `exp`.
+- Detalhe do framework: o Spring preenche `iat` sozinho quando o token não o traz; o que protege é exigir e validar o `exp`. Além disso, `iat` no futuro (além de 30 s) ou depois de `exp` é recusado, e dois cabeçalhos `Authorization` na mesma requisição são recusados em vez de escolher um em silêncio.
 
 ## O que os testes provam (Spring completo + filtros reais + PostgreSQL real)
 - **Cadastro (9 testes):** cria cliente sem expor hash; ignora `role`; normaliza e-mail; duplicado dá 409 (inclusive 4 cadastros simultâneos: só um vence); dados inválidos; senha de 73 bytes recusada e de 72 aceita; JSON quebrado.

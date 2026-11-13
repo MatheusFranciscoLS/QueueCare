@@ -129,6 +129,48 @@ class JwtSecurityIntegrationTest extends AuthIntegrationTestBase {
 		me(token(TEST_SECRET, ISSUER, AUDIENCE, null, now, now.plusSeconds(900), "CUSTOMER")).andExpect(status().isUnauthorized());
 	}
 
+	@Test
+	void iatNoFuturoOuPosteriorAExpEhRecusado() throws Exception {
+		UUID id = seedUser("maria@exemplo.test", "CUSTOMER", true);
+		Instant now = Instant.now();
+
+		me(token(TEST_SECRET, ISSUER, AUDIENCE, id.toString(), now.plusSeconds(600), now.plusSeconds(1500), "CUSTOMER")).andExpect(status().isUnauthorized());
+		String iatDepoisDeExp = "{\"iss\":\"" + ISSUER + "\",\"aud\":\"" + AUDIENCE + "\",\"sub\":\"" + id + "\",\"iat\":" + now.getEpochSecond() + ",\"exp\":" + (now.getEpochSecond() - 5) + "}";
+		me(rawSignedToken(TEST_SECRET, iatDepoisDeExp)).andExpect(status().isUnauthorized());
+		// iat levemente no futuro, dentro da tolerância de 30 s, é aceito.
+		me(token(TEST_SECRET, ISSUER, AUDIENCE, id.toString(), now.plusSeconds(5), now.plusSeconds(905), "CUSTOMER")).andExpect(status().isOk());
+	}
+
+	// --- cabeçalho Authorization malformado ---
+
+	@Test
+	void esquemaBasicOuBearerVazioNaoAutentica() throws Exception {
+		UUID id = seedUser("maria@exemplo.test", "CUSTOMER", true);
+		String basic = java.util.Base64.getEncoder().encodeToString(("maria@exemplo.test:" + PASSWORD).getBytes(java.nio.charset.StandardCharsets.UTF_8));
+
+		mvc.perform(get("/api/me").header(HttpHeaders.AUTHORIZATION, "Basic " + basic)).andExpect(status().isUnauthorized());
+		mvc.perform(get("/api/me").header(HttpHeaders.AUTHORIZATION, "Bearer ")).andExpect(status().isUnauthorized());
+		mvc.perform(get("/api/me").header(HttpHeaders.AUTHORIZATION, "Bearer")).andExpect(status().isUnauthorized());
+		mvc.perform(get("/api/me").header(HttpHeaders.AUTHORIZATION, "bearer " + validToken(id))).andExpect(status().isOk()); // esquema não diferencia maiúsculas (RFC 6750)
+	}
+
+	@Test
+	void tokenNaQueryStringNaoAutentica() throws Exception {
+		UUID id = seedUser("maria@exemplo.test", "CUSTOMER", true);
+
+		mvc.perform(get("/api/me").param("access_token", validToken(id))).andExpect(status().isUnauthorized());
+	}
+
+	@Test
+	void doisCabecalhosAuthorizationNaoSaoAceitosEmSilencio() throws Exception {
+		UUID id = seedUser("maria@exemplo.test", "CUSTOMER", true);
+
+		mvc.perform(get("/api/me").header(HttpHeaders.AUTHORIZATION, "Bearer " + validToken(id)).header(HttpHeaders.AUTHORIZATION, "Bearer lixo"))
+				.andExpect(status().isUnauthorized());
+		mvc.perform(get("/api/me").header(HttpHeaders.AUTHORIZATION, "Bearer lixo").header(HttpHeaders.AUTHORIZATION, "Bearer " + validToken(id)))
+				.andExpect(status().isUnauthorized());
+	}
+
 	// --- usuário depois de emitido o token ---
 
 	@Test

@@ -45,4 +45,5 @@ Até aqui o agendamento existia por dentro (serviço + banco) e o login existia 
 ## Limitações e o que ainda falta
 - Atendente sem vínculo com prestador (precisa de uma coluna/tabela no modelo); sem painel do dia, check-in e fila (M4).
 - Sem consulta de horários livres para a tela (disponibilidade como lista); sem tela.
-- Sem limite de tentativas nos endpoints públicos; sem paginação em `/mine`.
+- `/mine` é paginado (`page` a partir de 0, `size` de 1 a 50, padrão 20, mais recentes primeiro); fora desses limites responde 400.
+- Sem limite de tentativas nos endpoints públicos.

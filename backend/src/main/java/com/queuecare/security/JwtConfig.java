@@ -58,17 +58,24 @@ class JwtConfig {
 		decoder.setJwtValidator(new DelegatingOAuth2TokenValidator<>(
 				new JwtTimestampValidator(properties.clockSkew()),
 				new JwtIssuerValidator(properties.issuer()),
-				requiredClaims(properties.audience())));
+				requiredClaims(properties.audience(), properties.clockSkew())));
 		return decoder;
 	}
 
-	private static OAuth2TokenValidator<Jwt> requiredClaims(String audience) {
+	private static OAuth2TokenValidator<Jwt> requiredClaims(String audience, java.time.Duration clockSkew) {
 		return jwt -> {
 			if (jwt.getClaim(JwtClaimNames.EXP) == null) {
 				return failure("o token precisa ter exp");
 			}
 			if (jwt.getClaim(JwtClaimNames.IAT) == null) {
 				return failure("o token precisa ter iat");
+			}
+			// iat coerente: não pode estar no futuro (além da tolerância de relógio) nem depois de exp.
+			if (jwt.getIssuedAt() != null && jwt.getIssuedAt().isAfter(java.time.Instant.now().plus(clockSkew))) {
+				return failure("iat no futuro");
+			}
+			if (jwt.getIssuedAt() != null && jwt.getExpiresAt() != null && jwt.getIssuedAt().isAfter(jwt.getExpiresAt())) {
+				return failure("iat posterior a exp");
 			}
 			List<String> audiences = jwt.getAudience();
 			if (audiences == null || !audiences.contains(audience)) {
