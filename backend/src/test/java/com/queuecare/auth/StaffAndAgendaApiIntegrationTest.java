@@ -433,6 +433,58 @@ class StaffAndAgendaApiIntegrationTest extends AuthIntegrationTestBase {
 		assertEquals(1L, count("SELECT count(*) FROM appointment_events WHERE appointment_id = ?::uuid AND event_type = 'CANCELLED'", second));
 	}
 
+	// ---------- desvincular enquanto o atendente está em plena requisição ----------
+
+	@Test
+	void desvincularEAgendaSimultaneosDaoSempreUmResultadoValido() throws Exception {
+		for (int round = 0; round < 6; round++) {
+			jdbc.update("DELETE FROM provider_staff WHERE user_id = ?", userA1);
+			jdbc.update("INSERT INTO provider_staff (provider_id, user_id) VALUES (?, ?)", providerA, userA1);
+			CyclicBarrier startTogether = new CyclicBarrier(2);
+
+			List<Integer> statuses = race(List.of(
+					() -> {
+						startTogether.await(10, TimeUnit.SECONDS);
+						return send(delete("/api/provider/staff/" + userA1), pa, null).andReturn().getResponse().getStatus();
+					},
+					() -> {
+						startTogether.await(10, TimeUnit.SECONDS);
+						return agenda(a1, day(7)).andReturn().getResponse().getStatus();
+					}));
+
+			assertEquals(204, statuses.get(0), "o dono sempre consegue desvincular: " + statuses);
+			// A agenda que já começou usa o vínculo que viu no início (200); a que começa depois é recusada (403). Nunca 500.
+			assertTrue(statuses.get(1) == 200 || statuses.get(1) == 403, "agenda concorrente: 200 (viu o vínculo) ou 403 (já desvinculado): " + statuses);
+			agenda(a1, day(7)).andExpect(status().isForbidden()); // na requisição seguinte a revogação vale sempre
+		}
+	}
+
+	@Test
+	void desvincularECancelarSimultaneosDeixamOEstadoCoerente() throws Exception {
+		for (int round = 0; round < 6; round++) {
+			jdbc.update("DELETE FROM provider_staff WHERE user_id = ?", userA1);
+			jdbc.update("INSERT INTO provider_staff (provider_id, user_id) VALUES (?, ?)", providerA, userA1);
+			String appointment = book(c1, providerA, serviceA, slot(10 + round, 10));
+			CyclicBarrier startTogether = new CyclicBarrier(2);
+
+			List<Integer> statuses = race(List.of(
+					() -> {
+						startTogether.await(10, TimeUnit.SECONDS);
+						return send(delete("/api/provider/staff/" + userA1), pa, null).andReturn().getResponse().getStatus();
+					},
+					() -> {
+						startTogether.await(10, TimeUnit.SECONDS);
+						return cancel(a1, appointment).andReturn().getResponse().getStatus();
+					}));
+
+			assertEquals(204, statuses.get(0), "o dono sempre consegue desvincular: " + statuses);
+			assertTrue(statuses.get(1) == 200 || statuses.get(1) == 403, "cancelamento concorrente: 200 (viu o vínculo) ou 403 (já desvinculado): " + statuses);
+			assertEquals(statuses.get(1) == 200 ? "CANCELLED" : "SCHEDULED", statusOf(appointment), "estado final coerente com o resultado");
+			assertEquals(statuses.get(1) == 200 ? 1L : 0L, count("SELECT count(*) FROM appointment_events WHERE appointment_id = ?::uuid AND event_type = 'CANCELLED'", appointment));
+			cancel(a1, appointment).andExpect(status().isForbidden()); // depois, sem acesso, sempre
+		}
+	}
+
 	// ---------- agenda em dias de horário de verão ----------
 
 	private void insertAppointment(UUID provider, UUID service, String startsAtUtc) {

@@ -14,6 +14,7 @@ import org.springframework.security.config.annotation.web.configurers.AbstractHt
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.oauth2.server.resource.web.authentication.BearerTokenAuthenticationFilter;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
@@ -29,7 +30,8 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 class SecurityConfig {
 
 	@Bean
-	SecurityFilterChain securityFilterChain(HttpSecurity http, ActiveUserJwtConverter jwtConverter) throws Exception {
+	SecurityFilterChain securityFilterChain(HttpSecurity http, ActiveUserJwtConverter jwtConverter, RateLimiter rateLimiter,
+			RateLimitProperties rateLimitProperties) throws Exception {
 		http
 				.csrf(AbstractHttpConfigurer::disable)
 				.cors(Customizer.withDefaults())
@@ -42,6 +44,10 @@ class SecurityConfig {
 				.oauth2ResourceServer(oauth2 -> oauth2
 						.bearerTokenResolver(new SingleAuthorizationHeaderResolver())
 						.jwt(jwt -> jwt.jwtAuthenticationConverter(jwtConverter)));
+		if (rateLimitProperties.enabled()) {
+			// Depois da leitura do token (conhece o usuário) e antes da autorização das rotas.
+			http.addFilterAfter(new RateLimitFilter(rateLimiter, rateLimitProperties), BearerTokenAuthenticationFilter.class);
+		}
 		return http.build();
 	}
 

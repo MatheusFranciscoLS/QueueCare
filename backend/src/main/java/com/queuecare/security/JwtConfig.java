@@ -53,16 +53,18 @@ class JwtConfig {
 	}
 
 	@Bean
-	JwtDecoder jwtDecoder(SecretKey jwtSecretKey, JwtProperties properties) {
+	JwtDecoder jwtDecoder(SecretKey jwtSecretKey, JwtProperties properties, java.time.Clock clock) {
 		NimbusJwtDecoder decoder = NimbusJwtDecoder.withSecretKey(jwtSecretKey).macAlgorithm(MacAlgorithm.HS256).build();
+		JwtTimestampValidator timestamps = new JwtTimestampValidator(properties.clockSkew());
+		timestamps.setClock(clock); // o MESMO relógio da aplicação: exp, nbf e iat ficam determinísticos nos testes
 		decoder.setJwtValidator(new DelegatingOAuth2TokenValidator<>(
-				new JwtTimestampValidator(properties.clockSkew()),
+				timestamps,
 				new JwtIssuerValidator(properties.issuer()),
-				requiredClaims(properties.audience(), properties.clockSkew())));
+				requiredClaims(properties.audience(), properties.clockSkew(), clock)));
 		return decoder;
 	}
 
-	private static OAuth2TokenValidator<Jwt> requiredClaims(String audience, java.time.Duration clockSkew) {
+	private static OAuth2TokenValidator<Jwt> requiredClaims(String audience, java.time.Duration clockSkew, java.time.Clock clock) {
 		return jwt -> {
 			if (jwt.getClaim(JwtClaimNames.EXP) == null) {
 				return failure("o token precisa ter exp");
@@ -71,7 +73,7 @@ class JwtConfig {
 				return failure("o token precisa ter iat");
 			}
 			// iat coerente: não pode estar no futuro (além da tolerância de relógio) nem depois de exp.
-			if (jwt.getIssuedAt() != null && jwt.getIssuedAt().isAfter(java.time.Instant.now().plus(clockSkew))) {
+			if (jwt.getIssuedAt() != null && jwt.getIssuedAt().isAfter(clock.instant().plus(clockSkew))) {
 				return failure("iat no futuro");
 			}
 			if (jwt.getIssuedAt() != null && jwt.getExpiresAt() != null && jwt.getIssuedAt().isAfter(jwt.getExpiresAt())) {

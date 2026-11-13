@@ -304,4 +304,33 @@ class ProviderSetupApiIntegrationTest extends AuthIntegrationTestBase {
 
 		assertEquals(List.of(tuesday + "T22:00:00", tuesday + "T22:15:00", tuesday + "T22:30:00", tuesday + "T22:45:00"), starts, "o último início possível é 22:45 (termina 23:45)");
 	}
+
+	@Test
+	void doisPutsSimultaneosDeJanelasNuncaMisturamNemDao500() throws Exception {
+		send(post("/api/provider"), provider1, business("P1", "America/Sao_Paulo", 0, 0)).andExpect(status().isCreated());
+		String setA = "[" + window("MONDAY", "08:00", "12:00") + "]";
+		String setB = "[" + window("MONDAY", "10:00", "14:00") + "]"; // sobrepõe o conjunto A: se os dois gravassem, o banco recusaria
+		for (int round = 0; round < 12; round++) {
+			java.util.concurrent.CyclicBarrier startTogether = new java.util.concurrent.CyclicBarrier(2);
+			java.util.concurrent.ExecutorService pool = java.util.concurrent.Executors.newFixedThreadPool(2);
+			try {
+				List<java.util.concurrent.Callable<Integer>> tasks = new java.util.ArrayList<>();
+				for (String set : List.of(setA, setB)) {
+					tasks.add(() -> {
+						startTogether.await(10, java.util.concurrent.TimeUnit.SECONDS);
+						return send(put("/api/provider/availability"), provider1, set).andReturn().getResponse().getStatus();
+					});
+				}
+				List<Integer> statuses = new java.util.ArrayList<>();
+				for (java.util.concurrent.Future<Integer> f : pool.invokeAll(tasks, 60, java.util.concurrent.TimeUnit.SECONDS)) {
+					statuses.add(f.get());
+				}
+				assertEquals(List.of(200, 200), statuses, "os dois PUTs concluem (o último a confirmar vale), nunca 500: " + statuses);
+			} finally {
+				pool.shutdownNow();
+			}
+			List<String> finalStarts = jdbc.queryForList("SELECT start_time::text FROM availability_windows ORDER BY start_time", String.class);
+			assertTrue(finalStarts.equals(List.of("08:00:00")) || finalStarts.equals(List.of("10:00:00")), "estado final é exatamente um dos conjuntos, sem mistura: " + finalStarts);
+		}
+	}
 }

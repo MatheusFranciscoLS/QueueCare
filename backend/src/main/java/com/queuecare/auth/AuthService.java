@@ -6,7 +6,11 @@ import com.queuecare.auth.AuthExceptions.InvalidPasswordException;
 import com.queuecare.scheduling.persistence.UserAccount;
 import com.queuecare.scheduling.persistence.UserAccountRepository;
 import com.queuecare.scheduling.persistence.UserRole;
+import com.queuecare.auth.AuthExceptions.TooManyLoginAttemptsException;
 import com.queuecare.security.JwtProperties;
+import com.queuecare.security.RateLimitProperties;
+import com.queuecare.security.RateLimiter;
+import java.time.Duration;
 import java.nio.charset.StandardCharsets;
 import java.sql.SQLException;
 import java.time.Clock;
@@ -46,16 +50,20 @@ public class AuthService {
 	private final JwtEncoder jwtEncoder;
 	private final JwtProperties jwtProperties;
 	private final Clock clock;
+	private final RateLimiter rateLimiter;
+	private final RateLimitProperties rateLimitProperties;
 	/** Hash BCrypt fictício calculado uma única vez, para igualar o tempo de login de contas inexistentes. */
 	private final String dummyHash;
 
 	public AuthService(UserAccountRepository users, PasswordEncoder passwordEncoder, JwtEncoder jwtEncoder,
-			JwtProperties jwtProperties, Clock clock) {
+			JwtProperties jwtProperties, Clock clock, RateLimiter rateLimiter, RateLimitProperties rateLimitProperties) {
 		this.users = users;
 		this.passwordEncoder = passwordEncoder;
 		this.jwtEncoder = jwtEncoder;
 		this.jwtProperties = jwtProperties;
 		this.clock = clock;
+		this.rateLimiter = rateLimiter;
+		this.rateLimitProperties = rateLimitProperties;
 		this.dummyHash = passwordEncoder.encode("senha-ficticia-so-para-igualar-o-tempo");
 	}
 
@@ -86,9 +94,32 @@ public class AuthService {
 		}
 	}
 
+	/**
+	 * Login. Além das regras abaixo, aplica um BLOQUEIO TEMPORÁRIO por falhas: depois de N falhas para o mesmo par e-mail +
+	 * endereço dentro da janela, responde 429 (com Retry-After) antes mesmo de comparar a senha. TODA falha conta (e-mail
+	 * inexistente, inativo, senha errada ou grande demais), então o bloqueio não revela quais contas existem; e a chave inclui o
+	 * endereço, então quem erra não consegue trancar a conta para o dono em outro endereço. Login com sucesso zera a contagem.
+	 */
 	@Transactional(readOnly = true)
-	public IssuedToken login(String email, String rawPassword) {
-		Optional<UserAccount> user = users.findByEmail(normalizeEmail(email)).filter(UserAccount::isActive);
+	public IssuedToken login(String email, String rawPassword, String clientAddress) {
+		String normalizedEmail = normalizeEmail(email);
+		String attemptKey = "loginfail|" + normalizedEmail + "|" + clientAddress;
+		Duration window = Duration.ofMinutes(rateLimitProperties.loginFailureWindowMinutes());
+		if (rateLimiter.count(attemptKey, window) >= rateLimitProperties.loginFailuresPerEmailAndIp()) {
+			throw new TooManyLoginAttemptsException(rateLimiter.retryAfterSeconds(attemptKey, window));
+		}
+		try {
+			IssuedToken token = authenticate(normalizedEmail, rawPassword);
+			rateLimiter.clear(attemptKey);
+			return token;
+		} catch (InvalidCredentialsException e) {
+			rateLimiter.record(attemptKey, window);
+			throw e;
+		}
+	}
+
+	private IssuedToken authenticate(String normalizedEmail, String rawPassword) {
+		Optional<UserAccount> user = users.findByEmail(normalizedEmail).filter(UserAccount::isActive);
 		boolean fitsBcrypt = rawPassword.getBytes(StandardCharsets.UTF_8).length <= MAX_PASSWORD_BYTES;
 		// Sempre compara com algum hash, para o tempo de resposta não revelar se a conta existe.
 		String hashToCheck = user.map(UserAccount::getPasswordHash).orElse(dummyHash);

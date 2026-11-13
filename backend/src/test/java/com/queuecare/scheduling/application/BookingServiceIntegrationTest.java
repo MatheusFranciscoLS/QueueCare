@@ -30,6 +30,9 @@ class BookingServiceIntegrationTest extends BookingIntegrationTestBase {
 	@Autowired
 	AppointmentEventRepository eventRepository;
 
+	@Autowired
+	CancellationService cancellationService;
+
 	private BookingRequest sp(int day, int hour, int minute) {
 		return new BookingRequest(providerSp, serviceSp, customer, LocalDateTime.of(2026, 11, day, hour, minute));
 	}
@@ -238,5 +241,26 @@ class BookingServiceIntegrationTest extends BookingIntegrationTestBase {
 		assertEquals(0, count("SELECT count(*) FROM appointments"));
 		assertEquals(0, count("SELECT count(*) FROM appointment_events"));
 		assertNull(jdbc.queryForObject("SELECT max(id::text) FROM appointment_events", String.class));
+	}
+
+	@Test
+	void falhaAoGravarOEventoDeCancelamentoDesfazOCancelamento() {
+		Appointment appointment = bookingService.book(sp(17, 10, 0));
+		jdbc.execute("CREATE FUNCTION test_fail_event() RETURNS trigger AS $$ BEGIN RAISE EXCEPTION 'falha simulada'; END; $$ LANGUAGE plpgsql");
+		// Só o evento de CANCELAMENTO falha; o evento de agendamento já foi gravado antes do gatilho existir.
+		jdbc.execute("CREATE TRIGGER test_fail_event_trg BEFORE INSERT ON appointment_events FOR EACH ROW EXECUTE FUNCTION test_fail_event()");
+		try {
+			RuntimeException error = assertThrows(RuntimeException.class, () -> cancellationService.cancel(appointment.getId(), customer));
+
+			assertFalse(error instanceof com.queuecare.scheduling.application.AppointmentExceptions.CancellationRejectedException, "falha do evento não é recusa de regra: " + error);
+			assertEquals("SCHEDULED", jdbc.queryForObject("SELECT status FROM appointments WHERE id = ?", String.class, appointment.getId()), "o cancelamento sofreu rollback");
+			assertEquals(1, count("SELECT count(*) FROM appointment_events"), "só o evento de agendamento existe");
+		} finally {
+			jdbc.execute("DROP TRIGGER test_fail_event_trg ON appointment_events");
+			jdbc.execute("DROP FUNCTION test_fail_event()");
+		}
+		// Sem o gatilho, o cancelamento funciona (nada ficou preso) e libera o horário.
+		cancellationService.cancel(appointment.getId(), customer);
+		bookingService.book(sp(17, 10, 0));
 	}
 }

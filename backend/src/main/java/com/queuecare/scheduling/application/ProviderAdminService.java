@@ -73,7 +73,7 @@ public class ProviderAdminService {
 	@Transactional
 	public Provider updateBusiness(UUID ownerUserId, String businessName, String timeZone, int minimumNoticeMinutes, int cancellationDeadlineMinutes) {
 		validateBusiness(businessName, timeZone, minimumNoticeMinutes, cancellationDeadlineMinutes);
-		Provider provider = getBusiness(ownerUserId);
+		Provider provider = lockBusiness(ownerUserId);
 		provider.update(businessName.trim(), timeZone, minimumNoticeMinutes, cancellationDeadlineMinutes);
 		return providers.save(provider);
 	}
@@ -108,10 +108,14 @@ public class ProviderAdminService {
 		return windows.findByProviderId(getBusiness(ownerUserId).getId());
 	}
 
-	/** Substitui TODAS as janelas do prestador pela lista enviada (lista vazia = não atende em nenhum dia). */
+	/**
+	 * Substitui TODAS as janelas do prestador pela lista enviada (lista vazia = não atende em nenhum dia). Dois PUTs
+	 * simultâneos são serializados pelo bloqueio da linha do negócio: vale o último a confirmar e o resultado é sempre
+	 * exatamente um dos conjuntos enviados, nunca uma mistura.
+	 */
 	@Transactional
 	public List<AvailabilityWindowEntity> replaceAvailability(UUID ownerUserId, List<WindowInput> inputs) {
-		Provider provider = getBusiness(ownerUserId);
+		Provider provider = lockBusiness(ownerUserId);
 		if (inputs.size() > MAX_WINDOWS) {
 			throw new InvalidConfigurationException("windows", "no máximo " + MAX_WINDOWS + " janelas");
 		}
@@ -128,6 +132,11 @@ public class ProviderAdminService {
 		return windows.saveAll(domainWindows.stream()
 				.map(w -> new AvailabilityWindowEntity(provider.getId(), w.dayOfWeek(), w.start(), w.end()))
 				.toList());
+	}
+
+	/** Carrega o negócio do dono BLOQUEANDO a linha: edições concorrentes do mesmo prestador acontecem uma de cada vez. */
+	private Provider lockBusiness(UUID ownerUserId) {
+		return providers.findByUserIdForUpdate(ownerUserId).orElseThrow(ProviderNotConfiguredException::new);
 	}
 
 	// --- validações ---

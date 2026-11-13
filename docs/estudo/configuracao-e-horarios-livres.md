@@ -38,6 +38,6 @@ Cadastro/consulta/edição do negócio, 400 de valores inválidos, 403/401 por p
 ## Limitações e o que ainda falta
 - Atendente ainda sem vínculo com o prestador; cadastro de PROVIDER por API pública ainda não existe (o usuário PROVIDER precisa ser criado por outro caminho).
 - Grade fixa de 15 minutos; sem exceções de data (feriados) nem folgas; sem paginação em listas do prestador.
-- A consulta usa o relógio do servidor, não tem cache nem limite de chamadas (rate limit): antes de expor ao público, limitar por usuário/IP.
-- Dois PUTs simultâneos de janelas: vale o último a confirmar (last writer wins); o resultado é sempre um conjunto válido. Um bloqueio por prestador pode vir depois.
+- A consulta usa o relógio do servidor e não tem cache; ela tem limite de chamadas por usuário (120 por minuto por padrão, ver ADR 0003).
+- Dois PUTs simultâneos de janelas (ou de edição do negócio) são **serializados** por um bloqueio na linha do prestador (`SELECT ... FOR UPDATE`): vale o último a confirmar e o resultado é sempre exatamente um dos conjuntos enviados, nunca uma mistura. Sem esse bloqueio, dois conjuntos que se sobrepõem entre si podiam gerar erro 500 (o teste reproduzia antes da correção).
 - No PUT de serviço, `active` é obrigatório (omitir não reativa um serviço desativado).

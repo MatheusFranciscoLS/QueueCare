@@ -28,6 +28,11 @@ cliente --GET /api/me + Bearer token--> API (valida token, consulta usuário no 
 - **Token e acesso (16 testes):** os casos de recusa acima, usuário desativado depois de logado, usuário inexistente, cada perfil só nas rotas permitidas (rotas de prova só de teste), rotas públicas, padrão "tudo fechado", CORS, sem cookie.
 - **Configuração (4 testes):** segredo ausente, não-Base64 ou com menos de 32 bytes impede a aplicação de subir.
 
+## Limite de tentativas (força bruta)
+- Login e cadastro têm limite por minuto e por endereço; horários livres, por usuário. Excedeu: **429** com `Retry-After`.
+- **5 falhas de login** do mesmo e-mail **no mesmo endereço** em 15 minutos bloqueiam esse par (mesmo com a senha certa). Toda falha conta, inclusive e-mail inexistente, então o bloqueio **não revela quais contas existem**. Em outro endereço a dona da conta entra normalmente.
+- Testes: `RateLimiterTest` (relógio controlado, memória limitada), `RateLimitEndpointsIntegrationTest` e `LoginLockoutIntegrationTest`.
+
 ## Onde está
 - `backend/src/main/java/com/queuecare/security/`: `JwtProperties`, `JwtConfig`, `SecurityConfig`, `ActiveUserJwtConverter`
 - `backend/src/main/java/com/queuecare/auth/`: `AuthService`, `AuthController`, `MeController`, DTOs, exceções e `ApiExceptionHandler`
@@ -42,7 +47,7 @@ cliente --GET /api/me + Bearer token--> API (valida token, consulta usuário no 
    *Pista: token enviado no cabeçalho, sem cookie de autenticação.*
 
 ## Limitações e o que ainda falta
-- Sem limite de tentativas (rate limit) nos endpoints públicos; sem refresh token (login a cada 15 min); rotação do segredo é manual.
+- O limite de tentativas é em memória e por instância (ver ADR 0003); sem refresh token (login a cada 15 min); rotação do segredo é manual.
 - PROVIDER e ATTENDANT ainda não têm cadastro; só CUSTOMER se cadastra.
 - Ainda não há endpoints de agendar e cancelar (próximo PR): o `customerId` virá do token.
 - `JWT_SECRET` é obrigatório para rodar a aplicação (veja `.env.example` e o README).
