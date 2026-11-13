@@ -16,7 +16,7 @@ A semana é referência de planejamento, não um limite: abra o PR assim que a f
 - **M7 Entrega (S7):** README, arquitetura, API e mensagens de erro em inglês, vídeo curto, treino para explicar as 5 regras e os 6 testes.
 
 ## Cada marco só termina com
-Implementação funcional · testes passando · revisão independente · documentação atualizada · o Matheus explica as decisões centrais.
+Implementação funcional · testes passando · revisão independente · documentação atualizada · resumo e perguntas de estudo em `docs/estudo/`.
 
 ## Fora do escopo
 Pagamentos, WhatsApp/SMS, app mobile, múltiplas unidades, recorrência avançada, IA, integrações externas, RabbitMQ, fila em tempo real complexa.

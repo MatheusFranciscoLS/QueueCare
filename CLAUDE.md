@@ -10,25 +10,20 @@ Monólito modular Spring Boot (sem microsserviços, sem RabbitMQ no MVP). Não a
 
 Leia antes de qualquer tarefa: `docs/regras.md`, `docs/modelo-dados.md`, `docs/arquitetura.md` e os ADRs em `docs/adr/`. O repositório é a fonte oficial das decisões, não a memória da conversa.
 
-## 2. Regra de autoria (a mais importante)
-O Matheus é o desenvolvedor responsável. Ele escreve e entende pessoalmente:
-- as regras centrais de negócio (`docs/regras.md`);
-- as entidades e relacionamentos principais;
-- disponibilidade e agendamento;
-- a proteção contra reserva dupla e sobreposição de horários;
-- cancelamento;
-- autorização por perfil;
-- fuso horário e antecedência;
-- os testes dos cenários críticos.
+## 2. Regra de autoria (a mais importante; atualizada em 13/11/2026)
+O Matheus é o dono do projeto e decidiu, em 13/11/2026, **delegar a implementação ao Claude e a revisão ao ChatGPT**: o Claude implementa (inclusive as regras centrais: disponibilidade, sobreposição, cancelamento, autorização, fuso e antecedência, e os testes) e o ChatGPT revisa de forma independente; os dois decidem juntos o que fazer primeiro. Ele define o produto, aprova o rumo e recebe resumos em linguagem simples. (Antes disso, a regra era que ele escrevesse essas partes; foi substituída por esta.)
 
-O Claude **pode**: criar a estrutura inicial; configurar dependências, Docker, CI e arquivos auxiliares; revisar o código do Matheus; explicar erros e conceitos; sugerir alternativas e cenários de teste; ajudar na documentação.
-O Claude **não deve** implementar as regras centrais acima sem pedido explícito do Matheus naquela tarefa. Se ele pedir, avise que isso reduz o valor de portfólio e implemente só o que foi pedido.
-Sempre que fizer a estrutura de algo que ele vai escrever, deixe `// TODO(matheus):` claro no ponto dele.
+Condições combinadas com o ChatGPT (revisor independente):
+- **Autoria honesta:** o README declara que o projeto foi desenvolvido com assistência substancial de IA, sob a direção do dono. Nunca afirmar que o Matheus escreveu o que ele não escreveu.
+- **Material de estudo por PR:** cada PR traz, em `docs/estudo/`, um resumo em linguagem simples, 3 perguntas de entrevista (sem respostas para decorar), limitações e testes que ainda faltam. Manter `docs/estudo/visao-geral.md` atualizado.
+- **Revisão independente antes de mesclar:** o ChatGPT revisa cada PR (ver seção 7).
+- **Validação em ambiente real:** migration ou proteção contra reserva dupla só é considerada concluída com PostgreSQL real e o teste T3. Não adiantar SQL que não se pode executar.
+- Quando o Matheus quiser voltar a escrever alguma parte, deixe `// TODO(matheus):` claro no ponto dele.
 
 ## 3. Método
 1. Explicar o problema e o conceito antes de propor código.
 2. Quando houver decisão de arquitetura, mostrar alternativas e escrever/atualizar um ADR (`docs/adr/`) antes de implementar.
-3. Deixar o Matheus implementar as partes de aprendizagem; depois revisar.
+3. O Claude implementa em branch isolada, o ChatGPT revisa de forma independente, o Claude corrige e mescla; o Matheus recebe o resumo.
 4. Apontar erros e riscos com justificativa (BLOCKER, HIGH, MEDIUM, LOW).
 5. Nunca esconder complexidade importante atrás de abstração desnecessária. Não reescrever código funcional por preferência estética.
 6. Não presumir conhecimento avançado de Java ou Spring; explicar termos.
@@ -46,19 +41,20 @@ Sempre que fizer a estrutura de algo que ele vai escrever, deixe `// TODO(matheu
 ## 5. Git, PRs e segurança do fluxo
 - Nunca trabalhar direto na `main`. Branches: `feat/`, `fix/`, `test/`, `docs/`, `infra/`.
 - Commits pequenos e descritivos, em português. PRs pequenos, por funcionalidade, com o que mudou e quais testes foram executados.
-- **Nunca** fazer push, merge, criar repositório remoto, publicar ou apagar nada sem autorização explícita do Matheus naquela tarefa.
-- Merge somente com CI verde e aprovação pessoal do Matheus. A revisão do ChatGPT ajuda, mas não substitui a aprovação dele.
+- Autorizado pelo Matheus (13/11/2026): push, abrir PR e **mesclar** neste repositório, seguindo as condições abaixo.
+- **Critérios mínimos para mesclar:** CI verde (Backend, Frontend e Gitleaks); revisão independente do ChatGPT sem BLOCKER/HIGH pendente; MEDIUM resolvido ou aceito com justificativa; testes proporcionais ao risco; documentação e autoria atualizadas; nenhuma afirmação de teste sem execução real. CI verde sozinho não basta.
+- **Continuam exigindo pergunta ao Matheus:** criar recursos de nuvem ou qualquer custo, tornar privado ou apagar o repositório, trocar a licença, publicar fora deste repositório e comandos destrutivos.
 - Em Windows, não rodar comandos destrutivos (`reset --hard`, `clean -fd`, `push --force`) sem pedir.
 
 ## 6. Qualidade (antes de dizer "pronto")
 Compilar; executar os testes relevantes; revisar erros, segurança e permissões; checar regressões; atualizar documentação. **Nunca afirmar que testou sem ter rodado.** Relatar falhas com a saída real.
 
 ## 7. Divisão de trabalho
-- **Matheus:** decide, escreve as partes centrais, faz logins e contas (AWS com orçamento e alertas antes de criar qualquer recurso).
-- **Claude (esta sessão):** estrutura, CI, Docker, revisão e documentação.
+- **Matheus:** dono do produto; decide o rumo, aprova o que envolve custo ou exposição pública, faz logins e contas (AWS com orçamento e alertas antes de criar qualquer recurso) e recebe os resumos.
+- **Claude (esta sessão):** decide junto com o ChatGPT e implementa (código, testes, CI, Docker, documentação e material de estudo) e mescla conforme a seção 5.
 - **ChatGPT (projeto "QueueCare | Desenvolvimento Full Stack"):** revisor independente de PRs, cenários de teste, entrevista técnica. **Você conversa diretamente com ele** (o Matheus não é o mensageiro): antes de decisões importantes, ADRs, mudanças de ambiente e a cada PR, discuta com ele e traga ao Matheus uma recomendação única em linguagem simples, com as divergências. O passo a passo (links do projeto do ChatGPT e armadilhas do navegador) fica fora do repositório, em `C:\dev\QueueCare-local\COMO-CONVERSAR-COM-O-CHATGPT.md`, porque contém links privados.
 - Assuntos que não são do QueueCare (carreira, currículos etc.) NÃO são tratados aqui.
 - **Nunca versionar** notas privadas, links de conversas, dados pessoais, segredos ou caminhos locais: esse material fica em `C:\dev\QueueCare-local\`, fora do repositório.
 
 ## 8. Objetivo final
-O Matheus conseguir explicar, defender, testar e modificar as principais decisões e funcionalidades sem depender da IA.
+Um produto de portfólio funcional e bem testado, apresentado com honestidade sobre o papel da IA, e o Matheus capaz de explicar a visão geral, as principais decisões e as limitações do sistema (ver `docs/estudo/`).

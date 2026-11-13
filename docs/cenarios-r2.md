@@ -1,6 +1,6 @@
 # Cenários da regra R2 (sem reserva dupla e sem sobreposição)
 
-Documento de estudo. Serve de base para os testes da R2 (incluindo o T3, de concorrência). O Matheus deve conseguir explicar cada linha com as próprias palavras antes de implementar.
+Documento de estudo. Serve de base para os testes da R2 (incluindo o T3, de concorrência). O Matheus deve conseguir explicar a ideia de cada linha com as próprias palavras (ver `docs/estudo/`).
 
 ## A ideia em uma frase
 Um agendamento ocupa um intervalo de tempo que **começa no início e termina antes do fim** (escreve-se `[início, fim)`: o início conta, o fim não). Dois agendamentos ativos do **mesmo prestador** não podem ter nenhum instante em comum.
@@ -24,7 +24,7 @@ Base: agendamento existente, 60 min às 10:00, ou seja, `[10:00, 11:00)`, do pre
 | J | Duração zero ou negativa (`fim <= início`) | `[10:00, 10:00)` | **Não** (400) | Rejeitar na aplicação e, de preferência, também no banco com CHECK `ends_at > starts_at`. |
 | K | Cancelar o existente e reservar o mesmo horário logo depois | `[10:00, 11:00)` | **Sim** | Testar também a troca de status de ativo para cancelado: o horário volta a ficar livre e a reserva cancelada antiga não impede a nova. |
 
-## Para estudar (explicar sem consultar a IA, antes de implementar a R2)
+## Para estudar (explicar com as próprias palavras)
 1. Por que um índice único em (prestador, início) não resolve a sobreposição (cenários A, C e G)?
 2. O que significa `[)` e por que o fim do intervalo não conta (cenário B)?
 3. Por que o banco precisa garantir a exclusividade, e não só a aplicação (cenário H)?

@@ -2,7 +2,7 @@
 (descreva em 2 a 5 linhas)
 
 ## Decisões tomadas e por quê
-(o que o Matheus decidiu e as alternativas que descartou)
+(o que foi decidido, por quem, e as alternativas descartadas)
 
 ## Testes executados
 - [ ] Compila
@@ -16,5 +16,5 @@
 - [ ] Consigo explicar cada classe e teste deste PR sem consultar
 
 ## Autoria
-- Partes centrais escritas pelo Matheus: (liste)
+- Partes decididas pelo Matheus: (liste)
 - Partes geradas/estruturadas com IA: (liste)
