@@ -197,4 +197,117 @@ class RateLimiterTest {
 			pool.shutdownNow();
 		}
 	}
+
+	/** O cenário da re-revisão: a chave-alvo bloqueada NÃO pode ser expulsa por milhares de outras chaves também bloqueadas. */
+	@Test
+	void bloqueioSobreviveAUmaInundacaoDeOutrasChavesTambemBloqueadas() {
+		RateLimiter small = new RateLimiter(clock, 1_000);
+		Duration window = Duration.ofMinutes(15);
+		for (int i = 0; i < 5; i++) {
+			small.tryAcquire("alvo", 5, window);
+		}
+		assertFalse(small.tryAcquire("alvo", 5, window), "alvo bloqueado");
+
+		for (int k = 0; k < 5_000; k++) {
+			for (int i = 0; i < 6; i++) { // cada chave do atacante também chega ao limite (bloqueada)
+				small.tryAcquire("atacante-" + k, 5, window);
+			}
+		}
+
+		assertTrue(small.size() <= 1_000, "memória continua limitada: " + small.size());
+		assertFalse(small.tryAcquire("alvo", 5, window), "o alvo continua bloqueado depois da saturação");
+	}
+
+	@Test
+	void mapaCheioDeBloqueiosVivosRecusaChaveNovaEVoltaAoNormalQuandoExpiram() {
+		RateLimiter small = new RateLimiter(clock, 100);
+		Duration window = Duration.ofMinutes(15);
+		for (int k = 0; k < 100; k++) {
+			for (int i = 0; i < 6; i++) {
+				small.tryAcquire("b-" + k, 5, window);
+			}
+		}
+		assertEquals(100, small.size());
+
+		assertFalse(small.tryAcquire("novo", 5, window), "cheio de bloqueios vivos: fecha em vez de abrir");
+		assertEquals(100, small.size(), "a chave recusada não foi guardada nem expulsou ninguém");
+		assertFalse(small.tryAcquire("b-7", 5, window), "bloqueio existente intacto");
+
+		clock.advance(Duration.ofMinutes(15));
+		assertTrue(small.tryAcquire("novo", 5, window), "os bloqueios venceram: volta a admitir");
+	}
+
+	@Test
+	void chaveParcialmenteUsadaSaiAntesDeChaveBloqueada() {
+		RateLimiter small = new RateLimiter(clock, 100);
+		Duration window = Duration.ofMinutes(15);
+		for (int i = 0; i < 6; i++) {
+			small.tryAcquire("bloqueada", 5, window);
+		}
+		for (int k = 0; k < 99; k++) {
+			for (int i = 0; i < 4; i++) { // quase no limite, mas NÃO bloqueadas
+				small.tryAcquire("quase-" + k, 5, window);
+			}
+		}
+		assertEquals(100, small.size());
+
+		assertTrue(small.tryAcquire("nova", 5, window), "abre espaço expulsando chaves NÃO bloqueadas");
+		assertFalse(small.tryAcquire("bloqueada", 5, window), "a bloqueada ficou");
+	}
+
+	/** O tamanho nunca passa de maxKeys, nem por um instante, mesmo com muitas threads inserindo chaves distintas. */
+	@Test
+	void limiteDeChavesEhRigidoSobInsercoesConcorrentes() throws Exception {
+		int maxKeys = 500;
+		RateLimiter small = new RateLimiter(clock, maxKeys);
+		int threads = 16;
+		ExecutorService pool = Executors.newFixedThreadPool(threads + 1);
+		try {
+			CyclicBarrier barrier = new CyclicBarrier(threads);
+			java.util.concurrent.atomic.AtomicBoolean running = new java.util.concurrent.atomic.AtomicBoolean(true);
+			AtomicInteger maxSeen = new AtomicInteger();
+			Future<?> monitor = pool.submit(() -> {
+				while (running.get()) {
+					maxSeen.accumulateAndGet(small.size(), Math::max);
+				}
+			});
+			List<Future<?>> futures = new ArrayList<>();
+			for (int t = 0; t < threads; t++) {
+				int id = t;
+				futures.add(pool.submit(() -> {
+					barrier.await(10, TimeUnit.SECONDS);
+					for (int i = 0; i < 5_000; i++) {
+						small.tryAcquire("t" + id + "-" + i, 3, MINUTE);
+					}
+					return null;
+				}));
+			}
+			for (Future<?> f : futures) {
+				f.get(60, TimeUnit.SECONDS);
+			}
+			running.set(false);
+			monitor.get(10, TimeUnit.SECONDS);
+
+			assertTrue(maxSeen.get() <= maxKeys, "máximo observado: " + maxSeen.get());
+			assertTrue(small.size() <= maxKeys);
+		} finally {
+			pool.shutdownNow();
+		}
+	}
+
+	@Test
+	void milharesDeChavesNovasSaoRecusadasSemAlterarOMapaCheioDeBloqueios() {
+		RateLimiter small = new RateLimiter(clock, 100);
+		Duration window = Duration.ofMinutes(15);
+		for (int k = 0; k < 100; k++) {
+			for (int i = 0; i < 6; i++) {
+				small.tryAcquire("b-" + k, 5, window);
+			}
+		}
+		// Todos bloqueados: milhares de chaves novas são recusadas e o mapa não muda de tamanho.
+		for (int i = 0; i < 10_000; i++) {
+			assertFalse(small.tryAcquire("novo-" + i, 5, window));
+		}
+		assertEquals(100, small.size());
+	}
 }

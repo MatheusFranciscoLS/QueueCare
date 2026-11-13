@@ -37,6 +37,7 @@ public class ProviderAdminService {
 	static final int MIN_SERVICE_MINUTES = 5;
 	static final int MAX_SERVICE_MINUTES = 480;
 	static final int MAX_WINDOWS = 70;
+	static final Duration MAX_LOCK_TIMEOUT = Duration.ofSeconds(60);
 
 	private final ProviderRepository providers;
 	private final ServiceOfferingRepository services;
@@ -50,6 +51,10 @@ public class ProviderAdminService {
 		this.services = services;
 		this.windows = windows;
 		this.entityManager = entityManager;
+		// 0 desligaria o limite no PostgreSQL (espera infinita) e negativo seria erro: ambos impedem a aplicação de subir.
+		if (lockTimeout.isNegative() || lockTimeout.isZero() || lockTimeout.compareTo(MAX_LOCK_TIMEOUT) > 0) {
+			throw new IllegalArgumentException("queuecare.scheduling.provider-lock-timeout deve estar entre 1 ms e 60 s");
+		}
 		this.lockTimeoutMillis = lockTimeout.toMillis();
 	}
 

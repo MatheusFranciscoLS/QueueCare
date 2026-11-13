@@ -33,7 +33,8 @@ class SecurityConfig {
 	@Bean
 	SecurityFilterChain securityFilterChain(HttpSecurity http, ActiveUserJwtConverter jwtConverter,
 			@Qualifier(RateLimiter.REQUEST_LIMITER) RateLimiter rateLimiter,
-			RateLimitProperties rateLimitProperties) throws Exception {
+			RateLimitProperties rateLimitProperties,
+			@Value("${queuecare.http.max-body-bytes:65536}") long maxBodyBytes) throws Exception {
 		http
 				.csrf(AbstractHttpConfigurer::disable)
 				.cors(Customizer.withDefaults())
@@ -46,6 +47,8 @@ class SecurityConfig {
 				.oauth2ResourceServer(oauth2 -> oauth2
 						.bearerTokenResolver(new SingleAuthorizationHeaderResolver())
 						.jwt(jwt -> jwt.jwtAuthenticationConverter(jwtConverter)));
+		// Corpo de tamanho limitado, antes de qualquer leitura (o limite vale para todas as rotas).
+		http.addFilterBefore(new RequestSizeLimitFilter(maxBodyBytes), BearerTokenAuthenticationFilter.class);
 		if (rateLimitProperties.enabled()) {
 			// Depois da leitura do token (conhece o usuário) e antes da autorização das rotas.
 			http.addFilterAfter(new RateLimitFilter(rateLimiter, rateLimitProperties), BearerTokenAuthenticationFilter.class);

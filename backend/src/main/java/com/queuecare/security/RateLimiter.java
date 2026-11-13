@@ -12,13 +12,16 @@ import java.util.concurrent.ConcurrentHashMap;
  * Limitador de janela fixa, em memória, de UMA instância da aplicação (MVP): conta eventos por chave dentro de uma janela de tempo.
  * O relógio é injetado (testes determinísticos).
  *
- * <p><b>Memória limitada sem apagar bloqueios.</b> Ao passar de {@code maxKeys} chaves, primeiro descartam-se as entradas cuja
- * janela (cada uma com a SUA duração) já venceu; se ainda sobrar demais, descartam-se as de MENOR contagem (as mais fracas:
- * quem fez uma tentativa só), até sobrar 90% do limite. As de contagem alta, que são justamente as bloqueadas, são as últimas a
- * sair. Nunca se zera tudo: um atacante que inunde o mapa com chaves novas não consegue apagar os bloqueios existentes.
- * O bloqueio por falhas de login usa uma instância PRÓPRIA, para que o tráfego comum jamais dispute espaço com ele.
+ * <p><b>Memória limitada, sem apagar bloqueios.</b> O número de chaves nunca passa de {@code maxKeys} (limite RÍGIDO): toda
+ * chave NOVA entra por um único ponto, sob trava, que só admite se houver espaço. Para abrir espaço, descartam-se primeiro as
+ * janelas vencidas (cada uma com a SUA duração) e depois, se preciso, as janelas vivas que NÃO estão bloqueadas (contagem
+ * abaixo do limite), as de menor contagem primeiro, até sobrar 90% do espaço. Uma janela BLOQUEADA (contagem no limite) viva
+ * NUNCA é descartada para dar lugar a outra chave. Se o mapa estiver cheio só de bloqueios vivos, a chave nova é RECUSADA
+ * (devolve {@code false}, ou seja, 429): o sistema fecha em vez de abrir, e a varredura cara só se repete a cada segundo.
+ * Para encher o mapa assim seria preciso levar 100 mil chaves distintas até o limite dentro da mesma janela.
  *
- * <p>Em mais de uma instância os limites valem por instância; um limitador compartilhado (ex.: Redis) ou o do proxy é a
+ * <p>O bloqueio por tentativas de login usa uma instância PRÓPRIA, para que o tráfego comum jamais dispute espaço com ele.
+ * Em mais de uma instância os limites valem por instância; um limitador compartilhado (ex.: Redis) ou o do proxy é a
  * evolução natural.
  */
 public final class RateLimiter {
@@ -28,22 +31,30 @@ public final class RateLimiter {
 	public static final String LOGIN_LOCKOUT_LIMITER = "loginLockoutLimiter";
 
 	static final int DEFAULT_MAX_KEYS = 100_000;
+	private static final long FULL_SCAN_COOLDOWN_MILLIS = 1_000;
 
-	private record Window(long startMillis, long windowMillis, long count) {
+	private record Window(long startMillis, long windowMillis, long count, int limit) {
 		boolean expired(long now) {
 			return now - startMillis >= windowMillis;
 		}
 
+		/** Bloqueada: já usou todas as permissões da janela (e a janela ainda vale). */
+		boolean blocked(long now) {
+			return !expired(now) && count >= limit;
+		}
+
 		/** Soma 1 sem estourar: ao chegar em Long.MAX_VALUE fica ali (nunca vira negativo). */
-		Window incremented() {
-			return new Window(startMillis, windowMillis, count == Long.MAX_VALUE ? count : count + 1);
+		Window incremented(int newLimit) {
+			return new Window(startMillis, windowMillis, count == Long.MAX_VALUE ? count : count + 1, newLimit);
 		}
 	}
 
 	private final Clock clock;
 	private final int maxKeys;
 	private final ConcurrentHashMap<String, Window> windows = new ConcurrentHashMap<>();
-	private final Object evictionLock = new Object();
+	/** Trava de admissão: TODA chave nova entra aqui, então o tamanho nunca passa de maxKeys. */
+	private final Object admissionLock = new Object();
+	private long nextFullScanAllowedAtMillis; // protegido por admissionLock
 
 	public RateLimiter(Clock clock) {
 		this(clock, DEFAULT_MAX_KEYS);
@@ -56,25 +67,49 @@ public final class RateLimiter {
 
 	/**
 	 * Consome, de forma ATÔMICA, uma permissão da chave; devolve {@code true} se ainda havia (até {@code limit} por janela).
-	 * Com várias requisições simultâneas, no máximo {@code limit} recebem {@code true} por janela.
+	 * Com várias requisições simultâneas, no máximo {@code limit} recebem {@code true} por janela. Devolve {@code false}
+	 * também quando a chave é nova e o mapa está cheio de bloqueios vivos (fecha em vez de abrir).
 	 */
 	public boolean tryAcquire(String key, int limit, Duration window) {
 		long now = clock.millis();
 		long windowMillis = window.toMillis();
 		boolean[] allowed = {false};
-		windows.compute(key, (k, current) -> {
-			if (current == null || current.expired(now)) {
-				allowed[0] = limit > 0;
-				return new Window(now, windowMillis, 1);
-			}
-			if (current.count() >= limit) {
-				return current;
-			}
-			allowed[0] = true;
-			return current.incremented();
+		// Caminho comum: a chave já existe; só atualiza (nunca aumenta o mapa).
+		boolean[] existed = {false};
+		windows.computeIfPresent(key, (k, current) -> {
+			existed[0] = true;
+			return step(current, now, windowMillis, limit, allowed);
 		});
-		evictIfNeeded(now);
+		if (existed[0]) {
+			return allowed[0];
+		}
+		// Chave nova: única porta de entrada do mapa.
+		synchronized (admissionLock) {
+			// Abrir espaço mexe no mapa, então é feito FORA do compute (que não admite alterar outras entradas).
+			if (!windows.containsKey(key) && !makeRoom(now)) {
+				return false; // cheio de bloqueios vivos: recusa, sem guardar a chave
+			}
+			windows.compute(key, (k, current) -> {
+				if (current != null) { // outra thread a criou enquanto esperávamos a trava
+					return step(current, now, windowMillis, limit, allowed);
+				}
+				allowed[0] = limit > 0;
+				return new Window(now, windowMillis, 1, limit);
+			});
+		}
 		return allowed[0];
+	}
+
+	private static Window step(Window current, long now, long windowMillis, int limit, boolean[] allowed) {
+		if (current.expired(now)) {
+			allowed[0] = limit > 0;
+			return new Window(now, windowMillis, 1, limit);
+		}
+		if (current.count() >= limit) {
+			return current;
+		}
+		allowed[0] = true;
+		return current.incremented(limit);
 	}
 
 	public void clear(String key) {
@@ -100,28 +135,36 @@ public final class RateLimiter {
 		return windows.size();
 	}
 
-	private void evictIfNeeded(long now) {
-		if (windows.size() <= maxKeys) {
-			return;
+	/** Garante espaço para UMA chave nova (chamado sob {@code admissionLock}); {@code false} se não for possível. */
+	private boolean makeRoom(long now) {
+		if (windows.size() < maxKeys) {
+			return true;
 		}
-		synchronized (evictionLock) {
-			if (windows.size() <= maxKeys) {
-				return;
-			}
-			windows.entrySet().removeIf(e -> e.getValue().expired(now));
-			if (windows.size() <= maxKeys) {
-				return;
-			}
-			// Ainda cheio de janelas vivas: sai primeiro quem tem MENOS tentativas (e, empatando, quem começou há mais tempo).
-			int target = (int) (maxKeys * 0.9);
-			List<Map.Entry<String, Window>> candidates = new ArrayList<>(windows.entrySet());
-			candidates.sort(Comparator.<Map.Entry<String, Window>>comparingLong(e -> e.getValue().count())
-					.thenComparingLong(e -> e.getValue().startMillis()));
-			int toRemove = windows.size() - target;
-			for (int i = 0; i < toRemove && i < candidates.size(); i++) {
-				Map.Entry<String, Window> victim = candidates.get(i);
-				windows.remove(victim.getKey(), victim.getValue());
+		if (now < nextFullScanAllowedAtMillis) {
+			return false; // acabamos de varrer e não havia o que liberar: não repetir a varredura a cada chamada
+		}
+		windows.entrySet().removeIf(e -> e.getValue().expired(now));
+		if (windows.size() < maxKeys) {
+			return true;
+		}
+		// Ainda cheio de janelas vivas: sai quem NÃO está bloqueado, de menor contagem (e, empatando, a mais antiga).
+		List<Map.Entry<String, Window>> evictable = new ArrayList<>();
+		for (Map.Entry<String, Window> e : windows.entrySet()) {
+			if (!e.getValue().blocked(now)) {
+				evictable.add(e);
 			}
 		}
+		evictable.sort(Comparator.<Map.Entry<String, Window>>comparingLong(e -> e.getValue().count())
+				.thenComparingLong(e -> e.getValue().startMillis()));
+		int toRemove = Math.min(evictable.size(), windows.size() - (int) (maxKeys * 0.9));
+		for (int i = 0; i < toRemove; i++) {
+			Map.Entry<String, Window> victim = evictable.get(i);
+			windows.remove(victim.getKey(), victim.getValue());
+		}
+		if (windows.size() < maxKeys) {
+			return true;
+		}
+		nextFullScanAllowedAtMillis = now + FULL_SCAN_COOLDOWN_MILLIS;
+		return false;
 	}
 }
