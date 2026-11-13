@@ -1,0 +1,25 @@
+# PostgreSQL local para desenvolvimento e testes de banco.
+# Uso (na raiz do repositório):
+#   cp .env.example .env        (e ajuste os valores)
+#   docker compose --env-file .env -f infra/docker-compose.yml up -d
+# A versão principal do PostgreSQL deve ser a mesma no CI (.github/workflows).
+services:
+  db:
+    image: postgres:16
+    container_name: queuecare-db
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - "5432:5432"
+    volumes:
+      - queuecare-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  queuecare-db-data:

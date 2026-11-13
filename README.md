@@ -24,7 +24,28 @@ docs/      regras, modelo de dados, arquitetura, ADRs e roadmap
 ```
 
 ## Como rodar
-(Será preenchido ao fim do marco M1.)
+Pré-requisitos: JDK 21, Node 22 ou superior e, para o banco, Docker (ou PostgreSQL 16 instalado). O Maven vem junto, pelo Maven Wrapper (`mvnw`).
+
+```bash
+# Backend: build e teste de arranque (não precisa de banco)
+cd backend
+./mvnw verify          # no Windows (PowerShell): .\mvnw.cmd verify
+
+# Frontend: lint e build
+cd frontend
+npm ci
+npm run lint
+npm run build
+```
+
+Banco local (PostgreSQL), na raiz do repositório:
+```bash
+cp .env.example .env   # troque as senhas
+docker compose --env-file .env -f infra/docker-compose.yml up -d
+```
+A API lê `DB_URL`, `DB_USER` e `DB_PASSWORD` do ambiente (veja `.env.example`). O esquema do banco só muda por migrations Flyway em `backend/src/main/resources/db/migration/`.
+
+Estado atual (marco M1): estrutura, CI e teste de arranque. As regras de negócio ainda não foram implementadas.
 
 ## Autoria
 Projeto individual de Matheus Francisco, desenvolvido com apoio de IA para estrutura, revisão e documentação; as regras de negócio centrais, a autorização e os testes críticos são escritos e explicados por ele (ver [`CLAUDE.md`](CLAUDE.md)).
