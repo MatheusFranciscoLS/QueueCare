@@ -20,7 +20,7 @@ import org.flywaydb.core.Flyway;
  * e entrega um banco novo, já migrado pelo Flyway, para cada teste. O H2 não serve aqui: constraints de
  * exclusão e concorrência só se provam com PostgreSQL de verdade.
  */
-final class PostgresTestSupport {
+public final class PostgresTestSupport {
 
 	private static final EmbeddedPostgres SERVER = startServer();
 	private static final AtomicInteger COUNTER = new AtomicInteger();
@@ -53,6 +53,15 @@ final class PostgresTestSupport {
 		DataSource dataSource = SERVER.getDatabase("postgres", name);
 		Flyway.configure().dataSource(dataSource).locations("classpath:db/migration").load().migrate();
 		return dataSource;
+	}
+
+	/** Cria um banco novo (vazio, sem migrations) e devolve a URL JDBC; usado pelos testes que sobem o Spring, que migra sozinho. */
+	public static String newEmptyDatabaseJdbcUrl() throws SQLException {
+		String name = "queuecare_spring_" + COUNTER.incrementAndGet();
+		try (Connection connection = SERVER.getPostgresDatabase().getConnection(); Statement statement = connection.createStatement()) {
+			statement.execute("CREATE DATABASE " + name);
+		}
+		return SERVER.getJdbcUrl("postgres", name);
 	}
 
 	// --- helpers de dados (JDBC puro, para não depender de JPA/Hibernate) ---
