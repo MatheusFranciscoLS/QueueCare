@@ -34,11 +34,15 @@ queuecare:
     secret: ${JWT_SECRET}
   # Limites de requisições (ADR 0003). Valores PADRÃO abaixo; ajuste por ambiente se precisar.
   # rate-limit:
-  #   enabled: true
+  #   enabled: true                # liga/desliga SÓ o filtro por minuto (login, cadastro, horários livres)
+  #   login-lockout-enabled: true  # bloqueio por tentativas de login (chave própria)
   #   login-per-minute: 20
   #   register-per-minute: 10
   #   slots-per-minute: 120
   #   login-failures-per-email-and-ip: 5
   #   login-failure-window-minutes: 15
+  # Espera máxima pelo bloqueio da linha do prestador ao editar janelas/negócio (padrão 3s); estourou = 409 RESOURCE_BUSY.
+  # scheduling:
+  #   provider-lock-timeout: 3s
   cors:
     allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173}

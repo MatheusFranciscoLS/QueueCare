@@ -8,6 +8,12 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CyclicBarrier;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -106,5 +112,34 @@ class LoginLockoutIntegrationTest extends AuthIntegrationTestBase {
 
 		assertEquals(429, login("maria@exemplo.test", PASSWORD, "10.0.0.1"), "variações do mesmo e-mail não burlam o bloqueio");
 		assertTrue(login("outro@exemplo.test", PASSWORD, "10.0.0.1") != 429);
+	}
+
+	/** Conferir-e-depois-registrar deixaria passar tentativas em paralelo; a reserva atômica não deixa. */
+	@Test
+	void tentativasSimultaneasNaoPassamDoLimiteDeConferenciasDeSenha() throws Exception {
+		seedUser("maria@exemplo.test", "CUSTOMER", true);
+		int threads = 40;
+		ExecutorService pool = Executors.newFixedThreadPool(threads);
+		try {
+			CyclicBarrier startTogether = new CyclicBarrier(threads);
+			List<Callable<Integer>> tasks = new ArrayList<>();
+			for (int i = 0; i < threads; i++) {
+				int n = i;
+				tasks.add(() -> {
+					startTogether.await(10, TimeUnit.SECONDS);
+					return login("maria@exemplo.test", "errada-" + n, "10.0.0.1");
+				});
+			}
+			List<Integer> statuses = new ArrayList<>();
+			for (Future<Integer> f : pool.invokeAll(tasks, 60, TimeUnit.SECONDS)) {
+				statuses.add(f.get());
+			}
+
+			assertEquals(3, statuses.stream().filter(s -> s == 401).count(), "só 3 senhas chegam a ser conferidas: " + statuses);
+			assertEquals(threads - 3, statuses.stream().filter(s -> s == 429).count(), "as demais são barradas: " + statuses);
+			assertEquals(429, login("maria@exemplo.test", PASSWORD, "10.0.0.1"), "e a senha certa também fica bloqueada");
+		} finally {
+			pool.shutdownNow();
+		}
 	}
 }

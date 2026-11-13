@@ -10,6 +10,7 @@ import com.queuecare.auth.AuthExceptions.TooManyLoginAttemptsException;
 import com.queuecare.security.JwtProperties;
 import com.queuecare.security.RateLimitProperties;
 import com.queuecare.security.RateLimiter;
+import org.springframework.beans.factory.annotation.Qualifier;
 import java.time.Duration;
 import java.nio.charset.StandardCharsets;
 import java.sql.SQLException;
@@ -56,7 +57,8 @@ public class AuthService {
 	private final String dummyHash;
 
 	public AuthService(UserAccountRepository users, PasswordEncoder passwordEncoder, JwtEncoder jwtEncoder,
-			JwtProperties jwtProperties, Clock clock, RateLimiter rateLimiter, RateLimitProperties rateLimitProperties) {
+			JwtProperties jwtProperties, Clock clock, @Qualifier(RateLimiter.LOGIN_LOCKOUT_LIMITER) RateLimiter rateLimiter,
+			RateLimitProperties rateLimitProperties) {
 		this.users = users;
 		this.passwordEncoder = passwordEncoder;
 		this.jwtEncoder = jwtEncoder;
@@ -95,27 +97,28 @@ public class AuthService {
 	}
 
 	/**
-	 * Login. Além das regras abaixo, aplica um BLOQUEIO TEMPORÁRIO por falhas: depois de N falhas para o mesmo par e-mail +
-	 * endereço dentro da janela, responde 429 (com Retry-After) antes mesmo de comparar a senha. TODA falha conta (e-mail
-	 * inexistente, inativo, senha errada ou grande demais), então o bloqueio não revela quais contas existem; e a chave inclui o
-	 * endereço, então quem erra não consegue trancar a conta para o dono em outro endereço. Login com sucesso zera a contagem.
+	 * Login. Além das regras abaixo, aplica um BLOQUEIO TEMPORÁRIO por tentativas: o par e-mail + endereço tem direito a N
+	 * tentativas SEM sucesso dentro da janela; a seguinte responde 429 (com Retry-After) antes mesmo de comparar a senha.
+	 * A tentativa é RESERVADA antes de conferir a senha, numa operação atômica do limitador: com muitas requisições
+	 * simultâneas, só N chegam a ser conferidas (conferir e depois registrar deixaria passar tentativas em paralelo).
+	 * TODA tentativa conta (e-mail inexistente, inativo, senha errada ou grande demais), então o bloqueio não revela quais
+	 * contas existem; e a chave inclui o endereço, então quem erra não consegue trancar a conta para o dono em outro endereço.
+	 * Login com sucesso zera a contagem.
 	 */
 	@Transactional(readOnly = true)
 	public IssuedToken login(String email, String rawPassword, String clientAddress) {
 		String normalizedEmail = normalizeEmail(email);
+		if (!rateLimitProperties.loginLockoutEnabled()) {
+			return authenticate(normalizedEmail, rawPassword);
+		}
 		String attemptKey = "loginfail|" + normalizedEmail + "|" + clientAddress;
 		Duration window = Duration.ofMinutes(rateLimitProperties.loginFailureWindowMinutes());
-		if (rateLimiter.count(attemptKey, window) >= rateLimitProperties.loginFailuresPerEmailAndIp()) {
+		if (!rateLimiter.tryAcquire(attemptKey, rateLimitProperties.loginFailuresPerEmailAndIp(), window)) {
 			throw new TooManyLoginAttemptsException(rateLimiter.retryAfterSeconds(attemptKey, window));
 		}
-		try {
-			IssuedToken token = authenticate(normalizedEmail, rawPassword);
-			rateLimiter.clear(attemptKey);
-			return token;
-		} catch (InvalidCredentialsException e) {
-			rateLimiter.record(attemptKey, window);
-			throw e;
-		}
+		IssuedToken token = authenticate(normalizedEmail, rawPassword);
+		rateLimiter.clear(attemptKey);
+		return token;
 	}
 
 	private IssuedToken authenticate(String normalizedEmail, String rawPassword) {

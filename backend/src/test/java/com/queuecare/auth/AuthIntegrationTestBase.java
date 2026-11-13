@@ -70,11 +70,18 @@ abstract class AuthIntegrationTestBase {
 	PasswordEncoder passwordEncoder;
 
 	@Autowired
-	com.queuecare.security.RateLimiter rateLimiter;
+	@org.springframework.beans.factory.annotation.Qualifier(com.queuecare.security.RateLimiter.REQUEST_LIMITER)
+	com.queuecare.security.RateLimiter requestLimiter;
+
+	@Autowired
+	@org.springframework.beans.factory.annotation.Qualifier(com.queuecare.security.RateLimiter.LOGIN_LOCKOUT_LIMITER)
+	com.queuecare.security.RateLimiter loginLockoutLimiter;
 
 	@BeforeEach
 	void cleanUsers() {
-		rateLimiter.clearAll(); // o limitador é em memória e compartilhado pelo contexto: cada teste começa do zero
+		// Os limitadores são em memória e compartilhados pelo contexto: cada teste começa do zero.
+		requestLimiter.clearAll();
+		loginLockoutLimiter.clearAll();
 		jdbc.execute("TRUNCATE appointment_events, appointments, availability_windows, services, providers, users CASCADE");
 	}
 

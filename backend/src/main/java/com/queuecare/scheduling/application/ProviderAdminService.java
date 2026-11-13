@@ -16,7 +16,10 @@ import java.time.DayOfWeek;
 import java.time.LocalTime;
 import java.time.ZoneId;
 import java.util.List;
+import java.time.Duration;
 import java.util.UUID;
+import jakarta.persistence.EntityManager;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -38,11 +41,16 @@ public class ProviderAdminService {
 	private final ProviderRepository providers;
 	private final ServiceOfferingRepository services;
 	private final AvailabilityWindowRepository windows;
+	private final EntityManager entityManager;
+	private final long lockTimeoutMillis;
 
-	public ProviderAdminService(ProviderRepository providers, ServiceOfferingRepository services, AvailabilityWindowRepository windows) {
+	public ProviderAdminService(ProviderRepository providers, ServiceOfferingRepository services, AvailabilityWindowRepository windows,
+			EntityManager entityManager, @Value("${queuecare.scheduling.provider-lock-timeout:3s}") Duration lockTimeout) {
 		this.providers = providers;
 		this.services = services;
 		this.windows = windows;
+		this.entityManager = entityManager;
+		this.lockTimeoutMillis = lockTimeout.toMillis();
 	}
 
 	/** Entrada de uma janela semanal em horário local do prestador. */
@@ -134,8 +142,18 @@ public class ProviderAdminService {
 				.toList());
 	}
 
-	/** Carrega o negócio do dono BLOQUEANDO a linha: edições concorrentes do mesmo prestador acontecem uma de cada vez. */
+	/**
+	 * Carrega o negócio do dono BLOQUEANDO a linha: edições concorrentes do mesmo prestador acontecem uma de cada vez.
+	 * Regras do bloqueio (docs/estudo/configuracao-e-horarios-livres.md): (1) é o ÚNICO bloqueio pessimista da aplicação e é o PRIMEIRO passo da transação, antes de
+	 * tocar em qualquer outra tabela, então não há ordem de bloqueios diferente entre caminhos (sem ciclo, sem deadlock por
+	 * ordem); (2) a espera é LIMITADA por lock_timeout (só desta transação, via set_config(..., true)): se passar,
+	 * o PostgreSQL aborta com 55P03 e a API responde 409 "recurso ocupado, tente novamente", nunca 500 nem espera infinita;
+	 * (3) um deadlock (40P01), se algum dia ocorrer, tem a mesma resposta 409; (4) o bloqueio cai no commit ou rollback.
+	 */
 	private Provider lockBusiness(UUID ownerUserId) {
+		entityManager.createNativeQuery("select set_config('lock_timeout', ?1, true)")
+				.setParameter(1, lockTimeoutMillis + "ms")
+				.getSingleResult();
 		return providers.findByUserIdForUpdate(ownerUserId).orElseThrow(ProviderNotConfiguredException::new);
 	}
 

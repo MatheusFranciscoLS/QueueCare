@@ -2,6 +2,7 @@ package com.queuecare.security;
 
 import java.time.Duration;
 import java.util.List;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -30,7 +31,8 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 class SecurityConfig {
 
 	@Bean
-	SecurityFilterChain securityFilterChain(HttpSecurity http, ActiveUserJwtConverter jwtConverter, RateLimiter rateLimiter,
+	SecurityFilterChain securityFilterChain(HttpSecurity http, ActiveUserJwtConverter jwtConverter,
+			@Qualifier(RateLimiter.REQUEST_LIMITER) RateLimiter rateLimiter,
 			RateLimitProperties rateLimitProperties) throws Exception {
 		http
 				.csrf(AbstractHttpConfigurer::disable)

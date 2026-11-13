@@ -30,8 +30,11 @@ cliente --GET /api/me + Bearer token--> API (valida token, consulta usuário no 
 
 ## Limite de tentativas (força bruta)
 - Login e cadastro têm limite por minuto e por endereço; horários livres, por usuário. Excedeu: **429** com `Retry-After`.
-- **5 falhas de login** do mesmo e-mail **no mesmo endereço** em 15 minutos bloqueiam esse par (mesmo com a senha certa). Toda falha conta, inclusive e-mail inexistente, então o bloqueio **não revela quais contas existem**. Em outro endereço a dona da conta entra normalmente.
-- Testes: `RateLimiterTest` (relógio controlado, memória limitada), `RateLimitEndpointsIntegrationTest` e `LoginLockoutIntegrationTest`.
+- O par **e-mail + endereço** tem **5 tentativas sem sucesso** em 15 minutos; a seguinte recebe 429 (mesmo com a senha certa). A tentativa é **reservada de forma atômica antes** de conferir a senha: com 40 requisições simultâneas, só 3 (no teste, com limite 3) chegam a conferir. Toda tentativa conta, inclusive e-mail inexistente, então o bloqueio **não revela quais contas existem**. Em outro endereço a dona da conta entra normalmente.
+- Memória limitada **sem zerar tudo**: ao encher, saem as janelas vencidas e depois as de menor contagem; os bloqueios são os últimos a sair. O bloqueio tem limitador próprio, separado do de requisições.
+- **Risco aceito:** quem divide o mesmo endereço público com a vítima (empresa, Wi-Fi público) pode bloqueá-la por até 15 minutos; a alternativa (chave só por e-mail) é pior. Ver ADR 0003.
+- **Proxy:** por padrão o endereço é o da conexão e cabeçalhos `X-Forwarded-For`/`Forwarded` do cliente são ignorados (teste). Só ativar `server.forward-headers-strategy` com proxy que SUBSTITUI esses cabeçalhos.
+- Testes: `RateLimiterTest` (relógio controlado, memória limitada, atomicidade, inundação não apaga bloqueio), `RateLimitEndpointsIntegrationTest`, `RateLimitPathVariantsIntegrationTest` (variações de caminho e cabeçalhos de proxy) e `LoginLockoutIntegrationTest` (inclui 40 tentativas simultâneas).
 
 ## Onde está
 - `backend/src/main/java/com/queuecare/security/`: `JwtProperties`, `JwtConfig`, `SecurityConfig`, `ActiveUserJwtConverter`

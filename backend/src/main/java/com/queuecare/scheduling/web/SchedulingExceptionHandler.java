@@ -10,6 +10,7 @@ import com.queuecare.scheduling.application.ProviderExceptions.ProviderNotConfig
 import com.queuecare.scheduling.application.ProviderExceptions.ServiceNotFoundException;
 import com.queuecare.scheduling.application.ProviderExceptions.StaffAlreadyAssignedException;
 import com.queuecare.scheduling.application.ProviderExceptions.StaffNotFoundException;
+import org.springframework.dao.PessimisticLockingFailureException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -34,6 +35,12 @@ class SchedulingExceptionHandler {
 			case NONEXISTENT_LOCAL_TIME, AMBIGUOUS_LOCAL_TIME, IN_THE_PAST, TOO_SOON, OUTSIDE_AVAILABILITY -> HttpStatus.UNPROCESSABLE_ENTITY;
 		};
 		return problem(status, e.reason().name(), "agendamento recusado");
+	}
+
+	/** Espera de bloqueio estourou o limite (55P03) ou deadlock (40P01): conflito transitório, o cliente pode repetir. */
+	@ExceptionHandler(PessimisticLockingFailureException.class)
+	ProblemDetail resourceBusy(PessimisticLockingFailureException e) {
+		return problem(HttpStatus.CONFLICT, "RESOURCE_BUSY", "recurso ocupado; tente novamente");
 	}
 
 	@ExceptionHandler(AppointmentNotFoundException.class)

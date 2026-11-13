@@ -9,6 +9,14 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
+import java.util.concurrent.CyclicBarrier;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.ArrayList;
+import java.util.List;
 import org.junit.jupiter.api.Test;
 
 /** Limitador de janela fixa, puro, com relógio controlado pelo teste. */
@@ -16,7 +24,7 @@ class RateLimiterTest {
 
 	/** Relógio que o teste avança à mão. */
 	private static final class MutableClock extends Clock {
-		private Instant now = Instant.parse("2026-11-16T12:00:00Z");
+		private volatile Instant now = Instant.parse("2026-11-16T12:00:00Z");
 
 		void advance(Duration d) {
 			now = now.plus(d);
@@ -83,19 +91,17 @@ class RateLimiterTest {
 	}
 
 	@Test
-	void contagemDeFalhasRegistraConsultaELimpa() {
-		Duration window = Duration.ofMinutes(15);
-		assertEquals(0, limiter.count("f", window));
-		assertEquals(1, limiter.record("f", window));
-		assertEquals(2, limiter.record("f", window));
-		assertEquals(2, limiter.count("f", window));
+	void clearZeraUmaChaveEClearAllZeraTudo() {
+		limiter.tryAcquire("a", 1, MINUTE);
+		limiter.tryAcquire("b", 1, MINUTE);
 
-		clock.advance(Duration.ofMinutes(15));
-		assertEquals(0, limiter.count("f", window), "falhas antigas expiram");
-		assertEquals(1, limiter.record("f", window), "nova janela recomeça do 1");
+		limiter.clear("a");
+		assertTrue(limiter.tryAcquire("a", 1, MINUTE), "a chave limpa recomeça");
+		assertFalse(limiter.tryAcquire("b", 1, MINUTE), "a outra continua contando");
 
-		limiter.clear("f");
-		assertEquals(0, limiter.count("f", window));
+		limiter.clearAll();
+		assertTrue(limiter.tryAcquire("b", 1, MINUTE));
+		assertEquals(1, limiter.size());
 	}
 
 	@Test
@@ -105,23 +111,90 @@ class RateLimiterTest {
 
 	@Test
 	void aMemoriaEhLimitadaMesmoComMuitasChaves() {
-		for (int i = 0; i <= RateLimiter.MAX_KEYS + 10; i++) {
-			limiter.tryAcquire("chave-" + i, 5, MINUTE);
+		RateLimiter small = new RateLimiter(clock, 1_000);
+		for (int i = 0; i <= 5_000; i++) {
+			small.tryAcquire("chave-" + i, 5, MINUTE);
 		}
 
-		assertTrue(limiter.size() <= RateLimiter.MAX_KEYS, "tamanho: " + limiter.size());
+		assertTrue(small.size() <= 1_000, "tamanho: " + small.size());
 	}
 
 	@Test
-	void chavesVencidasSaoDescartadasAntesDeZerarTudo() {
-		for (int i = 0; i < RateLimiter.MAX_KEYS; i++) {
-			limiter.tryAcquire("velha-" + i, 5, MINUTE);
+	void chavesVencidasSaoDescartadasPrimeiro() {
+		RateLimiter small = new RateLimiter(clock, 1_000);
+		for (int i = 0; i < 1_000; i++) {
+			small.tryAcquire("velha-" + i, 5, MINUTE);
 		}
 		clock.advance(Duration.ofMinutes(2));
-		limiter.tryAcquire("nova-1", 5, MINUTE);
-		limiter.tryAcquire("nova-2", 5, MINUTE); // passa do limite de chaves: descarta as vencidas
+		small.tryAcquire("nova-1", 5, MINUTE);
+		small.tryAcquire("nova-2", 5, MINUTE); // passa do limite de chaves: descarta as vencidas
 
-		assertTrue(limiter.size() < 100, "sobraram só as recentes: " + limiter.size());
-		assertFalse(limiter.tryAcquire("nova-1", 1, MINUTE) && limiter.tryAcquire("nova-1", 1, MINUTE), "as recentes continuam contando");
+		assertTrue(small.size() < 10, "sobraram só as recentes: " + small.size());
+		assertTrue(small.tryAcquire("nova-1", 2, MINUTE));
+		assertFalse(small.tryAcquire("nova-1", 2, MINUTE), "as recentes continuam contando");
+	}
+
+	/** O ponto do ajuste: inundar o mapa com chaves novas NÃO pode apagar um bloqueio em andamento. */
+	@Test
+	void inundarComChavesNovasNaoApagaOsBloqueios() {
+		RateLimiter small = new RateLimiter(clock, 1_000);
+		Duration window = Duration.ofMinutes(15);
+		for (int i = 0; i < 5; i++) {
+			small.tryAcquire("bloqueada", 5, window);
+		}
+		assertFalse(small.tryAcquire("bloqueada", 5, window), "bloqueada");
+
+		for (int i = 0; i < 20_000; i++) {
+			small.tryAcquire("inundacao-" + i, 5, window); // todas com janela viva e contagem 1
+		}
+
+		assertTrue(small.size() <= 1_000, "memória continua limitada: " + small.size());
+		assertFalse(small.tryAcquire("bloqueada", 5, window), "o bloqueio sobreviveu à inundação");
+	}
+
+	@Test
+	void entradaVenceNaSuaPropriaJanelaMesmoQuandoOutraUsaJanelaMaior() {
+		RateLimiter small = new RateLimiter(clock, 100);
+		small.tryAcquire("longa", 5, Duration.ofHours(1));
+		for (int i = 0; i < 98; i++) {
+			small.tryAcquire("curta-" + i, 5, MINUTE);
+		}
+		clock.advance(Duration.ofMinutes(2));
+
+		small.tryAcquire("gatilho-1", 5, MINUTE);
+		small.tryAcquire("gatilho-2", 5, MINUTE); // passa de 100 chaves: as "curta-*" já venceram e saem; a "longa" fica
+
+		assertEquals(3, small.size(), "só a longa (ainda viva) e os dois gatilhos");
+		assertTrue(small.tryAcquire("longa", 2, Duration.ofHours(1)));
+		assertFalse(small.tryAcquire("longa", 2, Duration.ofHours(1)), "a longa seguiu contando");
+	}
+
+	/** Atomicidade: com muitas threads ao mesmo tempo, no máximo "limit" passam. */
+	@Test
+	void tentativasSimultaneasNuncaPassamDoLimite() throws Exception {
+		int threads = 64;
+		int limit = 5;
+		ExecutorService pool = Executors.newFixedThreadPool(threads);
+		try {
+			CyclicBarrier barrier = new CyclicBarrier(threads);
+			AtomicInteger allowed = new AtomicInteger();
+			List<Future<?>> futures = new ArrayList<>();
+			for (int i = 0; i < threads; i++) {
+				futures.add(pool.submit(() -> {
+					barrier.await(10, TimeUnit.SECONDS);
+					if (limiter.tryAcquire("quente", limit, MINUTE)) {
+						allowed.incrementAndGet();
+					}
+					return null;
+				}));
+			}
+			for (Future<?> f : futures) {
+				f.get(20, TimeUnit.SECONDS);
+			}
+
+			assertEquals(limit, allowed.get());
+		} finally {
+			pool.shutdownNow();
+		}
 	}
 }
