@@ -1,10 +1,11 @@
 # ADR 0002: controle de concorrência e sobreposição de horários
 
-- **Status:** Proposed (o Matheus decide e muda para Accepted na semana 1)
+- **Status:** Accepted
 - **Data:** 2026-11-13
+- **Quem decidiu:** o Matheus delegou a escolha; a alternativa foi proposta por Claude e revisada pelo ChatGPT (revisor independente). O Matheus deve explicar esta decisão com as próprias palavras antes de implementar a R2.
 
 ## Contexto
-Dois clientes podem tentar reservar o mesmo horário ao mesmo tempo, e serviços têm durações diferentes (60 min às 10h e 30 min às 10h30 se sobrepõem). A garantia precisa existir no banco, não só na aplicação (R2 em `docs/regras.md`).
+Dois clientes podem tentar reservar o mesmo horário ao mesmo tempo, e serviços têm durações diferentes (60 min às 10h e 30 min às 10h30 se sobrepõem). A garantia precisa existir no banco, não só na aplicação (R2 em `docs/regras.md`; cenários em `docs/cenarios-r2.md`).
 
 ## Alternativas consideradas
 1. **Índice único parcial em (`provider_id`, `starts_at`) com slots fixos de 30 min.** Simples, mas só impede reservas que começam no mesmo instante; serviços de 60 min ocupam dois slots e a sobreposição passa.
@@ -13,7 +14,32 @@ Dois clientes podem tentar reservar o mesmo horário ao mesmo tempo, e serviços
 4. **Bloqueio otimista (`@Version`) ou bloqueio pessimista (`SELECT ... FOR UPDATE`) sozinhos.** Ajudam em atualizações, mas não garantem exclusividade de um intervalo novo.
 
 ## Decisão
-(a preencher pelo Matheus. Preferência inicial: alternativa 3, com validação transacional na aplicação para dar mensagem clara e HTTP 409, e a constraint como garantia final.)
+**Alternativa 3**, junto com validação na aplicação:
+- A aplicação valida antes (dentro de uma transação) para dar mensagem clara e **HTTP 409**.
+- O PostgreSQL é a garantia final: mesmo que duas requisições passem pela validação ao mesmo tempo, o banco recusa a segunda.
+
+Forma da solução (a migration real é escrita pelo Matheus):
+```sql
+CREATE EXTENSION IF NOT EXISTS btree_gist;
+
+ALTER TABLE appointments
+  ADD CONSTRAINT appointments_sem_sobreposicao
+  EXCLUDE USING gist (
+    provider_id WITH =,                              -- mesmo prestador
+    tstzrange(starts_at, ends_at, '[)') WITH &&      -- intervalos que se sobrepõem
+  )
+  WHERE (status <> 'CANCELLED');                     -- cancelados não ocupam a agenda
+```
+Em palavras: "no banco, dois agendamentos do mesmo prestador, não cancelados, não podem ter intervalos que se sobreponham".
+
+Cuidado: a coluna `status` deve ser `NOT NULL`. Com `status` nulo, a condição `status <> 'CANCELLED'` não é verdadeira e a linha escaparia da proteção. Também convém um CHECK `ends_at > starts_at`.
+
+## Por que não as outras
+- Alternativa 1 e 2 exigem horários fixos e deixam brechas ou mais código para manter.
+- Alternativa 4 não protege a criação de um intervalo novo.
 
 ## Consequências
-(a preencher: migration com `CREATE EXTENSION btree_gist`; como o Spring traduz a violação em 409; teste de concorrência T3 com PostgreSQL real via Testcontainers, duas threads, uma vence e a outra recebe conflito.)
+- Migration com `CREATE EXTENSION btree_gist` (disponível no PostgreSQL padrão; H2 não tem, então esta regra só se testa com PostgreSQL real).
+- A violação da constraint de exclusão deve ser traduzida para **HTTP 409** **só quando for essa constraint** (não qualquer `DataIntegrityViolationException`), e depois do rollback: no PostgreSQL a transação que falhou fica abortada. Com JPA, o erro pode aparecer no `flush()` ou no `commit`, não necessariamente no `save()`.
+- Teste T3 com PostgreSQL real (Testcontainers ou PostgreSQL nativo, mesma versão principal do CI): duas threads, conexões independentes, **sem** `@Transactional` envolvendo o teste inteiro; no fim, só um agendamento ativo no banco.
+- Vale também para o CI: o PostgreSQL será um serviço do GitHub Actions quando o T3 existir.
