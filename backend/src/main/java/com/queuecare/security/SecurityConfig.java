@@ -43,7 +43,7 @@ class SecurityConfig {
 						.requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 						.requestMatchers("/api/admin/**").hasRole("ADMIN")
 						.requestMatchers("/api/provider/**").hasRole("PROVIDER")
-						.requestMatchers("/api/agenda").hasAnyRole("PROVIDER", "ATTENDANT")
+						.requestMatchers("/api/agenda/**").hasAnyRole("PROVIDER", "ATTENDANT")
 						.requestMatchers(HttpMethod.POST, "/api/appointments").hasRole("CUSTOMER")
 						.requestMatchers(HttpMethod.GET, "/api/appointments/mine").hasRole("CUSTOMER")
 						.requestMatchers(HttpMethod.POST, "/api/appointments/*/cancel").hasAnyRole("CUSTOMER", "PROVIDER", "ATTENDANT")

@@ -51,8 +51,18 @@ public class AgendaService {
 			UUID customerId, String customerName) {
 	}
 
+	/** Onde a pessoa trabalha: o negócio e o fuso em que os horários da agenda valem (o atendente não tem acesso a /api/provider). */
+	public record Workplace(String businessName, String timeZone) {
+	}
+
 	@Transactional(readOnly = true)
-	public List<AgendaItem> day(UUID userId, LocalDate date) {
+	public Workplace workplace(UUID userId) {
+		Provider provider = resolveProvider(userId);
+		return new Workplace(provider.getBusinessName(), provider.getTimeZone());
+	}
+
+	/** O prestador em que o usuário opera, com as MESMAS regras da agenda (perfil, vínculo e dono ativo); nunca vem da requisição. */
+	private Provider resolveProvider(UUID userId) {
 		UserAccount actor = users.findById(userId).filter(UserAccount::isActive).orElseThrow(() -> new AccessDeniedException("usuário inválido"));
 		if (actor.getRole() != UserRole.PROVIDER && actor.getRole() != UserRole.ATTENDANT) {
 			throw new AccessDeniedException("perfil sem acesso à agenda");
@@ -60,7 +70,13 @@ public class AgendaService {
 		UUID providerId = staffAccess.providerIdOf(actor).orElseThrow(() -> actor.getRole() == UserRole.PROVIDER
 				? new ProviderNotConfiguredException()
 				: new AccessDeniedException("atendente sem vínculo com um prestador"));
-		Provider provider = providers.findById(providerId).orElseThrow(ProviderNotConfiguredException::new);
+		return providers.findById(providerId).orElseThrow(ProviderNotConfiguredException::new);
+	}
+
+	@Transactional(readOnly = true)
+	public List<AgendaItem> day(UUID userId, LocalDate date) {
+		Provider provider = resolveProvider(userId);
+		UUID providerId = provider.getId();
 
 		ZoneId zone = ZoneId.of(provider.getTimeZone());
 		Instant dayStart = date.atStartOfDay(zone).toInstant();

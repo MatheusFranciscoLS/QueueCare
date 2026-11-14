@@ -6,6 +6,14 @@ const BY_REASON: Record<string, string> = {
   PASSWORD_CHANGE_REQUIRED: 'Troque a sua senha antes de continuar.',
   RESOURCE_BUSY: 'O sistema está ocupado com outra alteração. Tente de novo em instantes.',
   ACCOUNT_CONFLICT: 'Não foi possível criar a conta com os dados informados.',
+  STAFF_ALREADY_ASSIGNED: 'Essa pessoa já está vinculada a um prestador.',
+  STAFF_NOT_FOUND: 'Não encontramos esse atendente.',
+  PROVIDER_NOT_CONFIGURED: 'Cadastre primeiro o seu negócio.',
+  ALREADY_CANCELLED: 'Esse agendamento já foi cancelado.',
+  NOT_CANCELLABLE: 'Esse agendamento não pode mais ser cancelado.',
+  TOO_LATE: 'Passou do prazo para cancelar.',
+  CONCURRENT_UPDATE: 'O agendamento acabou de ser alterado por outra pessoa. Atualize a agenda.',
+  APPOINTMENT_NOT_FOUND: 'Agendamento não encontrado.',
 }
 
 export function describeError(error: unknown): string {

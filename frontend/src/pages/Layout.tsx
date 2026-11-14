@@ -31,6 +31,13 @@ export function Layout() {
           <NavLink to="/meu-negocio">Meu negócio</NavLink>
           <NavLink to="/servicos">Serviços</NavLink>
           <NavLink to="/expediente">Expediente</NavLink>
+          <NavLink to="/equipe">Equipe</NavLink>
+          <NavLink to="/agenda">Agenda</NavLink>
+        </nav>
+      )}
+      {user && !user.mustChangePassword && user.role === 'ATTENDANT' && (
+        <nav className="menu" aria-label="Menu do atendente">
+          <NavLink to="/agenda">Agenda</NavLink>
         </nav>
       )}
       <main className="content">

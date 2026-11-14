@@ -4,8 +4,8 @@ import { useAuth, type Role } from '../auth/session'
 /** O que cada perfil fará nas próximas telas. Honesto: as telas ainda não existem, então nada aqui finge ser um botão. */
 const COMING: Record<Role, string[]> = {
   CUSTOMER: ['Escolher um prestador e um horário livre', 'Ver e cancelar os seus agendamentos'],
-  PROVIDER: ['Cuidar da equipe de atendentes', 'Ver a agenda do dia'],
-  ATTENDANT: ['Ver a agenda do dia do prestador', 'Cancelar agendamentos'],
+  PROVIDER: [],
+  ATTENDANT: [],
   ADMIN: ['Criar contas de prestadores', 'Ativar, desativar e redefinir senhas de usuários'],
 }
 
@@ -30,15 +30,38 @@ export function HomePage() {
               <Link to="/expediente">Expediente</Link>: dias e horários de atendimento
             </li>
           </ol>
+          <h2>No dia a dia</h2>
+          <ul>
+            <li>
+              <Link to="/agenda">Agenda</Link>: os agendamentos do dia, com cancelamento
+            </li>
+            <li>
+              <Link to="/equipe">Equipe</Link>: criar contas de atendentes, vincular e desativar
+            </li>
+          </ul>
         </>
       )}
-      <h2>Em construção para o seu perfil</h2>
-      <ul>
-        {COMING[user.role].map((item) => (
-          <li key={item}>{item}</li>
-        ))}
-      </ul>
-      <p className="hint">Essas telas chegam nos próximos passos; a API correspondente já existe e está testada.</p>
+      {user.role === 'ATTENDANT' && (
+        <>
+          <h2>No dia a dia</h2>
+          <ul>
+            <li>
+              <Link to="/agenda">Agenda</Link>: os agendamentos do dia do prestador, com cancelamento
+            </li>
+          </ul>
+        </>
+      )}
+      {COMING[user.role].length > 0 && <h2>Em construção para o seu perfil</h2>}
+      {COMING[user.role].length > 0 && (
+        <>
+          <ul>
+            {COMING[user.role].map((item) => (
+              <li key={item}>{item}</li>
+            ))}
+          </ul>
+          <p className="hint">Essas telas chegam nos próximos passos; a API correspondente já existe e está testada.</p>
+        </>
+      )}
     </section>
   )
 }

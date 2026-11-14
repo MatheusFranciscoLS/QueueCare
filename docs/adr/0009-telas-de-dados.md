@@ -16,6 +16,10 @@ As telas do prestador (negócio, serviços, expediente) são as primeiras que ca
 6. **Telas por perfil:** `RequireRole` leva quem tem outro perfil ao início e o menu só aparece para o prestador. É conforto de navegação; a API continua autorizando (ADR 0005).
 7. **Horário local:** o expediente é sempre no fuso do negócio (escolhido numa lista do navegador, o do Brasil primeiro; a API confere). A API devolve `08:00:00` e aceita `08:00`; o front trabalha com `HH:mm`.
 
+8. **Ações destrutivas pedem confirmação na própria linha** (desvincular, desativar conta, cancelar agendamento): o primeiro clique só mostra "Confirmar" e "Voltar"; nada é enviado antes. O resultado aparece como aviso na tela-mãe (as linhas são refeitas ao recarregar).
+9. **Agenda por dia:** a lista de cada dia é um componente com a DATA como chave, então trocar de dia refaz a lista do zero ("Carregando…") e nunca aparece a lista de um dia sob a data de outro. "Hoje" e os horários usam o FUSO DO NEGÓCIO (`GET /api/agenda/workplace`, nova rota para dono e atendente, com as mesmas regras de acesso da agenda; o atendente não tem acesso a `/api/provider`), não o do aparelho.
+10. **Senha provisória:** a conta de atendente nasce com a senha que o prestador informa ou gera no navegador (14 caracteres aleatórios com `crypto.getRandomValues`, sem caracteres que se confundem), que o atendente é obrigado a trocar (ADR 0005). A tela não guarda nem repete a senha depois de criar a conta.
+
 ## Alternativas descartadas
 - **Biblioteca de cache de dados (React Query):** mais conceitos do que três telas pedem; reavaliar com muitas listas.
 - **Salvar cada janela do expediente separadamente:** a API só tem a substituição do conjunto, que evita estados intermediários inválidos e corridas.

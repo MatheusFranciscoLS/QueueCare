@@ -34,6 +34,17 @@ class AgendaController {
 		}
 	}
 
+	record WorkplaceResponse(String businessName, String timeZone) {
+	}
+
+	/** Negócio e fuso do lugar onde a pessoa trabalha (dono ou atendente vinculado); os horários da agenda valem nesse fuso. */
+	@GetMapping("/api/agenda/workplace")
+	@PreAuthorize("hasAnyRole('PROVIDER','ATTENDANT')")
+	WorkplaceResponse workplace(@AuthenticationPrincipal Jwt jwt) {
+		AgendaService.Workplace w = agendaService.workplace(UUID.fromString(jwt.getSubject()));
+		return new WorkplaceResponse(w.businessName(), w.timeZone());
+	}
+
 	@GetMapping("/api/agenda")
 	@PreAuthorize("hasAnyRole('PROVIDER','ATTENDANT')")
 	List<AgendaResponse> day(@AuthenticationPrincipal Jwt jwt, @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {

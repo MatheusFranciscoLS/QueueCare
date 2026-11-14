@@ -270,6 +270,23 @@ input[type='time'] {
   width: auto;
 }
 
+.daybar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.daybar label {
+  margin: 0;
+  font-weight: 400;
+}
+
+input[type='date'] {
+  width: auto;
+}
+
 .notice.warning {
   border: 1px solid var(--danger);
 }
