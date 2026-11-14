@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { ApiError } from '../../api/client'
 import { longDate, timeIn, todayIn } from '../../api/dates'
@@ -78,6 +78,16 @@ function Row({
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const once = useSingleFlight()
+  // Foco (teclado e leitor de tela): ao abrir a confirmação vai para "Voltar" (a opção segura); ao fechar volta para "Cancelar agendamento".
+  const rowRef = useRef<HTMLLIElement>(null)
+  const openRef = useRef<HTMLButtonElement>(null)
+  const backRef = useRef<HTMLButtonElement>(null)
+  const wasConfirming = useRef(false)
+  useEffect(() => {
+    if (confirming) backRef.current?.focus()
+    else if (wasConfirming.current) openRef.current?.focus()
+    wasConfirming.current = confirming
+  }, [confirming])
   const zone = item.timeZone ?? 'UTC'
   const status = cancelled ? 'CANCELLED' : item.status
   const what = `${item.serviceName ?? 'Serviço'} em ${item.businessName ?? 'o negócio'}`
@@ -91,6 +101,9 @@ function Row({
         await api.cancel(item.id)
         onCancelled()
         setConfirming(false)
+        // O botão some: leva o foco para a própria linha, que passa a mostrar "Cancelado".
+        wasConfirming.current = false
+        rowRef.current?.focus()
         setNotice(`Agendamento cancelado: ${what}.`)
         await onStateChanged()
       } catch (e) {
@@ -105,7 +118,7 @@ function Row({
   }
 
   return (
-    <li className="row">
+    <li className="row" ref={rowRef} tabIndex={-1}>
       <span>
         <strong>{longDate(todayIn(zone, new Date(item.startsAt)))}</strong>, {timeIn(item.startsAt, zone)}–{timeIn(item.endsAt, zone)} · {what}{' '}
         <span className="badge">{STATUS_LABEL[status] ?? status}</span>
@@ -113,7 +126,7 @@ function Row({
       {status === 'SCHEDULED' && (
         <span className="actions">
           {!confirming ? (
-            <button type="button" className="button secondary" disabled={busy} onClick={() => setConfirming(true)}>
+            <button type="button" className="button secondary" ref={openRef} disabled={busy} onClick={() => setConfirming(true)}>
               Cancelar agendamento
             </button>
           ) : (
@@ -122,7 +135,7 @@ function Row({
               <button type="button" className="button" disabled={busy} onClick={cancel}>
                 {busy ? 'Cancelando…' : 'Confirmar cancelamento'}
               </button>
-              <button type="button" className="button secondary" disabled={busy} onClick={() => setConfirming(false)}>
+              <button type="button" className="button secondary" ref={backRef} disabled={busy} onClick={() => setConfirming(false)}>
                 Voltar
               </button>
             </>

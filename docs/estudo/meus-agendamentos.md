@@ -12,10 +12,12 @@ O cliente vê os próprios agendamentos (data e hora do negócio) e cancela com 
 1. `api/booking.ts` (`mine` e `cancel`) e `api/messages.ts` (motivos).
 2. `pages/customer/MyAppointmentsPage.tsx` (lista e linha com a lógica de cancelar).
 
-## Provas por teste (180 no front)
+## Provas por teste (184 no front)
 - Data/hora no fuso do negócio (02:00Z ainda é o dia anterior em São Paulo); lista vazia; falha ao carregar; perfis sem acesso.
 - Confirmação e Voltar; sucesso sem depender do GET seguinte (mutação removendo isso falha); duplo clique envia um cancelamento.
 - Cada recusa com a sua mensagem; as três em que o servidor já mudou refazem a lista (mutação sem o refetch falha); prazo vencido não refaz.
+- Foco: abrir a confirmação foca "Voltar", fechar devolve o foco a "Cancelar", sucesso leva o foco à linha (mutação sem isso falha).
+- Corridas: duas recargas pendentes chegando fora de ordem (a antiga nunca vence) e lista atualizada que ainda traz o item como Agendado não desfaz o cancelamento.
 
 ## Três perguntas de entrevista
 1. **Por que refazer a lista em ALREADY_CANCELLED ou CONCURRENT_UPDATE?** Porque o erro revela que o estado mudou; só mostrar a mensagem deixaria o botão de cancelar errado na tela.
