@@ -12,7 +12,7 @@ export function apiUrl(path: string): string {
   } catch {
     throw new Error('VITE_API_URL inválida: informe um endereço completo, como https://api.exemplo.com')
   }
-  if ((base.protocol !== 'https:' && base.protocol !== 'http:') || base.search || base.hash || (base.pathname !== '/' && base.pathname !== '')) {
+  if ((base.protocol !== 'https:' && base.protocol !== 'http:') || base.username || base.password || base.search || base.hash || (base.pathname !== '/' && base.pathname !== '')) {
     throw new Error('VITE_API_URL inválida: use só o endereço (https://api.exemplo.com), sem caminho nem parâmetros')
   }
   return `${base.origin}${path}`

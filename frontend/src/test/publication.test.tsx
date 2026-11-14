@@ -24,7 +24,7 @@ describe('endereço da API', () => {
     expect(apiUrl('/api/appointments/mine?page=0&size=50')).toBe('https://queuecare-api.onrender.com/api/appointments/mine?page=0&size=50')
   })
 
-  it.each(['queuecare-api.onrender.com', 'ftp://api.exemplo.com', 'https://api.exemplo.com/v1', 'https://api.exemplo.com?x=1', 'https://api.exemplo.com/#a', 'javascript:alert(1)'])(
+  it.each(['queuecare-api.onrender.com', 'ftp://api.exemplo.com', 'https://api.exemplo.com/v1', 'https://api.exemplo.com?x=1', 'https://api.exemplo.com/#a', 'https://usuario:senha@api.exemplo.com', 'https://api.exemplo.com@evil.example', 'javascript:alert(1)'])(
     'valor inválido (%s) falha alto em vez de mandar o token para um lugar errado',
     (value) => {
       vi.stubEnv('VITE_API_URL', value)
