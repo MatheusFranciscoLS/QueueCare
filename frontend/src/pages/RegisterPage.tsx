@@ -5,6 +5,8 @@ import { describeError } from '../api/messages'
 import { validateNewPassword } from '../auth/passwordPolicy'
 import { useAuth } from '../auth/session'
 import { Field } from './Field'
+import { useSingleFlight } from './useSingleFlight'
+import { useFocusFirstInvalid } from './useFocusFirstInvalid'
 
 export function RegisterPage() {
   const { register } = useAuth()
@@ -14,9 +16,12 @@ export function RegisterPage() {
   const [password, setPassword] = useState('')
   const [errors, setErrors] = useState<{ name?: string; email?: string; password?: string; form?: string }>({})
   const [busy, setBusy] = useState(false)
+  const once = useSingleFlight()
+  const focusFirstInvalid = useFocusFirstInvalid()
 
   async function submit(event: FormEvent) {
     event.preventDefault()
+    await once(async () => {
     const found = {
       name: name.trim() ? undefined : 'Informe o seu nome.',
       email: /^\S+@\S+$/.test(email.trim()) ? undefined : 'Informe um e-mail válido.',
@@ -24,6 +29,7 @@ export function RegisterPage() {
     }
     if (found.name || found.email || found.password) {
       setErrors(found)
+      focusFirstInvalid()
       return
     }
     setErrors({})
@@ -35,16 +41,18 @@ export function RegisterPage() {
       if (e instanceof ApiError && e.status === 409) setErrors({ email: 'Esse e-mail já está cadastrado.' })
       else if (e instanceof ApiError && e.status === 400 && e.fieldErrors.password) setErrors({ password: e.fieldErrors.password })
       else setErrors({ form: describeError(e) })
+      focusFirstInvalid()
       setBusy(false)
     }
+    })
   }
 
   return (
     <section className="card narrow">
       <h1>Criar conta de cliente</h1>
       <form onSubmit={submit} noValidate>
-        <Field label="Nome" name="name" autoComplete="name" value={name} error={errors.name} onChange={(e) => setName(e.target.value)} />
-        <Field label="E-mail" name="email" type="email" autoComplete="username" value={email} error={errors.email} onChange={(e) => setEmail(e.target.value)} />
+        <Field label="Nome" name="name" autoComplete="name" value={name} error={errors.name} onChange={(e) => { setName(e.target.value); setErrors((x) => ({ ...x, name: undefined })) }} />
+        <Field label="E-mail" name="email" type="email" autoComplete="username" value={email} error={errors.email} onChange={(e) => { setEmail(e.target.value); setErrors((x) => ({ ...x, email: undefined })) }} />
         <Field
           label="Senha"
           name="password"
@@ -53,7 +61,10 @@ export function RegisterPage() {
           hint="Pelo menos 10 caracteres."
           value={password}
           error={errors.password}
-          onChange={(e) => setPassword(e.target.value)}
+          onChange={(e) => {
+            setPassword(e.target.value)
+            setErrors((x) => ({ ...x, password: undefined }))
+          }}
         />
         <p role="alert" className="error" hidden={!errors.form}>
           {errors.form}

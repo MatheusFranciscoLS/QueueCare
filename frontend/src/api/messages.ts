@@ -25,7 +25,7 @@ export function describeError(error: unknown): string {
     case 404:
       return 'Não encontramos o que você procura.'
     case 409:
-      return error.message || 'Essa ação conflita com o estado atual. Atualize e tente de novo.'
+      return 'Essa ação conflita com o estado atual. Atualize a página e tente de novo.'
     case 413:
       return 'Os dados enviados são grandes demais.'
     case 429:

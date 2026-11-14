@@ -48,10 +48,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null)
   const [expired, setExpired] = useState(false)
   const tokenRef = useRef<string | null>(null)
+  /**
+   * Geração das operações de autenticação (entrar, cadastrar, trocar senha). Cada operação nova E todo encerramento de sessão
+   * a incrementam; uma operação que termina depois (por exemplo, a consulta a /api/me que vem depois de um "Sair") vê que a
+   * geração mudou e NÃO cria a sessão de volta.
+   */
+  const generation = useRef(0)
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
 
   const clear = useCallback((because: 'logout' | 'expired') => {
     clearTimeout(timer.current)
+    generation.current += 1
     tokenRef.current = null
     setSession(null)
     setExpired(because === 'expired')
@@ -84,8 +91,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   )
 
   const enter = useCallback(
-    async (response: TokenResponse) => {
+    async (response: TokenResponse, operation: number) => {
       const user = await apiRequest<User>('/api/me', { token: response.accessToken })
+      if (generation.current !== operation) return // a pessoa saiu (ou começou outra operação) enquanto esperava: não reabre a sessão
       start(response.accessToken, response.expiresIn, user)
     },
     [start],
@@ -96,16 +104,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       user: session?.user ?? null,
       expired,
       async login(email, password) {
-        await enter(await apiRequest<TokenResponse>('/api/auth/login', { method: 'POST', body: { email, password } }))
+        const operation = ++generation.current
+        await enter(await apiRequest<TokenResponse>('/api/auth/login', { method: 'POST', body: { email, password } }), operation)
       },
       async register(name, email, password) {
+        const operation = ++generation.current
         await apiRequest('/api/auth/register', { method: 'POST', body: { name, email, password } })
-        await enter(await apiRequest<TokenResponse>('/api/auth/login', { method: 'POST', body: { email, password } }))
+        await enter(await apiRequest<TokenResponse>('/api/auth/login', { method: 'POST', body: { email, password } }), operation)
       },
       logout: () => clear('logout'),
       async changePassword(currentPassword, newPassword) {
         // A troca invalida o token atual e devolve um novo: a sessão passa a usá-lo.
-        await enter(await request<TokenResponse>('/api/auth/change-password', { method: 'POST', body: { currentPassword, newPassword } }))
+        const operation = ++generation.current
+        await enter(await request<TokenResponse>('/api/auth/change-password', { method: 'POST', body: { currentPassword, newPassword } }), operation)
       },
       request,
     }),

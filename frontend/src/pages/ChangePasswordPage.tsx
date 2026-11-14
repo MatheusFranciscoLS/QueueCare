@@ -5,6 +5,8 @@ import { describeError } from '../api/messages'
 import { validateNewPassword } from '../auth/passwordPolicy'
 import { useAuth } from '../auth/session'
 import { Field } from './Field'
+import { useSingleFlight } from './useSingleFlight'
+import { useFocusFirstInvalid } from './useFocusFirstInvalid'
 
 export function ChangePasswordPage() {
   const { user, changePassword } = useAuth()
@@ -15,9 +17,12 @@ export function ChangePasswordPage() {
   const [confirm, setConfirm] = useState('')
   const [errors, setErrors] = useState<{ current?: string; next?: string; confirm?: string; form?: string }>({})
   const [busy, setBusy] = useState(false)
+  const once = useSingleFlight()
+  const focusFirstInvalid = useFocusFirstInvalid()
 
   async function submit(event: FormEvent) {
     event.preventDefault()
+    await once(async () => {
     const found = {
       current: current ? undefined : 'Informe a senha atual.',
       next: validateNewPassword(next, current) ?? undefined,
@@ -25,6 +30,7 @@ export function ChangePasswordPage() {
     }
     if (found.current || found.next || found.confirm) {
       setErrors(found)
+      focusFirstInvalid()
       return
     }
     setErrors({})
@@ -36,8 +42,10 @@ export function ChangePasswordPage() {
       if (e instanceof ApiError && e.reason === 'INVALID_CURRENT_PASSWORD') setErrors({ current: describeError(e) })
       else if (e instanceof ApiError && e.status === 400 && e.fieldErrors.password) setErrors({ next: e.fieldErrors.password })
       else setErrors({ form: describeError(e) })
+      focusFirstInvalid()
       setBusy(false)
     }
+    })
   }
 
   return (
@@ -49,7 +57,7 @@ export function ChangePasswordPage() {
         </p>
       )}
       <form onSubmit={submit} noValidate>
-        <Field label="Senha atual" name="current" type="password" autoComplete="current-password" value={current} error={errors.current} onChange={(e) => setCurrent(e.target.value)} />
+        <Field label="Senha atual" name="current" type="password" autoComplete="current-password" value={current} error={errors.current} onChange={(e) => { setCurrent(e.target.value); setErrors((x) => ({ ...x, current: undefined })) }} />
         <Field
           label="Nova senha"
           name="next"
@@ -58,9 +66,12 @@ export function ChangePasswordPage() {
           hint="Pelo menos 10 caracteres, diferente da atual."
           value={next}
           error={errors.next}
-          onChange={(e) => setNext(e.target.value)}
+          onChange={(e) => {
+            setNext(e.target.value)
+            setErrors((x) => ({ ...x, next: undefined }))
+          }}
         />
-        <Field label="Repita a nova senha" name="confirm" type="password" autoComplete="new-password" value={confirm} error={errors.confirm} onChange={(e) => setConfirm(e.target.value)} />
+        <Field label="Repita a nova senha" name="confirm" type="password" autoComplete="new-password" value={confirm} error={errors.confirm} onChange={(e) => { setConfirm(e.target.value); setErrors((x) => ({ ...x, confirm: undefined })) }} />
         <p role="alert" className="error" hidden={!errors.form}>
           {errors.form}
         </p>

@@ -1,8 +1,10 @@
 import { useState, type FormEvent } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { describeError } from '../api/messages'
+import { safeDestination } from '../auth/destinations'
 import { useAuth } from '../auth/session'
 import { Field } from './Field'
+import { useSingleFlight } from './useSingleFlight'
 
 export function LoginPage() {
   const { login, expired } = useAuth()
@@ -12,19 +14,21 @@ export function LoginPage() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
+  const once = useSingleFlight()
 
   async function submit(event: FormEvent) {
     event.preventDefault()
+    await once(async () => {
     setError(null)
     setBusy(true)
     try {
       await login(email.trim(), password)
-      const from = (location.state as { from?: string } | null)?.from
-      navigate(from && from !== '/entrar' ? from : '/', { replace: true })
+      navigate(safeDestination((location.state as { from?: unknown } | null)?.from), { replace: true })
     } catch (e) {
       setError(describeError(e))
       setBusy(false)
     }
+    })
   }
 
   return (
