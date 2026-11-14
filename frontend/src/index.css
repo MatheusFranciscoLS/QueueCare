@@ -492,7 +492,13 @@ input[type='date'] {
   }
 }
 
-/* Linha de Atendimento: traço vertical com um ponto por atendimento, na cor do estado */
+/* Linha de Atendimento: traço vertical com um ponto por atendimento, na cor do estado.
+   O ponto fica ao lado da PRIMEIRA linha da informação (.appt-info), e não no meio da <li>, para não se deslocar quando
+   as ações quebram de linha ou a confirmação de cancelamento abre. --dot-y = padding da linha + meia linha de texto. */
+.timeline {
+  --dot-y: 1.45rem;
+}
+
 .timeline .row {
   position: relative;
   padding-left: 1.6rem;
@@ -509,43 +515,44 @@ input[type='date'] {
 }
 
 .timeline .row:first-child::before {
-  top: 50%;
+  top: var(--dot-y);
 }
 
 .timeline .row:last-child::before {
-  bottom: 50%;
+  bottom: auto;
+  height: var(--dot-y);
 }
 
-.timeline .row:only-child::before {
+.timeline .row:first-child:last-child::before {
   display: none;
 }
 
-.timeline .row::after {
+.timeline .appt-info::before {
   content: '';
   position: absolute;
-  left: 0.12rem;
-  top: 50%;
+  left: -1.48rem;
+  top: 0.44rem;
   width: 0.62rem;
   height: 0.62rem;
-  margin-top: -0.31rem;
   border-radius: 50%;
   background: var(--muted);
   box-shadow: 0 0 0 3px var(--surface);
 }
 
-.timeline .row[data-status='SCHEDULED']::after {
+.timeline .row[data-status='SCHEDULED'] .appt-info::before {
   background: var(--st-scheduled);
 }
 
-.timeline .row[data-status='CHECKED_IN']::after {
+.timeline .row[data-status='CHECKED_IN'] .appt-info::before {
   background: var(--st-waiting);
 }
 
-.timeline .row[data-status='COMPLETED']::after {
+.timeline .row[data-status='COMPLETED'] .appt-info::before {
   background: var(--st-done);
 }
 
 .appt-info {
+  position: relative;
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
