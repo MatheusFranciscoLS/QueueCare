@@ -86,7 +86,7 @@ function Queue({ workplace }: { workplace: Workplace }) {
         {problem}
       </p>
       {visible && visible.length === 0 && <p className="notice">Ninguém na fila agora.</p>}
-      <ol className="rows">
+      <ol className="rows timeline">
         {visible?.map((item, index) => (
           <QueueRow
             key={item.id}
@@ -150,9 +150,15 @@ function QueueRow({
   }
 
   return (
-    <li className="row">
-      <span>
-        <strong>{position}º</strong> · {customer} · {item.serviceName ?? 'Serviço'} · chegou às {timeIn(item.checkedInAt, timeZone)}
+    <li className="row appt" data-status="CHECKED_IN">
+      <span className="appt-info">
+        <strong className="appt-time">{position}º</strong>
+        <span className="sep" aria-hidden="true"> · </span>
+        <span className="appt-who">{customer}</span>
+        <span className="sep" aria-hidden="true"> · </span>
+        <span className="appt-service">{item.serviceName ?? 'Serviço'}</span>
+        <span className="sep" aria-hidden="true"> · </span>
+        <span className="badge" data-status="CHECKED_IN">chegou às {timeIn(item.checkedInAt, timeZone)}</span>
       </span>
       <span className="actions">
         <button type="button" className="button" disabled={busy} onClick={complete}>
