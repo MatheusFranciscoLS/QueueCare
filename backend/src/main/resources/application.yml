@@ -33,6 +33,14 @@ management:
   endpoint:
     health:
       show-details: never
+      # Vivacidade e prontidão SEPARADAS (ADR 0013): /actuator/health/liveness só diz se o processo está vivo (não consulta o banco);
+      # /actuator/health/readiness diz se pode atender. /actuator/health continua agregando tudo, inclusive o banco.
+      probes:
+        enabled: true
+      group:
+        # Prontidão = pode atender (inclui o banco); vivacidade usa só o estado do processo (padrão do Spring Boot).
+        readiness:
+          include: readinessState,db
 
 queuecare:
   jwt:

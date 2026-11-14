@@ -55,7 +55,10 @@ jobs:
       - name: Construir a imagem de produção
         run: docker build -t queuecare-api:ci backend
       - name: A imagem não roda como root
-        run: test "$(docker run --rm --entrypoint id queuecare-api:ci -u)" != "0"
+        run: |
+          uid="$(docker run --rm --entrypoint id queuecare-api:ci -u)"
+          echo "uid=$uid"
+          test "$uid" = "10001"
 
   segredos:
     name: Segredos (Gitleaks)

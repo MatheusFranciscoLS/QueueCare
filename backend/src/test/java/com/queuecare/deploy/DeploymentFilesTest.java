@@ -48,7 +48,7 @@ class DeploymentFilesTest {
 			assertTrue(Pattern.compile("key:\\s*" + secret + "\\b[^\\n]*\\n\\s*sync:\\s*false").matcher(render).find(), secret + " deve ser sync: false");
 		}
 		assertFalse(Pattern.compile("(?m)^\\s*value:").matcher(render).find(), "nenhum valor literal no render.yaml");
-		assertTrue(render.contains("healthCheckPath: /actuator/health"));
+		assertTrue(Pattern.compile("(?m)^\\s*healthCheckPath:\\s*/actuator/health/liveness(\\s|$)").matcher(render).find(), "o health check do Render é a VIVACIDADE (não depende do banco)");
 		assertTrue(render.contains("autoDeployTrigger: \"off\""), "publicar só quando o dono decidir");
 	}
 
@@ -60,8 +60,17 @@ class DeploymentFilesTest {
 		assertFalse(Pattern.compile("(?i)(JWT_SECRET|DB_PASSWORD|ADMIN_PASSWORD|DB_USER)\\s*=").matcher(docker).find(), "nenhum segredo na imagem");
 		assertTrue(docker.contains("-Xmx256m") && docker.contains("-XX:TieredStopAtLevel=1"), "memória e JIT para 512 MB e 0,1 CPU (medidos)");
 		assertTrue(docker.contains("-XX:+ExitOnOutOfMemoryError"), "falta de memória reinicia em vez de ficar travado");
+		long pinned = Pattern.compile("(?m)^FROM\\s+\\S+@sha256:[0-9a-f]{64}").matcher(docker).results().count();
+		assertEquals(2, pinned, "as duas imagens base são fixadas por digest (reprodutível)");
 		assertFalse(read("backend/.dockerignore").isBlank());
 		assertTrue(read("backend/.dockerignore").contains(".env"), "arquivos .env nunca entram no contexto da imagem");
+	}
+
+	@Test
+	void ciConfereOUidExatoDoContainerEFalhaSeOContainerNaoRodar() throws IOException {
+		String ci = read(".github/workflows/ci.yml");
+		assertTrue(ci.contains("uid=\"$(docker run --rm --entrypoint id queuecare-api:ci -u)\""), "captura o UID numa variável (falha do docker run derruba o job)");
+		assertTrue(ci.contains("test \"$uid\" = \"10001\""), "exige o UID exato, nunca só 'diferente de 0'");
 	}
 
 	@Test
@@ -80,6 +89,8 @@ class DeploymentFilesTest {
 	@Test
 	void configuracaoBaseNaoLigaNadaSensivelPorPadrao() throws IOException {
 		PropertySource<?> base = yaml("backend/src/main/resources/application.yml");
+		assertEquals(true, base.getProperty("management.endpoint.health.probes.enabled"), "vivacidade e prontidão separadas");
+		assertEquals("readinessState,db", base.getProperty("management.endpoint.health.group.readiness.include"));
 		assertEquals("${OPENAPI_ENABLED:false}", base.getProperty("springdoc.api-docs.enabled"));
 		assertEquals("validate", base.getProperty("spring.jpa.hibernate.ddl-auto"));
 		assertEquals("${JWT_SECRET}", base.getProperty("queuecare.jwt.secret"), "sem valor padrão para o segredo do JWT");

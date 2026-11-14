@@ -6,7 +6,7 @@ services:
     plan: free
     dockerfilePath: ./backend/Dockerfile
     dockerContext: ./backend
-    healthCheckPath: /actuator/health
+    healthCheckPath: /actuator/health/liveness   # vivacidade: NÃO depende do banco (Neon pode estar acordando)
     autoDeployTrigger: "off"
     envVars:
       - key: DB_URL          # URL do Neon COM pooler, ex.: jdbc:postgresql://HOST-pooler/DB?sslmode=require&prepareThreshold=0

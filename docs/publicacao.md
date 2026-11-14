@@ -30,18 +30,26 @@ Para cada serviço, entre com o e-mail ou o GitHub, **não cadastre cartão**. S
 | `JWT_SECRET` | gerar uma vez: `openssl rand -base64 32` (ou `node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"`); **fixo**: trocar invalida todos os logins |
 | `CORS_ALLOWED_ORIGINS` | só o endereço do site, ex.: `https://queuecare.pages.dev` |
 
-3. Health check: `/actuator/health` (já no `render.yaml`). A primeira subida leva uns 2 minutos.
+3. Health check: `/actuator/health/liveness` (já no `render.yaml`): só diz se o processo está vivo e **não consulta o banco**, então o banco dormindo não faz o Render reiniciar a API. `/actuator/health/readiness` e `/actuator/health` incluem o banco. A primeira subida leva uns 2 minutos.
 
 ## Parte 4: primeiro administrador (ADR 0005)
 O plano gratuito do Render não dá terminal. Crie o admin **do seu computador**, uma única vez, apontando para o Neon pela URL direta:
 ```bash
 cd backend && ./mvnw -q -DskipTests package
-ADMIN_EMAIL=seu@email ADMIN_PASSWORD='uma-senha-forte-de-12+' \
-DB_URL='jdbc:postgresql://HOST-DIRETO/DB?sslmode=require' DB_DIRECT_URL="$DB_URL" DB_USER=... DB_PASSWORD=... JWT_SECRET=... \
-SPRING_PROFILES_ACTIVE=prod \
+# Segredos lidos SEM eco e sem ficar no histórico do terminal (nunca digite senha numa linha de comando):
+read -rp "E-mail do administrador: " ADMIN_EMAIL
+read -rsp "Senha do administrador (12+ caracteres): " ADMIN_PASSWORD; echo
+read -rsp "Senha do banco (Neon): " DB_PASSWORD; echo
+export ADMIN_EMAIL ADMIN_PASSWORD DB_PASSWORD
+# Não secretos:
+export DB_URL='jdbc:postgresql://HOST-DIRETO/NOMEDOBANCO?sslmode=require' DB_USER='USUARIO'
+export DB_DIRECT_URL="$DB_URL" SPRING_PROFILES_ACTIVE=prod
+# Este comando não emite tokens: um segredo descartável basta (não precisa ser o do Render):
+export JWT_SECRET="$(openssl rand -base64 32)"
 java -jar target/queuecare-api-*.jar --queuecare.bootstrap-admin.enabled=true --server.port=0
+unset ADMIN_EMAIL ADMIN_PASSWORD DB_PASSWORD JWT_SECRET DB_URL DB_DIRECT_URL DB_USER
 ```
-Saída "ADMIN criado" = pronto. Depois **apague** as variáveis do terminal (`unset ADMIN_PASSWORD`). A senha só vale para o primeiro login (a troca é obrigatória).
+Saída "ADMIN criado" = pronto (o `unset` do fim limpa as variáveis). A senha só vale para o primeiro login (a troca é obrigatória).
 
 ## Parte 5: site (Cloudflare Pages)
 - Projeto a partir do repositório; **diretório raiz:** `frontend`; **comando de build:** `npm ci && npm run build`; **saída:** `dist`.
