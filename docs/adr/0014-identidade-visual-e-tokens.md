@@ -15,7 +15,10 @@ O CSS era um arquivo único com cores soltas, fonte do sistema e alvos de toque 
 5. **Acessibilidade:** alvos de toque de pelo menos 44 px, foco visível de 3 px, `prefers-reduced-motion` respeitado, menu que rola na horizontal em vez de quebrar linhas.
 6. **Migração gradual:** nomes de classe existentes foram mantidos; nenhuma regra de negócio, API nem fluxo mudou. Cada tela é migrada em um PR pequeno.
 
-## Consequências
-- Um novo pacote de fontes (peso extra no carregamento, ~dezenas de KB por idioma usado).
-- Os contrastes dos pares texto/fundo foram escolhidos para AA, mas **ainda não há medição automática**; fica como tarefa da etapa de testes.
+## Consequências e medições (revisão do PR 37)
+- Fontes: o navegador só baixa os subconjuntos usados (unicode-range); para português, **latin**: Inter 48 KB + Manrope 25 KB em WOFF2 (~73 KB), medido no build. O build emite também os outros subconjuntos, que não são baixados.
+- **Contraste medido (WCAG 2.1):** pares texto/fundo dos dois temas e dos quatro estados: de 5,0:1 a 15,3:1 (AA). Correções da revisão: texto do botão perigoso no tema escuro (, de 2,28:1 para 8,03:1) e borda de campos (, 3,5:1 no claro e 3,8:1 no escuro; antes ~1,4:1). Bordas decorativas de cartões e linhas continuam em .
+- O foco visível de 3 px () **já existia**: foi preservado, não criado aqui. No menu rolável usa deslocamento interno para não ser recortado.
+- Caixas e opções de marcar mantêm o desenho nativo (só recebem ).
+- Ainda não há teste automático de contraste nem de foco em navegador real; entra na etapa de testes ponta a ponta.
 - O modo escuro é automático (sem botão); botão manual fica para depois.

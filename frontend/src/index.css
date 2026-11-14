@@ -11,6 +11,8 @@
   --text: #14302f;
   --muted: #4f6462;
   --line: #d3dedb;
+  --field-line: #76898a; /* borda de campos: 3:1 contra o fundo (WCAG 1.4.11) */
+  --on-danger: #ffffff;
   --accent: #0f766e;
   --accent-strong: #0b5a54;
   --accent-text: #ffffff;
@@ -55,6 +57,8 @@
     --text: #e6f0ee;
     --muted: #9fb5b2;
     --line: #2b3f3d;
+    --field-line: #6b8785;
+    --on-danger: #2a0a08;
     --accent: #4fd1c5;
     --accent-strong: #7fe3d9;
     --accent-text: #05211f;
@@ -233,8 +237,20 @@ select {
   font: inherit;
   color: var(--text);
   background: var(--surface-2);
-  border: 1px solid var(--line);
+  border: 1px solid var(--field-line);
   border-radius: var(--radius-sm);
+}
+
+/* caixas e opções de marcar mantêm o desenho nativo (só ganham a cor de destaque) */
+input[type='checkbox'],
+input[type='radio'] {
+  width: auto;
+  min-height: 0;
+  padding: 0;
+  background: revert;
+  border: revert;
+  border-radius: revert;
+  accent-color: var(--accent);
 }
 
 input[aria-invalid='true'] {
@@ -303,7 +319,7 @@ input[aria-invalid='true'] {
 }
 
 .button.danger {
-  color: #ffffff;
+  color: var(--on-danger);
   background: var(--danger);
   border-color: var(--danger);
 }
@@ -343,6 +359,11 @@ a {
   font-weight: 500;
   text-decoration: none;
   border-bottom: 3px solid transparent;
+}
+
+/* dentro do menu rolável o contorno interno não é recortado pelas bordas */
+.menu a:focus-visible {
+  outline-offset: -3px;
 }
 
 .menu a:hover {
