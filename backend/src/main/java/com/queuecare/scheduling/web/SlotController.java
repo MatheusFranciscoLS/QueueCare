@@ -30,6 +30,7 @@ class SlotController {
 	}
 
 	@GetMapping("/api/providers/{providerId}/slots")
+	@org.springframework.security.access.prepost.PreAuthorize("hasAnyRole('CUSTOMER','PROVIDER','ATTENDANT')")
 	List<SlotResponse> slots(@PathVariable UUID providerId, @RequestParam UUID serviceId,
 			@RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
 		return slotService.freeSlots(providerId, serviceId, date).stream().map(SlotResponse::from).toList();

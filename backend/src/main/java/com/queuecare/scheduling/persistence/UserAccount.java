@@ -37,6 +37,9 @@ public class UserAccount {
 	@Column(nullable = false)
 	private boolean active;
 
+	@Column(name = "must_change_password", nullable = false)
+	private boolean mustChangePassword;
+
 	@Column(name = "created_at", nullable = false)
 	private Instant createdAt;
 
@@ -44,6 +47,12 @@ public class UserAccount {
 	}
 
 	public UserAccount(String name, String email, String passwordHash, UserRole role, Instant createdAt) {
+		this(name, email, passwordHash, role, createdAt, false);
+	}
+
+	/** {@code mustChangePassword}: a senha inicial foi definida por outra pessoa; até trocá-la o acesso é restrito. */
+	public UserAccount(String name, String email, String passwordHash, UserRole role, Instant createdAt, boolean mustChangePassword) {
+		this.mustChangePassword = mustChangePassword;
 		this.id = UUID.randomUUID();
 		this.name = Objects.requireNonNull(name);
 		this.email = Objects.requireNonNull(email);
@@ -75,6 +84,10 @@ public class UserAccount {
 
 	public boolean isActive() {
 		return active;
+	}
+
+	public boolean isMustChangePassword() {
+		return mustChangePassword;
 	}
 
 	public Instant getCreatedAt() {

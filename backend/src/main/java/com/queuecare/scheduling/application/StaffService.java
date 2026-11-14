@@ -1,5 +1,8 @@
 package com.queuecare.scheduling.application;
 
+import com.queuecare.audit.AuditAction;
+import com.queuecare.audit.AuditService;
+import com.queuecare.auth.AccountProvisioner;
 import com.queuecare.auth.AuthService;
 import com.queuecare.scheduling.application.ProviderExceptions.ProviderNotConfiguredException;
 import com.queuecare.scheduling.application.ProviderExceptions.StaffAlreadyAssignedException;
@@ -43,8 +46,13 @@ public class StaffService {
 	private final UserAccountRepository users;
 	private final ProviderStaffRepository staff;
 	private final Clock clock;
+	private final AccountProvisioner provisioner;
+	private final AuditService audit;
 
-	public StaffService(ProviderRepository providers, UserAccountRepository users, ProviderStaffRepository staff, Clock clock) {
+	public StaffService(ProviderRepository providers, UserAccountRepository users, ProviderStaffRepository staff, Clock clock,
+			AccountProvisioner provisioner, AuditService audit) {
+		this.provisioner = provisioner;
+		this.audit = audit;
 		this.providers = providers;
 		this.users = users;
 		this.staff = staff;
@@ -74,6 +82,21 @@ public class StaffService {
 			throw translate(e);
 		}
 		return StaffMember.from(user);
+	}
+
+	/**
+	 * O PROVIDER cria uma conta NOVA de atendente e já a vincula ao PRÓPRIO negócio, na mesma transação (e com auditoria).
+	 * O perfil é sempre ATTENDANT (fixo no código, nunca vem da requisição); só cria identidade nova: e-mail já usado por
+	 * qualquer conta é 409 (nunca reaproveita nem altera conta existente). A senha inicial obriga a troca no primeiro acesso.
+	 * Observação: o 409 diz a quem é prestador autenticado que o e-mail já existe; é o preço de não duplicar contas.
+	 */
+	@Transactional
+	public StaffMember createAttendantAccount(UUID ownerUserId, String name, String email, String initialPassword) {
+		Provider provider = providers.findByUserId(ownerUserId).orElseThrow(ProviderNotConfiguredException::new);
+		UserAccount attendant = provisioner.provision(UserRole.ATTENDANT, name, email, initialPassword, true);
+		staff.saveAndFlush(new ProviderStaff(provider.getId(), attendant.getId(), clock.instant()));
+		audit.record(ownerUserId, AuditAction.ATTENDANT_ACCOUNT_CREATED, attendant.getId(), UserRole.ATTENDANT);
+		return StaffMember.from(attendant);
 	}
 
 	@Transactional(readOnly = true)

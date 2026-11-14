@@ -35,10 +35,10 @@ class AuthController {
 	@PostMapping("/login")
 	TokenResponse login(@Valid @RequestBody LoginRequest request, HttpServletRequest http) {
 		AuthService.IssuedToken token = authService.login(request.email(), request.password(), http.getRemoteAddr());
-		return new TokenResponse(token.accessToken(), "Bearer", token.expiresInSeconds());
+		return new TokenResponse(token.accessToken(), "Bearer", token.expiresInSeconds(), token.mustChangePassword());
 	}
 
 	static UserResponse toResponse(UserAccount user) {
-		return new UserResponse(user.getId(), user.getName(), user.getEmail(), user.getRole().name());
+		return new UserResponse(user.getId(), user.getName(), user.getEmail(), user.getRole().name(), user.isMustChangePassword());
 	}
 }

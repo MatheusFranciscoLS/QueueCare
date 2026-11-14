@@ -45,7 +45,9 @@ docker compose --env-file .env -f infra/docker-compose.yml up -d
 ```
 A API lê `DB_URL`, `DB_USER`, `DB_PASSWORD` e **`JWT_SECRET`** (obrigatório, Base64 de pelo menos 32 bytes; gere com `openssl rand -base64 32`) do ambiente (veja `.env.example`). O esquema do banco só muda por migrations Flyway em `backend/src/main/resources/db/migration/`.
 
-Estado atual: regras R1, R2 e R5, banco com a trava contra reserva dupla provada, serviço de agendamento e autenticação por JWT, todos testados. Ainda não há API de agendar/cancelar nem telas. Veja `docs/estudo/visao-geral.md`.
+Primeiro administrador (uma vez só, por comando explícito, sem senha em arquivo): veja `docs/adr/0005-provisionamento-de-contas.md`.
+
+Estado atual: regras R1, R2 e R5, banco com a trava contra reserva dupla provada, serviço de agendamento, autenticação por JWT, API de agendamento, configuração do prestador, equipe, criação de contas (ADMIN, prestador e atendente), todos testados. Ainda não há telas. Veja `docs/estudo/visao-geral.md`.
 
 ## Autoria
 Projeto de portfólio de Matheus Francisco, desenvolvido sob a direção do dono do produto e **com assistência substancial de IA**: Claude implementa as partes técnicas (incluindo regras de negócio e testes) e o ChatGPT faz a revisão independente de cada mudança; o Matheus define o produto, aprova o rumo e recebe resumos de cada entrega. Não é uma demonstração de implementação individual. O processo está em [`CLAUDE.md`](CLAUDE.md) e o material de estudo em [`docs/estudo/`](docs/estudo/).

@@ -45,7 +45,7 @@ public class StaffAccess {
 		return switch (user.getRole()) {
 			case PROVIDER -> providers.findByUserId(user.getId()).map(Provider::getId);
 			case ATTENDANT -> staff.findByUserId(user.getId()).map(ProviderStaff::getProviderId);
-			case CUSTOMER -> Optional.empty();
+			case ADMIN, CUSTOMER -> Optional.empty();
 		};
 	}
 

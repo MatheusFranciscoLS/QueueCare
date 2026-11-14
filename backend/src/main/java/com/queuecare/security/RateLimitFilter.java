@@ -34,6 +34,9 @@ final class RateLimitFilter extends OncePerRequestFilter {
 
 	private static final RequestMatcher LOGIN = PathPatternRequestMatcher.withDefaults().matcher(HttpMethod.POST, "/api/auth/login");
 	private static final RequestMatcher REGISTER = PathPatternRequestMatcher.withDefaults().matcher(HttpMethod.POST, "/api/auth/register");
+	private static final Duration HOUR = Duration.ofHours(1);
+	private static final RequestMatcher CREATE_PROVIDER = PathPatternRequestMatcher.withDefaults().matcher(HttpMethod.POST, "/api/admin/providers");
+	private static final RequestMatcher CREATE_ATTENDANT = PathPatternRequestMatcher.withDefaults().matcher(HttpMethod.POST, "/api/provider/staff/accounts");
 	private static final RequestMatcher SLOTS = PathPatternRequestMatcher.withDefaults().matcher(HttpMethod.GET, "/api/providers/*/slots");
 
 	private final RateLimiter limiter;
@@ -49,18 +52,24 @@ final class RateLimitFilter extends OncePerRequestFilter {
 			throws ServletException, IOException {
 		String key = null;
 		int limit = 0;
-		if (LOGIN.matches(request)) {
+		Duration window = WINDOW;
+		// Cada grupo de regras tem a SUA chave de ativação: o filtro existe sempre e cada regra confere a própria chave.
+		if (properties.enabled() && LOGIN.matches(request)) {
 			key = "login|" + request.getRemoteAddr();
 			limit = properties.loginPerMinute();
-		} else if (REGISTER.matches(request)) {
+		} else if (properties.enabled() && REGISTER.matches(request)) {
 			key = "register|" + request.getRemoteAddr();
 			limit = properties.registerPerMinute();
-		} else if (SLOTS.matches(request)) {
+		} else if (properties.accountCreationsEnabled() && (CREATE_PROVIDER.matches(request) || CREATE_ATTENDANT.matches(request))) {
+			key = "accounts|" + principalOrAddress(request);
+			limit = properties.accountCreationsPerHour();
+			window = HOUR;
+		} else if (properties.enabled() && SLOTS.matches(request)) {
 			key = "slots|" + principalOrAddress(request);
 			limit = properties.slotsPerMinute();
 		}
-		if (key != null && !limiter.tryAcquire(key, limit, WINDOW)) {
-			tooManyRequests(response, limiter.retryAfterSeconds(key, WINDOW));
+		if (key != null && !limiter.tryAcquire(key, limit, window)) {
+			tooManyRequests(response, limiter.retryAfterSeconds(key, window));
 			return;
 		}
 		chain.doFilter(request, response);

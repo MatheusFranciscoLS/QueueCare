@@ -41,6 +41,14 @@ class SecurityConfig {
 				.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 				.authorizeHttpRequests(auth -> auth
 						.requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+						.requestMatchers("/api/admin/**").hasRole("ADMIN")
+						.requestMatchers("/api/provider/**").hasRole("PROVIDER")
+						.requestMatchers("/api/agenda").hasAnyRole("PROVIDER", "ATTENDANT")
+						.requestMatchers(HttpMethod.POST, "/api/appointments").hasRole("CUSTOMER")
+						.requestMatchers(HttpMethod.GET, "/api/appointments/mine").hasRole("CUSTOMER")
+						.requestMatchers(HttpMethod.POST, "/api/appointments/*/cancel").hasAnyRole("CUSTOMER", "PROVIDER", "ATTENDANT")
+						.requestMatchers(HttpMethod.GET, "/api/providers/*/slots").hasAnyRole("CUSTOMER", "PROVIDER", "ATTENDANT")
+						.requestMatchers(HttpMethod.POST, "/api/auth/change-password").authenticated()
 						.requestMatchers("/api/auth/**").permitAll()
 						.requestMatchers("/actuator/health", "/actuator/health/**").permitAll()
 						.anyRequest().authenticated())
@@ -49,10 +57,11 @@ class SecurityConfig {
 						.jwt(jwt -> jwt.jwtAuthenticationConverter(jwtConverter)));
 		// Corpo de tamanho limitado, antes de qualquer leitura (o limite vale para todas as rotas).
 		http.addFilterBefore(new RequestSizeLimitFilter(maxBodyBytes), BearerTokenAuthenticationFilter.class);
-		if (rateLimitProperties.enabled()) {
+		// Conta com troca de senha pendente só acessa /api/me e a troca de senha (depois de ler o token, antes do limite).
+		http.addFilterAfter(new PasswordChangeRequiredFilter(), BearerTokenAuthenticationFilter.class);
+		// O filtro é sempre registrado; cada grupo de regras liga/desliga pela própria propriedade (enabled, account-creations-enabled).
 			// Depois da leitura do token (conhece o usuário) e antes da autorização das rotas.
-			http.addFilterAfter(new RateLimitFilter(rateLimiter, rateLimitProperties), BearerTokenAuthenticationFilter.class);
-		}
+		http.addFilterAfter(new RateLimitFilter(rateLimiter, rateLimitProperties), BearerTokenAuthenticationFilter.class);
 		return http.build();
 	}
 

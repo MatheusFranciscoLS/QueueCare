@@ -1,6 +1,5 @@
 package com.queuecare.auth;
 
-import com.queuecare.auth.AuthExceptions.EmailAlreadyRegisteredException;
 import com.queuecare.auth.AuthExceptions.InvalidCredentialsException;
 import com.queuecare.auth.AuthExceptions.InvalidPasswordException;
 import com.queuecare.scheduling.persistence.UserAccount;
@@ -13,13 +12,11 @@ import com.queuecare.security.RateLimiter;
 import org.springframework.beans.factory.annotation.Qualifier;
 import java.time.Duration;
 import java.nio.charset.StandardCharsets;
-import java.sql.SQLException;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
 import org.springframework.security.oauth2.jwt.JwsHeader;
@@ -44,9 +41,9 @@ public class AuthService {
 
 	static final int MIN_PASSWORD_CHARACTERS = 10;
 	static final int MAX_PASSWORD_BYTES = 72;
-	private static final String UNIQUE_VIOLATION = "23505";
 
 	private final UserAccountRepository users;
+	private final AccountProvisioner provisioner;
 	private final PasswordEncoder passwordEncoder;
 	private final JwtEncoder jwtEncoder;
 	private final JwtProperties jwtProperties;
@@ -56,10 +53,11 @@ public class AuthService {
 	/** Hash BCrypt fictício calculado uma única vez, para igualar o tempo de login de contas inexistentes. */
 	private final String dummyHash;
 
-	public AuthService(UserAccountRepository users, PasswordEncoder passwordEncoder, JwtEncoder jwtEncoder,
+	public AuthService(UserAccountRepository users, AccountProvisioner provisioner, PasswordEncoder passwordEncoder, JwtEncoder jwtEncoder,
 			JwtProperties jwtProperties, Clock clock, @Qualifier(RateLimiter.LOGIN_LOCKOUT_LIMITER) RateLimiter rateLimiter,
 			RateLimitProperties rateLimitProperties) {
 		this.users = users;
+		this.provisioner = provisioner;
 		this.passwordEncoder = passwordEncoder;
 		this.jwtEncoder = jwtEncoder;
 		this.jwtProperties = jwtProperties;
@@ -70,30 +68,17 @@ public class AuthService {
 	}
 
 	/** Resultado do login: o token e a validade em segundos. */
-	public record IssuedToken(String accessToken, long expiresInSeconds) {
+	public record IssuedToken(String accessToken, long expiresInSeconds, boolean mustChangePassword) {
 	}
 
 	public static String normalizeEmail(String email) {
 		return email.trim().toLowerCase(Locale.ROOT);
 	}
 
+	/** O cadastro público SEMPRE cria CUSTOMER, sem troca de senha obrigatória (a senha é da própria pessoa). */
 	@Transactional
 	public UserAccount registerCustomer(String name, String email, String rawPassword) {
-		validatePassword(rawPassword);
-		String normalizedEmail = normalizeEmail(email);
-		if (users.findByEmail(normalizedEmail).isPresent()) {
-			throw new EmailAlreadyRegisteredException();
-		}
-		UserAccount user = new UserAccount(name.trim(), normalizedEmail, passwordEncoder.encode(rawPassword), UserRole.CUSTOMER, clock.instant());
-		try {
-			return users.saveAndFlush(user);
-		} catch (DataIntegrityViolationException e) {
-			// Duas requisições cadastrando o mesmo e-mail ao mesmo tempo: o índice único do banco decide.
-			if (hasSqlState(e, UNIQUE_VIOLATION)) {
-				throw new EmailAlreadyRegisteredException();
-			}
-			throw e;
-		}
+		return provisioner.registerPublic(UserRole.CUSTOMER, name, email, rawPassword);
 	}
 
 	/**
@@ -147,7 +132,7 @@ public class AuthService {
 				.build();
 		JwsHeader header = JwsHeader.with(MacAlgorithm.HS256).build();
 		String token = jwtEncoder.encode(JwtEncoderParameters.from(header, claims)).getTokenValue();
-		return new IssuedToken(token, jwtProperties.accessTokenTtl().toSeconds());
+		return new IssuedToken(token, jwtProperties.accessTokenTtl().toSeconds(), user.isMustChangePassword());
 	}
 
 	static void validatePassword(String rawPassword) {
@@ -157,17 +142,5 @@ public class AuthService {
 		if (rawPassword.getBytes(StandardCharsets.UTF_8).length > MAX_PASSWORD_BYTES) {
 			throw new InvalidPasswordException("a senha deve ter no máximo " + MAX_PASSWORD_BYTES + " bytes em UTF-8");
 		}
-	}
-
-	private static boolean hasSqlState(Throwable error, String sqlState) {
-		for (Throwable t = error; t != null; t = t.getCause()) {
-			if (t instanceof SQLException sql && sqlState.equals(sql.getSQLState())) {
-				return true;
-			}
-			if (t.getCause() == t) {
-				break;
-			}
-		}
-		return false;
 	}
 }

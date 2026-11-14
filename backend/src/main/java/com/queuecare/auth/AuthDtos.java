@@ -34,9 +34,9 @@ final class AuthDtos {
 			@NotBlank @Size(max = MAX_PASSWORD_CHARACTERS) String password) {
 	}
 
-	record UserResponse(UUID id, String name, String email, String role) {
+	record UserResponse(UUID id, String name, String email, String role, boolean mustChangePassword) {
 	}
 
-	record TokenResponse(String accessToken, String tokenType, long expiresIn) {
+	record TokenResponse(String accessToken, String tokenType, long expiresIn, boolean mustChangePassword) {
 	}
 }

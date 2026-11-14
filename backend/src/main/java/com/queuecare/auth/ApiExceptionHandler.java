@@ -48,6 +48,13 @@ class ApiExceptionHandler {
 		return ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, "e-mail já cadastrado");
 	}
 
+	@ExceptionHandler(AccountConflictException.class)
+	ProblemDetail accountConflict(AccountConflictException e) {
+		ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, "não foi possível criar a conta com os dados informados");
+		problem.setProperty("reason", "ACCOUNT_CONFLICT");
+		return problem;
+	}
+
 	@ExceptionHandler(TooManyLoginAttemptsException.class)
 	ResponseEntity<ProblemDetail> tooManyAttempts(TooManyLoginAttemptsException e) {
 		// Mesma resposta para e-mail existente ou não: o bloqueio conta TODA falha, então não revela contas.

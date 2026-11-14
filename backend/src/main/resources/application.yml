@@ -35,12 +35,14 @@ queuecare:
   # Limites de requisições (ADR 0003). Valores PADRÃO abaixo; ajuste por ambiente se precisar.
   # rate-limit:
   #   enabled: true                # liga/desliga SÓ o filtro por minuto (login, cadastro, horários livres)
+  #   account-creations-enabled: true  # limite por hora de criação de contas (chave própria, independe de enabled)
   #   login-lockout-enabled: true  # bloqueio por tentativas de login (chave própria)
   #   login-per-minute: 20
   #   register-per-minute: 10
   #   slots-per-minute: 120
   #   login-failures-per-email-and-ip: 5
   #   login-failure-window-minutes: 15
+  #   account-creations-per-hour: 30   # criar contas para outras pessoas (ADMIN e prestador), por usuário
   # Espera máxima pelo bloqueio da linha do prestador ao editar janelas/negócio (padrão 3s); estourou = 409 RESOURCE_BUSY.
   # scheduling:
   #   provider-lock-timeout: 3s
