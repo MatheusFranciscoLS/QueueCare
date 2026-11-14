@@ -8,6 +8,7 @@ import { useAuth } from '../../auth/session'
 import { RefreshWarning } from '../RefreshWarning'
 import { useLoad } from '../useLoad'
 import { useSingleFlight } from '../useSingleFlight'
+import { Loading } from '../Loading'
 
 const PAGE_SIZE = 50
 const STATUS_LABEL: Record<string, string> = { SCHEDULED: 'Agendado', CHECKED_IN: 'Chegou', COMPLETED: 'Concluído', CANCELLED: 'Cancelado' }
@@ -28,7 +29,7 @@ export function MyAppointmentsPage() {
   // Cancelados com SUCESSO nesta tela: aparecem como "Cancelado" na hora, mesmo que o GET seguinte falhe.
   const [cancelled, setCancelled] = useState<ReadonlySet<string>>(new Set())
 
-  if (loading && !data) return <p role="status">Carregando…</p>
+  if (loading && !data) return <Loading />
   if (error && !data) return <p role="alert" className="error">{describeError(error)}</p>
   return (
     <section className="card">

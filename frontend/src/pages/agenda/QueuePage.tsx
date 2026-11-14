@@ -9,6 +9,7 @@ import { useAuth } from '../../auth/session'
 import { RefreshWarning } from '../RefreshWarning'
 import { useLoad } from '../useLoad'
 import { useSingleFlight } from '../useSingleFlight'
+import { Loading } from '../Loading'
 
 /** Fila de hoje do prestador, para o dono e para o atendente vinculado: quem já chegou e espera, por ordem de chegada. */
 export function QueuePage() {
@@ -17,7 +18,7 @@ export function QueuePage() {
   const load = useCallback(() => api.workplace(), [api])
   const { data: workplace, error, loading } = useLoad<Workplace>(load)
 
-  if (loading && !workplace) return <p role="status">Carregando…</p>
+  if (loading && !workplace) return <Loading />
   if (isNotConfigured(error)) {
     return (
       <section className="card">
@@ -64,7 +65,7 @@ function Queue({ workplace }: { workplace: Workplace }) {
   // Concluídos com SUCESSO nesta tela: saem da fila na hora, mesmo que o GET seguinte falhe ou traga uma fila de antes da conclusão.
   const [done, setDone] = useState<ReadonlySet<string>>(new Set())
 
-  if (loading && !data) return <p role="status">Carregando…</p>
+  if (loading && !data) return <Loading />
   if (error && !data) return <p role="alert" className="error">{describeError(error)}</p>
   const visible = data?.filter((item) => !done.has(item.id))
   return (

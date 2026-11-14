@@ -9,6 +9,7 @@ import { RefreshWarning } from '../RefreshWarning'
 import { useFocusFirstInvalid } from '../useFocusFirstInvalid'
 import { useLoad } from '../useLoad'
 import { useSingleFlight } from '../useSingleFlight'
+import { Loading } from '../Loading'
 
 export function AvailabilityPage() {
   const { request } = useAuth()
@@ -18,7 +19,7 @@ export function AvailabilityPage() {
   // O aviso "salvo" fica aqui (e não no editor) porque o editor é refeito quando o servidor devolve o conjunto gravado.
   const [saved, setSaved] = useState(false)
 
-  if (loading && !data) return <p role="status">Carregando…</p>
+  if (loading && !data) return <Loading />
   if (isNotConfigured(error)) {
     return (
       <section className="card">

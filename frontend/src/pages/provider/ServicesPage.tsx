@@ -9,6 +9,7 @@ import { Field } from '../Field'
 import { RefreshWarning } from '../RefreshWarning'
 import { useLoad } from '../useLoad'
 import { useSingleFlight } from '../useSingleFlight'
+import { Loading } from '../Loading'
 
 const MIN_MINUTES = 5
 const MAX_MINUTES = 480
@@ -27,7 +28,7 @@ export function ServicesPage() {
   const load = useCallback(() => api.listServices(), [api])
   const { data, error, loading, reload } = useLoad<Service[]>(load)
 
-  if (loading && !data) return <p role="status">Carregando…</p>
+  if (loading && !data) return <Loading />
   if (isNotConfigured(error)) {
     return (
       <section className="card">

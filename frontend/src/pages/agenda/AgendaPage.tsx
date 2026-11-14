@@ -9,6 +9,7 @@ import { useAuth } from '../../auth/session'
 import { RefreshWarning } from '../RefreshWarning'
 import { useLoad } from '../useLoad'
 import { useSingleFlight } from '../useSingleFlight'
+import { Loading } from '../Loading'
 
 /** Agenda do dia do prestador, para o dono e para o atendente vinculado. O fuso e o negócio vêm do servidor (o atendente não os conhece). */
 export function AgendaPage() {
@@ -17,7 +18,7 @@ export function AgendaPage() {
   const load = useCallback(() => api.workplace(), [api])
   const { data: workplace, error, loading } = useLoad<Workplace>(load)
 
-  if (loading && !workplace) return <p role="status">Carregando…</p>
+  if (loading && !workplace) return <Loading />
   if (isNotConfigured(error)) {
     return (
       <section className="card">
@@ -110,7 +111,7 @@ function DayList({ date, timeZone }: { date: string; timeZone: string }) {
     })
   }, [])
 
-  if (loading && !data) return <p role="status">Carregando…</p>
+  if (loading && !data) return <Loading />
   if (error && !data) return <p role="alert" className="error">{describeError(error)}</p>
   const visible = data?.filter((item) => !cancelled.has(item.id))
   // Só no dia de HOJE (do negócio) a chegada pode ser registrada; a API também confere (WRONG_DAY).

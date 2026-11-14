@@ -34,6 +34,7 @@ export function LoginPage() {
   return (
     <section className="card narrow">
       <h1>Entrar</h1>
+      <p className="lead">A agenda e a fila do seu atendimento, em um só lugar.</p>
       {expired && (
         <p role="status" className="notice">
           Sua sessão terminou. Entre novamente para continuar.

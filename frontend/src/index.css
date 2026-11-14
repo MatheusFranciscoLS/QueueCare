@@ -577,3 +577,66 @@ input[type='date'] {
 .sep {
   display: none;
 }
+
+.loading {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin: var(--space-6) 0;
+  color: var(--muted);
+}
+
+.loading-dots {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.loading-dots i {
+  display: block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+  animation: queue-step 1.2s infinite ease-in-out;
+}
+
+.loading-dots i:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.loading-dots i:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+@keyframes queue-step {
+  0%,
+  80%,
+  100% {
+    opacity: 0.25;
+    transform: scale(0.8);
+  }
+  40% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* entrada (login e cadastro) */
+.card.narrow {
+  border-top: 4px solid var(--accent);
+}
+
+.lead {
+  margin: calc(var(--space-2) * -1) 0 var(--space-4);
+  color: var(--muted);
+}
+
+/* Movimento reduzido: fica no FIM do arquivo para vencer as regras acima. Os pontos de carregamento ficam parados
+   (a animação repete sem fim, então só encurtar a duração não a pararia). */
+@media (prefers-reduced-motion: reduce) {
+  .loading-dots i {
+    animation: none;
+    opacity: 0.7;
+  }
+}

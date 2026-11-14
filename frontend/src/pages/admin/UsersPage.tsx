@@ -10,6 +10,7 @@ import { RefreshWarning } from '../RefreshWarning'
 import { useLoad } from '../useLoad'
 import { useSingleFlight } from '../useSingleFlight'
 import { PasswordDelivery } from './PasswordDelivery'
+import { Loading } from '../Loading'
 
 const PAGE_SIZE = 20
 const ROLE_LABEL: Record<AdminRole, string> = { ADMIN: 'Administrador', PROVIDER: 'Prestador', ATTENDANT: 'Atendente', CUSTOMER: 'Cliente' }
@@ -94,7 +95,7 @@ function UserList({ query, page, onPage }: { query: { q: string; role: string };
     setConfirmed((current) => new Map(current).set(id, { ...current.get(id), ...change, seq: mine }))
   }, [])
 
-  if (loading && !data) return <p role="status">Carregando…</p>
+  if (loading && !data) return <Loading />
   if (error && !data) return <p role="alert" className="error">{describeError(error)}</p>
   return (
     <>
