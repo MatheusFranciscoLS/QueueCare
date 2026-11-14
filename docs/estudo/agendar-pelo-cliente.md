@@ -13,11 +13,11 @@ O cliente escolhe prestador, serviço, dia e horário livre, confirma, e a tela 
 1. `api/booking.ts` (chamadas) e `api/messages.ts` (motivos).
 2. `pages/customer/BookPage.tsx` (um componente por passo).
 
-## Provas por teste (166 no front)
+## Provas por teste (168 no front)
 - Passos em sequência e descarte das escolhas seguintes ao trocar o prestador; prestador sem serviços.
 - Dia sem horários, navegação pelos dias, limite de hoje e de 90 dias; a lista de outro dia nunca aparece sob o dia novo (carregando).
 - Falha ao atualizar horários mantém a lista com aviso.
-- Reservar: horário local enviado, confirmação, "agendar outro horário"; **409**: motivo, escolha descartada e lista refeita (mutação sem a chave de versão falha); cada recusa 422 com a sua mensagem; 404; duplo clique não duplica a reserva; "escolher outro" não envia nada.
+- Reservar: horário local enviado, confirmação, "agendar outro horário"; **409**: motivo, escolha descartada e lista refeita (mutação sem a chave de versão falha); cada recusa 422 com a sua mensagem; 404; duplo clique não duplica a reserva; durante o envio nada pode ser trocado e o resumo é o do que foi enviado (mutação sem o bloqueio falha); "escolher outro" não envia nada.
 - Perfis: só o cliente vê o menu e a tela; os outros voltam ao início sem nenhuma chamada ao catálogo.
 
 ## Três perguntas de entrevista

@@ -1,7 +1,7 @@
 import { act, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { addDays, todayIn } from '../api/dates'
+import { addDays, longDate, todayIn } from '../api/dates'
 import { json, mockApi, PASSWORD, problem, renderWithHarness, token, USER, type Call } from './helpers'
 
 afterEach(() => vi.unstubAllGlobals())
@@ -256,6 +256,53 @@ describe('agendar: reservar', () => {
 
     expect(screen.queryByRole('button', { name: 'Confirmar agendamento' })).not.toBeInTheDocument()
     expect(calls.some((c) => c.method === 'POST' && c.path === '/api/appointments')).toBe(false)
+  })
+})
+
+describe('agendar: nada muda durante o envio da reserva', () => {
+  it('prestador, serviço, dia e horário ficam bloqueados enquanto a reserva está pendente, e o resumo é o do que foi ENVIADO', async () => {
+    const slow = deferred<Response>()
+    const { calls, user } = await loginAsCustomer({
+      [`GET /api/providers/p-1/slots?serviceId=s-1&date=${today}`]: () => json(200, [slot(today, '09:00'), slot(today, '10:00')]),
+      'POST /api/appointments': () => slow.promise,
+    })
+    await reachSlots(user)
+    await user.click(await screen.findByRole('button', { name: '09:00' }))
+
+    await user.click(screen.getByRole('button', { name: 'Confirmar agendamento' }))
+
+    // com a requisição pendente, NENHUMA escolha pode ser trocada
+    expect(screen.getByRole('radio', { name: 'Barbearia do Zé' })).toBeDisabled()
+    expect(screen.getByRole('radio', { name: 'Oficina Central' })).toBeDisabled()
+    expect(screen.getByRole('radio', { name: /Alinhamento/ })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Próximo dia' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Dia anterior' })).toBeDisabled()
+    expect(screen.getByLabelText('Data')).toBeDisabled()
+    expect(screen.getByRole('button', { name: '10:00' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Atualizar horários' })).toBeDisabled()
+    await user.click(screen.getByRole('radio', { name: 'Barbearia do Zé' })) // clique em controle desabilitado não faz nada
+    await user.click(screen.getByRole('button', { name: '10:00' }))
+    expect(screen.getByRole('radio', { name: 'Oficina Central' })).toBeChecked()
+
+    await act(async () => slow.resolve(json(201, { id: 'a-1', providerId: 'p-1', serviceId: 's-1', startsAt: '', endsAt: '', status: 'SCHEDULED', businessName: 'Oficina Central', timeZone: ZONE, serviceName: 'Troca de óleo' })))
+
+    expect(await screen.findByRole('status')).toHaveTextContent(`Troca de óleo em Oficina Central, ${longDate(today)}, às 09:00`)
+    expect(calls.filter((c) => c.method === 'POST' && c.path === '/api/appointments')).toHaveLength(1)
+    expect((calls.find((c) => c.method === 'POST' && c.path === '/api/appointments')!.body as { localStart: string }).localStart).toBe(`${today}T09:00:00`)
+  })
+
+  it('depois de uma recusa as escolhas voltam a poder ser trocadas', async () => {
+    const { user } = await loginAsCustomer({
+      [`GET /api/providers/p-1/slots?serviceId=s-1&date=${today}`]: () => json(200, [slot(today, '09:00')]),
+      'POST /api/appointments': () => problem(409, 'x', { reason: 'SLOT_TAKEN' }),
+    })
+    await reachSlots(user)
+    await user.click(await screen.findByRole('button', { name: '09:00' }))
+    await user.click(screen.getByRole('button', { name: 'Confirmar agendamento' }))
+    await screen.findByText('Esse horário acabou de ser ocupado por outra pessoa. Escolha outro.')
+
+    await waitFor(() => expect(screen.getByRole('radio', { name: 'Barbearia do Zé' })).toBeEnabled())
+    expect(screen.getByRole('button', { name: 'Próximo dia' })).toBeEnabled()
   })
 })
 

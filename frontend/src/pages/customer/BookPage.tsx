@@ -21,17 +21,42 @@ export function BookPage() {
   const [service, setService] = useState<CatalogService | null>(null)
   const [date, setDate] = useState<string | null>(null)
   const [slot, setSlot] = useState<FreeSlot | null>(null)
-  const [done, setDone] = useState<BookedAppointment | null>(null)
+  // O que foi CONFIRMADO, copiado no instante do envio: o resumo mostra exatamente o que a API recebeu, mesmo que a tela mude depois.
+  const [done, setDone] = useState<{ appointment: BookedAppointment; serviceName: string; businessName: string; localStart: string } | null>(null)
+  // Enquanto uma reserva está em andamento NENHUMA escolha pode mudar (prestador, serviço, dia, horário): o estado fica aqui, no pai.
+  const [submitting, setSubmitting] = useState(false)
+  const once = useSingleFlight()
+  const { request } = useAuth()
+  const api = useMemo(() => bookingApi(request), [request])
   // Sobe quando a API recusa o horário escolhido: a lista de horários é refeita do zero.
   const [slotsVersion, setSlotsVersion] = useState(0)
   const [bookingError, setBookingError] = useState<string | null>(null)
+
+  async function confirm() {
+    if (!provider || !service || !slot) return
+    const sent = { provider, service, slot } // snapshot imutável do que está sendo enviado
+    await once(async () => {
+      setSubmitting(true)
+      try {
+        const appointment = await api.book({ providerId: sent.provider.id, serviceId: sent.service.id, localStart: sent.slot.localStart })
+        setDone({ appointment, serviceName: sent.service.name, businessName: sent.provider.businessName, localStart: sent.slot.localStart })
+      } catch (e) {
+        // A API recusou este horário: mostra o motivo e refaz a lista de horários (o escolhido pode não existir mais).
+        setBookingError(describeError(e))
+        setSlot(null)
+        setSlotsVersion((v) => v + 1)
+      } finally {
+        setSubmitting(false)
+      }
+    })
+  }
 
   if (done) {
     return (
       <section className="card">
         <h1>Agendamento confirmado</h1>
         <p role="status" className="notice">
-          {done.serviceName ?? 'Serviço'} em {done.businessName ?? 'o negócio'}, {longDate((slot?.localStart ?? '').slice(0, 10))}, às {(slot?.localStart ?? '').slice(11, 16)} (horário do negócio).
+          {done.serviceName} em {done.businessName}, {longDate(done.localStart.slice(0, 10))}, às {done.localStart.slice(11, 16)} (horário do negócio).
         </p>
         <button
           type="button"
@@ -58,6 +83,7 @@ export function BookPage() {
         {bookingError}
       </p>
       <ProviderStep
+        disabled={submitting}
         selected={provider}
         onSelect={(p) => {
           setProvider(p)
@@ -70,6 +96,7 @@ export function BookPage() {
       {provider && (
         <ServiceStep
           key={provider.id}
+          disabled={submitting}
           provider={provider}
           selected={service}
           onSelect={(s) => {
@@ -83,6 +110,7 @@ export function BookPage() {
       {provider && service && date && (
         <>
           <DayStep
+            disabled={submitting}
             provider={provider}
             date={date}
             onChange={(d) => {
@@ -96,6 +124,7 @@ export function BookPage() {
             provider={provider}
             service={service}
             date={date}
+            disabled={submitting}
             selected={slot}
             onSelect={(s) => {
               setSlot(s)
@@ -105,25 +134,13 @@ export function BookPage() {
         </>
       )}
       {provider && service && slot && (
-        <ConfirmStep
-          provider={provider}
-          service={service}
-          slot={slot}
-          onBooked={setDone}
-          onRefused={(message) => {
-            // A API recusou este horário: mostra o motivo e refaz a lista de horários (o escolhido pode não existir mais).
-            setBookingError(message)
-            setSlot(null)
-            setSlotsVersion((v) => v + 1)
-          }}
-          onCancel={() => setSlot(null)}
-        />
+        <ConfirmStep provider={provider} service={service} slot={slot} busy={submitting} onConfirm={confirm} onCancel={() => setSlot(null)} />
       )}
     </section>
   )
 }
 
-function ProviderStep({ selected, onSelect }: { selected: CatalogProvider | null; onSelect: (p: CatalogProvider) => void }) {
+function ProviderStep({ selected, disabled, onSelect }: { selected: CatalogProvider | null; disabled: boolean; onSelect: (p: CatalogProvider) => void }) {
   const { request } = useAuth()
   const api = useMemo(() => bookingApi(request), [request])
   const load = useCallback(() => api.providers(0, PAGE_SIZE), [api])
@@ -138,7 +155,7 @@ function ProviderStep({ selected, onSelect }: { selected: CatalogProvider | null
       {data && data.length === 0 && <p className="notice">Ainda não há prestadores disponíveis.</p>}
       {data?.map((p) => (
         <label key={p.id} className="choice">
-          <input type="radio" name="provider" checked={selected?.id === p.id} onChange={() => onSelect(p)} />
+          <input type="radio" name="provider" disabled={disabled} checked={selected?.id === p.id} onChange={() => onSelect(p)} />
           <span>{p.businessName}</span>
         </label>
       ))}
@@ -147,7 +164,7 @@ function ProviderStep({ selected, onSelect }: { selected: CatalogProvider | null
   )
 }
 
-function ServiceStep({ provider, selected, onSelect }: { provider: CatalogProvider; selected: CatalogService | null; onSelect: (s: CatalogService) => void }) {
+function ServiceStep({ provider, selected, disabled, onSelect }: { provider: CatalogProvider; selected: CatalogService | null; disabled: boolean; onSelect: (s: CatalogService) => void }) {
   const { request } = useAuth()
   const api = useMemo(() => bookingApi(request), [request])
   const load = useCallback(() => api.services(provider.id), [api, provider.id])
@@ -162,7 +179,7 @@ function ServiceStep({ provider, selected, onSelect }: { provider: CatalogProvid
       {data && data.length === 0 && <p className="notice">Este prestador ainda não tem serviços para agendar.</p>}
       {data?.map((s) => (
         <label key={s.id} className="choice">
-          <input type="radio" name="service" checked={selected?.id === s.id} onChange={() => onSelect(s)} />
+          <input type="radio" name="service" disabled={disabled} checked={selected?.id === s.id} onChange={() => onSelect(s)} />
           <span>
             {s.name} · {s.durationMinutes} min
           </span>
@@ -172,23 +189,24 @@ function ServiceStep({ provider, selected, onSelect }: { provider: CatalogProvid
   )
 }
 
-function DayStep({ provider, date, onChange }: { provider: CatalogProvider; date: string; onChange: (date: string) => void }) {
+function DayStep({ provider, date, disabled, onChange }: { provider: CatalogProvider; date: string; disabled: boolean; onChange: (date: string) => void }) {
   // Os limites são do DIA DO NEGÓCIO (fuso do prestador), não do aparelho.
   const today = todayIn(provider.timeZone)
   return (
     <fieldset className="step">
       <legend>3. Escolha o dia</legend>
       <div className="daybar">
-        <button type="button" className="button secondary" disabled={date <= today} onClick={() => onChange(addDays(date, -1))}>
+        <button type="button" className="button secondary" disabled={disabled || date <= today} onClick={() => onChange(addDays(date, -1))}>
           Dia anterior
         </button>
-        <button type="button" className="button secondary" disabled={date >= addDays(today, MAX_DAYS_AHEAD)} onClick={() => onChange(addDays(date, 1))}>
+        <button type="button" className="button secondary" disabled={disabled || date >= addDays(today, MAX_DAYS_AHEAD)} onClick={() => onChange(addDays(date, 1))}>
           Próximo dia
         </button>
         <label>
           Data
           <input
             type="date"
+            disabled={disabled}
             value={date}
             min={today}
             max={addDays(today, MAX_DAYS_AHEAD)}
@@ -208,11 +226,13 @@ function SlotStep({
   service,
   date,
   selected,
+  disabled,
   onSelect,
 }: {
   provider: CatalogProvider
   service: CatalogService
   date: string
+  disabled: boolean
   selected: FreeSlot | null
   onSelect: (s: FreeSlot) => void
 }) {
@@ -235,6 +255,7 @@ function SlotStep({
             type="button"
             className={selected?.localStart === s.localStart ? 'button' : 'button secondary'}
             aria-pressed={selected?.localStart === s.localStart}
+            disabled={disabled}
             onClick={() => onSelect(s)}
           >
             {s.localStart.slice(11, 16)}
@@ -242,7 +263,7 @@ function SlotStep({
         ))}
       </div>
       <p>
-        <button type="button" className="button secondary" onClick={reload}>
+        <button type="button" className="button secondary" disabled={disabled} onClick={reload}>
           Atualizar horários
         </button>
       </p>
@@ -254,35 +275,17 @@ function ConfirmStep({
   provider,
   service,
   slot,
-  onBooked,
-  onRefused,
+  busy,
+  onConfirm,
   onCancel,
 }: {
   provider: CatalogProvider
   service: CatalogService
   slot: FreeSlot
-  onBooked: (appointment: BookedAppointment) => void
-  onRefused: (message: string) => void
+  busy: boolean
+  onConfirm: () => void
   onCancel: () => void
 }) {
-  const { request } = useAuth()
-  const api = useMemo(() => bookingApi(request), [request])
-  const [busy, setBusy] = useState(false)
-  const once = useSingleFlight()
-
-  async function confirm() {
-    await once(async () => {
-      setBusy(true)
-      try {
-        const appointment = await api.book({ providerId: provider.id, serviceId: service.id, localStart: slot.localStart })
-        onBooked(appointment)
-      } catch (e) {
-        setBusy(false)
-        onRefused(describeError(e))
-      }
-    })
-  }
-
   return (
     <section className="step" aria-label="Confirmar agendamento">
       <h2>5. Confirme</h2>
@@ -291,7 +294,7 @@ function ConfirmStep({
         <strong>{slot.localStart.slice(11, 16)}</strong> (horário do negócio).
       </p>
       <span className="actions">
-        <button type="button" className="button" disabled={busy} onClick={confirm}>
+        <button type="button" className="button" disabled={busy} onClick={onConfirm}>
           {busy ? 'Agendando…' : 'Confirmar agendamento'}
         </button>
         <button type="button" className="button secondary" disabled={busy} onClick={onCancel}>
