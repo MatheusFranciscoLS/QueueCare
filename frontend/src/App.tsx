@@ -8,6 +8,8 @@ import { LoginPage } from './pages/LoginPage'
 import { AvailabilityPage } from './pages/provider/AvailabilityPage'
 import { BusinessPage } from './pages/provider/BusinessPage'
 import { ServicesPage } from './pages/provider/ServicesPage'
+import { CreateProviderPage } from './pages/admin/CreateProviderPage'
+import { UsersPage } from './pages/admin/UsersPage'
 import { AgendaPage } from './pages/agenda/AgendaPage'
 import { QueuePage } from './pages/agenda/QueuePage'
 import { BookPage } from './pages/customer/BookPage'
@@ -31,6 +33,10 @@ export function App() {
             <Route path="/servicos" element={<ServicesPage />} />
             <Route path="/expediente" element={<AvailabilityPage />} />
             <Route path="/equipe" element={<TeamPage />} />
+          </Route>
+          <Route element={<RequireRole roles={['ADMIN']} />}>
+            <Route path="/admin/contas" element={<UsersPage />} />
+            <Route path="/admin/prestadores/novo" element={<CreateProviderPage />} />
           </Route>
           <Route element={<RequireRole roles={['CUSTOMER']} />}>
             <Route path="/agendar" element={<BookPage />} />

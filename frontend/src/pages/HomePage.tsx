@@ -6,7 +6,7 @@ const COMING: Record<Role, string[]> = {
   CUSTOMER: [],
   PROVIDER: [],
   ATTENDANT: [],
-  ADMIN: ['Criar contas de prestadores', 'Ativar, desativar e redefinir senhas de usuários'],
+  ADMIN: [],
 }
 
 export function HomePage() {
@@ -40,6 +40,19 @@ export function HomePage() {
             </li>
             <li>
               <Link to="/equipe">Equipe</Link>: criar contas de atendentes, vincular e desativar
+            </li>
+          </ul>
+        </>
+      )}
+      {user.role === 'ADMIN' && (
+        <>
+          <h2>No dia a dia</h2>
+          <ul>
+            <li>
+              <Link to="/admin/contas">Contas</Link>: buscar, ativar, desativar e redefinir senhas
+            </li>
+            <li>
+              <Link to="/admin/prestadores/novo">Novo prestador</Link>: criar a conta e o negócio de um prestador
             </li>
           </ul>
         </>
