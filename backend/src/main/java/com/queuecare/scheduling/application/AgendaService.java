@@ -11,6 +11,7 @@ import com.queuecare.scheduling.persistence.ServiceOfferingRepository;
 import com.queuecare.scheduling.persistence.UserAccount;
 import com.queuecare.scheduling.persistence.UserAccountRepository;
 import com.queuecare.scheduling.persistence.UserRole;
+import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
@@ -36,9 +37,11 @@ public class AgendaService {
 	private final ServiceOfferingRepository services;
 	private final AppointmentRepository appointments;
 	private final StaffAccess staffAccess;
+	private final Clock clock;
 
 	public AgendaService(UserAccountRepository users, ProviderRepository providers, ServiceOfferingRepository services,
-			AppointmentRepository appointments, StaffAccess staffAccess) {
+			AppointmentRepository appointments, StaffAccess staffAccess, Clock clock) {
+		this.clock = clock;
 		this.users = users;
 		this.providers = providers;
 		this.services = services;
@@ -49,6 +52,11 @@ public class AgendaService {
 	/** Um agendamento da agenda. */
 	public record AgendaItem(UUID id, Instant startsAt, Instant endsAt, AppointmentStatus status, UUID serviceId, String serviceName,
 			UUID customerId, String customerName) {
+	}
+
+	/** Uma pessoa na fila: posição (1 = a primeira a chegar), quem é, o que vai fazer e quando chegou. */
+	public record QueueItem(int position, UUID id, Instant startsAt, Instant endsAt, UUID serviceId, String serviceName, UUID customerId, String customerName,
+			Instant checkedInAt) {
 	}
 
 	/** Onde a pessoa trabalha: o negócio e o fuso em que os horários da agenda valem (o atendente não tem acesso a /api/provider). */
@@ -91,4 +99,28 @@ public class AgendaService {
 				serviceNames.get(a.getServiceId()), a.getCustomerId(), customerNames.get(a.getCustomerId()))).toList();
 	}
 
+
+	/**
+	 * Fila de HOJE (dia do prestador, no fuso dele): quem já chegou e ainda não foi atendido, por ordem de chegada. A posição é a
+	 * ordem na lista; não existe reordenação manual. O prestador vem SEMPRE do usuário autenticado.
+	 */
+	@Transactional(readOnly = true)
+	public List<QueueItem> queue(UUID userId) {
+		Provider provider = resolveProvider(userId);
+		ZoneId zone = ZoneId.of(provider.getTimeZone());
+		LocalDate today = clock.instant().atZone(zone).toLocalDate();
+		List<AppointmentRepository.QueueRow> rows = appointments.findQueue(provider.getId(), today.atStartOfDay(zone).toInstant(), today.plusDays(1).atStartOfDay(zone).toInstant());
+
+		Map<UUID, String> serviceNames = services.findAllById(rows.stream().map(r -> r.appointment().getServiceId()).distinct().toList()).stream()
+				.collect(Collectors.toMap(ServiceOffering::getId, ServiceOffering::getName));
+		Map<UUID, String> customerNames = users.findAllById(rows.stream().map(r -> r.appointment().getCustomerId()).distinct().toList()).stream()
+				.collect(Collectors.toMap(UserAccount::getId, UserAccount::getName, (a, b) -> a, java.util.HashMap::new));
+		List<QueueItem> queue = new java.util.ArrayList<>();
+		for (AppointmentRepository.QueueRow row : rows) {
+			Appointment a = row.appointment();
+			queue.add(new QueueItem(queue.size() + 1, a.getId(), a.getStartsAt(), a.getEndsAt(), a.getServiceId(), serviceNames.get(a.getServiceId()), a.getCustomerId(),
+					customerNames.get(a.getCustomerId()), row.checkedInAt()));
+		}
+		return queue;
+	}
 }

@@ -2,6 +2,7 @@ package com.queuecare.scheduling.web;
 
 import com.queuecare.scheduling.application.AgendaService;
 import com.queuecare.scheduling.application.AgendaService.AgendaItem;
+import com.queuecare.scheduling.application.AgendaService.QueueItem;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
@@ -34,6 +35,13 @@ class AgendaController {
 		}
 	}
 
+	record QueueResponse(int position, UUID id, Instant startsAt, Instant endsAt, UUID serviceId, String serviceName, UUID customerId, String customerName,
+			Instant checkedInAt) {
+		static QueueResponse from(QueueItem i) {
+			return new QueueResponse(i.position(), i.id(), i.startsAt(), i.endsAt(), i.serviceId(), i.serviceName(), i.customerId(), i.customerName(), i.checkedInAt());
+		}
+	}
+
 	record WorkplaceResponse(String businessName, String timeZone) {
 	}
 
@@ -49,5 +57,12 @@ class AgendaController {
 	@PreAuthorize("hasAnyRole('PROVIDER','ATTENDANT')")
 	List<AgendaResponse> day(@AuthenticationPrincipal Jwt jwt, @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
 		return agendaService.day(UUID.fromString(jwt.getSubject()), date).stream().map(AgendaResponse::from).toList();
+	}
+
+	/** Fila de hoje do prestador em que a pessoa opera, por ordem de chegada. */
+	@GetMapping("/api/agenda/queue")
+	@PreAuthorize("hasAnyRole('PROVIDER','ATTENDANT')")
+	List<QueueResponse> queue(@AuthenticationPrincipal Jwt jwt) {
+		return agendaService.queue(UUID.fromString(jwt.getSubject())).stream().map(QueueResponse::from).toList();
 	}
 }

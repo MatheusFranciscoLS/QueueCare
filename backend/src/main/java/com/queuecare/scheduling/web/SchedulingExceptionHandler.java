@@ -1,6 +1,7 @@
 package com.queuecare.scheduling.web;
 
 import com.queuecare.scheduling.application.AppointmentExceptions.AppointmentNotFoundException;
+import com.queuecare.scheduling.application.AppointmentExceptions.AttendanceRejectedException;
 import com.queuecare.scheduling.application.AppointmentExceptions.CancellationRejectedException;
 import com.queuecare.scheduling.application.BookingConflictException;
 import com.queuecare.scheduling.application.BookingRejectedException;
@@ -52,6 +53,12 @@ class SchedulingExceptionHandler {
 	ProblemDetail cancellationRejected(CancellationRejectedException e) {
 		HttpStatus status = e.reason() == CancellationRejectedException.Reason.TOO_LATE ? HttpStatus.UNPROCESSABLE_ENTITY : HttpStatus.CONFLICT;
 		return problem(status, e.reason().name(), "cancelamento recusado");
+	}
+
+	@ExceptionHandler(AttendanceRejectedException.class)
+	ProblemDetail attendanceRejected(AttendanceRejectedException e) {
+		HttpStatus status = e.reason() == AttendanceRejectedException.Reason.WRONG_DAY ? HttpStatus.UNPROCESSABLE_ENTITY : HttpStatus.CONFLICT;
+		return problem(status, e.reason().name(), "operação recusada");
 	}
 
 	@ExceptionHandler(ProviderAlreadyConfiguredException.class)
