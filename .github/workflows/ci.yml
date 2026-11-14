@@ -47,6 +47,19 @@ jobs:
       - run: npm test
       - run: npm run build
 
+  imagem:
+    name: Backend (imagem Docker)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Construir a imagem de produção
+        run: docker build -t queuecare-api:ci backend
+      - name: A imagem não roda como root
+        run: |
+          uid="$(docker run --rm --entrypoint id queuecare-api:ci -u)"
+          echo "uid=$uid"
+          test "$uid" = "10001"
+
   segredos:
     name: Segredos (Gitleaks)
     runs-on: ubuntu-latest

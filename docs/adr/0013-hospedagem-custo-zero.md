@@ -1,6 +1,7 @@
 # ADR 0013: hospedagem com custo zero e sem cartão
 
 - **Status:** Proposed (depende de o Matheus criar as contas; nada foi cadastrado e nenhum cartão foi usado)
+- **Imagens-base fixadas por digest** no Dockerfile (instruções de atualização no próprio arquivo).
 - **Data da pesquisa:** 14/11/2026. **Os planos gratuitos mudam: reconferir a página oficial de cada serviço na hora de criar a conta.**
 - **Quem decidiu:** o Matheus exigiu CUSTO ZERO e NENHUM CARTÃO (sem servidor comprado), o que descarta a AWS do roadmap (M5). Desenho de Claude, pesquisa e revisão do ChatGPT.
 
@@ -18,8 +19,8 @@ O projeto é de portfólio: pode "dormir" quando ninguém usa, mas não pode ger
 8. **Conexões:** a aplicação usa a URL com pooler; o Flyway usa a URL DIRETA (sem pooler). Pool Hikari pequeno (máx. 3).
 9. **Segredos:** só nos painéis dos provedores (JWT_SECRET, DB_URL, DB_USER, DB_PASSWORD) e em GitHub Secrets (tokens de deploy); nunca no repositório. O JWT_SECRET é fixo (gerar um novo a cada deploy invalidaria os tokens).
 10. **CORS:** só a origem do frontend publicado (`queuecare.cors.allowed-origins`), nunca `*`; HTTPS nos três serviços.
-11. **Memória do JVM:** ponto de partida `-Xms64m -Xmx256m -XX:MaxMetaspaceSize=128m -XX:+UseSerialGC` é uma HIPÓTESE (já soma até 384 MB, fora memória nativa e threads): começar menor, MEDIR de verdade (início, Flyway, fluxos principais, sem reinício por falta de memória). Com 0,1 CPU a inicialização e as migrations serão lentas.
-12. **Saúde:** só `/actuator/health` exposto; a vivacidade não deve depender do banco.
+11. **Memória e CPU, MEDIDOS (14/11/2026) com a imagem real em contêiner limitado a 512 MB e 0,1 CPU:** com `-Xms64m -Xmx256m -XX:MaxMetaspaceSize=128m -XX:+UseSerialGC` a API sobe em ~187 s e usa ~310 MB; **adicionando `-XX:TieredStopAtLevel=1 -Xss512k` (só o compilador leve) sobe em ~95 s e usa ~250 MB** (adotado no Dockerfile, com `-XX:+ExitOnOutOfMemoryError`). Sem falta de memória. Cadastro e login levam 3 a 5 s (BCrypt na CPU limitada). Cold start esperado na primeira visita: de um a dois minutos. As medidas valem para o Docker local; reconferir no Render.
+12. **Saúde:** só o health é exposto, com vivacidade e prontidão SEPARADAS: o Render consulta `/actuator/health/liveness` (só o processo; NÃO depende do banco, para o Neon dormindo não derrubar a API); `/actuator/health/readiness` e `/actuator/health` incluem o banco. Um teste com um indicador de banco "caído" prova: agregado 503, vivacidade 200.
 13. **Cold start:** a primeira requisição após inatividade é lenta (backend e banco acordam); a tela avisa com mensagem amigável e a demonstração começa "acordando" o serviço.
 14. **Nunca ser cobrado:** nenhum cartão; nenhuma instância ou upgrade pago; conferir o painel de uso todo mês; backup lógico local do banco; se um limite for atingido, o serviço suspende e a demonstração fica indisponível até o mês seguinte (aceito).
 15. **Desligamento:** excluir o serviço do Render; exportar e excluir o projeto Neon; excluir o projeto Cloudflare Pages; **revogar os tokens E apagar os GitHub Secrets de deploy** (são ações diferentes); rotacionar segredos se houver suspeita de exposição; conferir que nada ficou ativo.
@@ -29,8 +30,8 @@ O projeto é de portfólio: pode "dormir" quando ninguém usa, mas não pode ger
 |---|---|---|---|
 | 1 | Criar e conferir as contas gratuitas (Neon, Render, Cloudflare) SEM cartão; parar se pedirem | Médio | **Matheus** |
 | 2 | Banco Neon: criar, rodar o Flyway com a URL direta | Médio | Claude com o Matheus |
-| 3 | Perfil prod, variáveis, SSL e pool | Médio | Claude |
-| 4 | Medir memória e tempo de inicialização em 512 MB e 0,1 CPU | Alto | juntos |
+| 3 | Perfil prod, Dockerfile, `render.yaml`, CI da imagem e roteiro ([docs/publicacao.md](../publicacao.md)) | Médio | **feito** |
+| 4 | Medir memória e tempo de inicialização em 512 MB e 0,1 CPU | Alto | **feito no Docker** (item 11); reconferir no Render |
 | 5 | Publicar backend e frontend, CORS, aviso de cold start | Médio | Claude com o Matheus |
 | 6 | Deploy por GitHub Actions com segredos | Médio | Claude |
 | 7 | Testar jornadas e retomada após suspensão (junto com o E2E) | Alto | juntos |
