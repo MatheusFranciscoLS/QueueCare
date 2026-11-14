@@ -162,6 +162,24 @@ class StaffAndAgendaApiIntegrationTest extends AuthIntegrationTestBase {
 	}
 
 	@Test
+	void localDeTrabalhoDevolveNegocioEFusoSoDoPrestadorDeQuemPergunta() throws Exception {
+		for (String token : List.of(pa, a1)) {
+			mvc.perform(get("/api/agenda/workplace").param("providerId", providerB.toString()).header(HttpHeaders.AUTHORIZATION, token))
+					.andExpect(status().isOk()).andExpect(jsonPath("$.businessName").value("Negócio A")).andExpect(jsonPath("$.timeZone").value("America/Sao_Paulo"));
+		}
+		for (String token : List.of(pb, b1)) {
+			mvc.perform(get("/api/agenda/workplace").header(HttpHeaders.AUTHORIZATION, token)).andExpect(status().isOk()).andExpect(jsonPath("$.businessName").value("Negócio B"));
+		}
+		mvc.perform(get("/api/agenda/workplace").header(HttpHeaders.AUTHORIZATION, s)).andExpect(status().isForbidden()); // atendente sem vínculo
+		mvc.perform(get("/api/agenda/workplace").header(HttpHeaders.AUTHORIZATION, c1)).andExpect(status().isForbidden());
+		mvc.perform(get("/api/agenda/workplace").header(HttpHeaders.AUTHORIZATION, c2)).andExpect(status().isForbidden());
+		mvc.perform(get("/api/agenda/workplace")).andExpect(status().isUnauthorized());
+		seedUser("sem-negocio@exemplo.test", "PROVIDER", true);
+		mvc.perform(get("/api/agenda/workplace").header(HttpHeaders.AUTHORIZATION, tokenOf("sem-negocio@exemplo.test"))).andExpect(status().isNotFound())
+				.andExpect(jsonPath("$.reason").value("PROVIDER_NOT_CONFIGURED"));
+	}
+
+	@Test
 	void parametroProviderIdNaAgendaEIgnoradoNuncaTrocaOContexto() throws Exception {
 		for (String token : List.of(pa, a1)) {
 			String body = mvc.perform(get("/api/agenda").param("date", day(7)).param("providerId", providerB.toString())

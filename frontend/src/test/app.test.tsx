@@ -245,8 +245,8 @@ describe('sessão', () => {
 describe('início por perfil', () => {
   it.each([
     ['ADMIN', 'Criar contas de prestadores'],
-    ['PROVIDER', 'Cuidar da equipe de atendentes'],
-    ['ATTENDANT', 'Ver a agenda do dia do prestador'],
+    ['PROVIDER', 'No dia a dia'],
+    ['ATTENDANT', 'No dia a dia'],
     ['CUSTOMER', 'Escolher um prestador e um horário livre'],
   ])('%s vê o que vem a seguir para o seu perfil e nada dos outros', async (role, expected) => {
     mockApi({ 'POST /api/auth/login': () => token(), 'GET /api/me': () => json(200, { ...USER, role }) })

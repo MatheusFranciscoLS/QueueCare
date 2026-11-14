@@ -8,6 +8,8 @@ import { LoginPage } from './pages/LoginPage'
 import { AvailabilityPage } from './pages/provider/AvailabilityPage'
 import { BusinessPage } from './pages/provider/BusinessPage'
 import { ServicesPage } from './pages/provider/ServicesPage'
+import { AgendaPage } from './pages/agenda/AgendaPage'
+import { TeamPage } from './pages/provider/TeamPage'
 import { RegisterPage } from './pages/RegisterPage'
 
 export function App() {
@@ -25,6 +27,10 @@ export function App() {
             <Route path="/meu-negocio" element={<BusinessPage />} />
             <Route path="/servicos" element={<ServicesPage />} />
             <Route path="/expediente" element={<AvailabilityPage />} />
+            <Route path="/equipe" element={<TeamPage />} />
+          </Route>
+          <Route element={<RequireRole roles={['PROVIDER', 'ATTENDANT']} />}>
+            <Route path="/agenda" element={<AgendaPage />} />
           </Route>
         </Route>
         <Route path="*" element={<NotFound />} />

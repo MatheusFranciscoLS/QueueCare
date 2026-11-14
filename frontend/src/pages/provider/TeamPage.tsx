@@ -1,0 +1,264 @@
+import { useCallback, useMemo, useState, type FormEvent } from 'react'
+import { Link } from 'react-router-dom'
+import { isNotConfigured } from '../../api/errors'
+import { describeError } from '../../api/messages'
+import { staffApi, type StaffMember } from '../../api/staff'
+import { generatePassword } from '../../auth/generatePassword'
+import { validateNewPassword } from '../../auth/passwordPolicy'
+import { useAuth } from '../../auth/session'
+import { Field } from '../Field'
+import { RefreshWarning } from '../RefreshWarning'
+import { useFocusFirstInvalid } from '../useFocusFirstInvalid'
+import { useLoad } from '../useLoad'
+import { useSingleFlight } from '../useSingleFlight'
+
+export function TeamPage() {
+  const { request } = useAuth()
+  const api = useMemo(() => staffApi(request), [request])
+  const load = useCallback(() => api.list(), [api])
+  const { data, error, loading, reload } = useLoad<StaffMember[]>(load)
+  // Um aviso por ação concluída (ex.: "Conta criada"); fica aqui porque as listas e formulários são refeitos ao recarregar.
+  const [notice, setNotice] = useState<string | null>(null)
+
+  if (loading && !data) return <p role="status">Carregando…</p>
+  if (isNotConfigured(error)) {
+    return (
+      <section className="card">
+        <h1>Equipe</h1>
+        <p className="notice">
+          Cadastre primeiro o seu negócio em <Link to="/meu-negocio">Meu negócio</Link>.
+        </p>
+      </section>
+    )
+  }
+  if (error && !data) return <p role="alert" className="error">{describeError(error)}</p>
+
+  return (
+    <section className="card">
+      <h1>Equipe</h1>
+      {error !== undefined && data && <RefreshWarning onRetry={reload} />}
+      <p role="status" className="notice" hidden={!notice}>
+        {notice}
+      </p>
+      {data && data.length === 0 && <p className="notice">Você ainda não tem atendentes. Crie uma conta ou vincule alguém abaixo.</p>}
+      <ul className="rows">
+        {data?.map((member) => (
+          <MemberRow key={member.userId} member={member} onChanged={reload} setNotice={setNotice} />
+        ))}
+      </ul>
+      <h2>Criar conta de atendente</h2>
+      <CreateAccount onCreated={reload} setNotice={setNotice} />
+      <h2>Vincular um atendente que já tem conta</h2>
+      <LinkExisting onLinked={reload} setNotice={setNotice} />
+    </section>
+  )
+}
+
+type Notice = (message: string | null) => void
+
+function CreateAccount({ onCreated, setNotice }: { onCreated: () => Promise<void>; setNotice: Notice }) {
+  const { request } = useAuth()
+  const api = useMemo(() => staffApi(request), [request])
+  const [name, setName] = useState('')
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [reveal, setReveal] = useState(false)
+  const [errors, setErrors] = useState<{ name?: string; email?: string; password?: string; form?: string }>({})
+  const [busy, setBusy] = useState(false)
+  const once = useSingleFlight()
+  const focusFirstInvalid = useFocusFirstInvalid()
+
+  async function submit(event: FormEvent) {
+    event.preventDefault()
+    await once(async () => {
+      const found = {
+        name: name.trim() ? undefined : 'Informe o nome do atendente.',
+        email: /^\S+@\S+$/.test(email.trim()) ? undefined : 'Informe um e-mail válido.',
+        password: validateNewPassword(password) ?? undefined,
+      }
+      if (found.name || found.email || found.password) {
+        setErrors(found)
+        focusFirstInvalid()
+        return
+      }
+      setErrors({})
+      setNotice(null)
+      setBusy(true)
+      try {
+        await api.createAccount({ name: name.trim(), email: email.trim(), initialPassword: password })
+        setName('')
+        setEmail('')
+        setPassword('')
+        setReveal(false)
+        setNotice('Conta criada. Entregue a senha provisória ao atendente: ela só vale para o primeiro acesso, quando ele escolherá a própria senha.')
+        await onCreated()
+      } catch (e) {
+        setErrors({ form: describeError(e) })
+        focusFirstInvalid()
+      } finally {
+        setBusy(false)
+      }
+    })
+  }
+
+  const edit = (key: 'name' | 'email' | 'password', set: (value: string) => void) => (e: { target: { value: string } }) => {
+    set(e.target.value)
+    setErrors((x) => ({ ...x, [key]: undefined }))
+  }
+
+  return (
+    <form onSubmit={submit} noValidate>
+      <Field label="Nome" name="staff-name" disabled={busy} value={name} error={errors.name} onChange={edit('name', setName)} />
+      <Field label="E-mail" name="staff-email" type="email" autoComplete="off" disabled={busy} value={email} error={errors.email} onChange={edit('email', setEmail)} />
+      <Field
+        label="Senha provisória"
+        name="staff-password"
+        type={reveal ? 'text' : 'password'}
+        autoComplete="new-password"
+        disabled={busy}
+        hint="Pelo menos 10 caracteres. O atendente será obrigado a trocá-la no primeiro acesso."
+        value={password}
+        error={errors.password}
+        onChange={edit('password', setPassword)}
+      />
+      <p>
+        <button
+          type="button"
+          className="button secondary"
+          disabled={busy}
+          onClick={() => {
+            setPassword(generatePassword())
+            setReveal(true) // a senha gerada fica visível para você copiar e entregar
+            setErrors((x) => ({ ...x, password: undefined }))
+          }}
+        >
+          Gerar senha
+        </button>
+      </p>
+      <p role="alert" className="error" hidden={!errors.form}>
+        {errors.form}
+      </p>
+      <button type="submit" className="button" disabled={busy}>
+        {busy ? 'Criando…' : 'Criar conta'}
+      </button>
+    </form>
+  )
+}
+
+function LinkExisting({ onLinked, setNotice }: { onLinked: () => Promise<void>; setNotice: Notice }) {
+  const { request } = useAuth()
+  const api = useMemo(() => staffApi(request), [request])
+  const [email, setEmail] = useState('')
+  const [error, setError] = useState<string | null>(null)
+  const [busy, setBusy] = useState(false)
+  const once = useSingleFlight()
+
+  async function submit(event: FormEvent) {
+    event.preventDefault()
+    await once(async () => {
+      if (!/^\S+@\S+$/.test(email.trim())) {
+        setError('Informe um e-mail válido.')
+        return
+      }
+      setError(null)
+      setNotice(null)
+      setBusy(true)
+      try {
+        await api.link(email.trim())
+        setEmail('')
+        setNotice('Atendente vinculado.')
+        await onLinked()
+      } catch (e) {
+        setError(describeError(e))
+      } finally {
+        setBusy(false)
+      }
+    })
+  }
+
+  return (
+    <form onSubmit={submit} noValidate>
+      <Field
+        label="E-mail do atendente"
+        name="link-email"
+        type="email"
+        autoComplete="off"
+        disabled={busy}
+        hint="Só atendentes com conta ativa e que ainda não estão em outro prestador."
+        value={email}
+        error={error}
+        onChange={(e) => {
+          setEmail(e.target.value)
+          setError(null)
+        }}
+      />
+      <button type="submit" className="button" disabled={busy}>
+        {busy ? 'Vinculando…' : 'Vincular'}
+      </button>
+    </form>
+  )
+}
+
+type Pending = 'unlink' | 'deactivate' | null
+
+function MemberRow({ member, onChanged, setNotice }: { member: StaffMember; onChanged: () => Promise<void>; setNotice: Notice }) {
+  const { request } = useAuth()
+  const api = useMemo(() => staffApi(request), [request])
+  const [confirming, setConfirming] = useState<Pending>(null)
+  const [error, setError] = useState<string | null>(null)
+  const [busy, setBusy] = useState(false)
+  const once = useSingleFlight()
+
+  async function run(action: Exclude<Pending, null>) {
+    await once(async () => {
+      setError(null)
+      setNotice(null)
+      setBusy(true)
+      try {
+        await (action === 'unlink' ? api.unlink(member.userId) : api.deactivate(member.userId))
+        setNotice(action === 'unlink' ? `${member.name} foi desvinculado da equipe.` : `A conta de ${member.name} foi desativada e saiu da equipe.`)
+        await onChanged()
+      } catch (e) {
+        setError(describeError(e))
+        setConfirming(null)
+      } finally {
+        setBusy(false)
+      }
+    })
+  }
+
+  return (
+    <li className="row">
+      <span>
+        <strong>{member.name}</strong> · {member.email}
+      </span>
+      <span className="actions">
+        {confirming === null ? (
+          <>
+            <button type="button" className="button secondary" disabled={busy} onClick={() => setConfirming('unlink')}>
+              Desvincular
+            </button>
+            <button type="button" className="button secondary" disabled={busy} onClick={() => setConfirming('deactivate')}>
+              Desativar conta
+            </button>
+          </>
+        ) : (
+          <>
+            <span>{confirming === 'unlink' ? `Desvincular ${member.name}? A conta continua existindo.` : `Desativar a conta de ${member.name}? Ela perde o acesso e só um administrador reativa.`}</span>
+            <button type="button" className="button" disabled={busy} onClick={() => run(confirming)}>
+              {busy ? 'Aguarde…' : 'Confirmar'}
+            </button>
+            <button type="button" className="button secondary" disabled={busy} onClick={() => setConfirming(null)}>
+              Voltar
+            </button>
+          </>
+        )}
+      </span>
+      {error && (
+        <p role="alert" className="error">
+          {error}
+        </p>
+      )}
+    </li>
+  )
+}
