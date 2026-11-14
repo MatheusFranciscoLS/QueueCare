@@ -60,6 +60,20 @@ class ProvisioningConstraintsTest extends DatabaseTestBase {
 	}
 
 	@Test
+	void versaoDasCredenciaisComecaEmZeroEAuditoriaAceitaAsAcoesDeSenha() throws SQLException {
+		try (Connection c = dataSource.getConnection(); Statement st = c.createStatement()) {
+			UUID actor = PostgresTestSupport.insertUser(c, "admin@exemplo.test", "ADMIN");
+			UUID target = PostgresTestSupport.insertUser(c, "alvo@exemplo.test", "PROVIDER");
+			try (ResultSet rs = st.executeQuery("SELECT token_version FROM users WHERE id = '" + target + "'")) {
+				rs.next();
+				assertEquals(0, rs.getInt(1));
+			}
+			insertAudit(c, actor, "PASSWORD_RESET", target, "PROVIDER");
+			insertAudit(c, target, "PASSWORD_CHANGED", target, "PROVIDER");
+		}
+	}
+
+	@Test
 	void auditoriaAceitaInsercaoEmasRecusaAlteracaoEExclusao() throws SQLException {
 		try (Connection c = dataSource.getConnection(); Statement st = c.createStatement()) {
 			UUID actor = PostgresTestSupport.insertUser(c, "admin@exemplo.test", "ADMIN");

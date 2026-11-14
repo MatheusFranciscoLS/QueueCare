@@ -34,6 +34,12 @@ final class AuthDtos {
 			@NotBlank @Size(max = MAX_PASSWORD_CHARACTERS) String password) {
 	}
 
+	/** Troca de senha: tamanhos limitados antes de qualquer uso (a política real da nova senha é conferida no serviço). */
+	record ChangePasswordRequest(
+			@NotBlank @Size(max = MAX_PASSWORD_CHARACTERS) String currentPassword,
+			@NotBlank @Size(max = MAX_PASSWORD_CHARACTERS) String newPassword) {
+	}
+
 	record UserResponse(UUID id, String name, String email, String role, boolean mustChangePassword) {
 	}
 

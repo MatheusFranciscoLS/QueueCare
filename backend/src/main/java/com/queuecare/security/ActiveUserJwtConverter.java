@@ -33,6 +33,12 @@ class ActiveUserJwtConverter implements Converter<Jwt, AbstractOAuth2TokenAuthen
 		UserAccount user = users.findById(userId)
 				.filter(UserAccount::isActive)
 				.orElseThrow(() -> new InvalidBearerTokenException("usuário inválido ou inativo"));
+		// Troca ou redefinição de senha invalida TODO token anterior: a versão do token tem de ser a atual do banco (ausente = 0).
+		Object claim = jwt.getClaim("ver");
+		int tokenVersion = claim instanceof Number n ? n.intValue() : 0;
+		if (claim != null && !(claim instanceof Number) || tokenVersion != user.getTokenVersion()) {
+			throw new InvalidBearerTokenException("token emitido antes da última troca de senha");
+		}
 		// Conta com senha inicial: SÓ a autoridade de troca de senha, nenhum perfil. Assim nenhuma rota por perfil abre, e o
 		// PasswordChangeRequiredFilter fecha também as rotas que exigem apenas estar autenticado.
 		List<GrantedAuthority> authorities = user.isMustChangePassword()

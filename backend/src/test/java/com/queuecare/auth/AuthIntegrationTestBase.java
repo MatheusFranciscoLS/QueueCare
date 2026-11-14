@@ -34,7 +34,8 @@ import org.springframework.test.web.servlet.MockMvc;
 		"queuecare.rate-limit.login-per-minute=100000",
 		"queuecare.rate-limit.register-per-minute=100000",
 		"queuecare.rate-limit.slots-per-minute=100000",
-		"queuecare.rate-limit.login-failures-per-email-and-ip=100000"
+		"queuecare.rate-limit.login-failures-per-email-and-ip=100000",
+		"queuecare.rate-limit.password-change-attempts=100000"
 })
 @SpringBootTest
 @AutoConfigureMockMvc

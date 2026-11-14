@@ -40,6 +40,10 @@ public class UserAccount {
 	@Column(name = "must_change_password", nullable = false)
 	private boolean mustChangePassword;
 
+	/** Versão das credenciais: sobe a cada troca/redefinição de senha e invalida todo token emitido antes (ADR 0006). */
+	@Column(name = "token_version", nullable = false)
+	private int tokenVersion;
+
 	@Column(name = "created_at", nullable = false)
 	private Instant createdAt;
 
@@ -84,6 +88,17 @@ public class UserAccount {
 
 	public boolean isActive() {
 		return active;
+	}
+
+	/** Troca a senha (já em hash), define se a troca é obrigatória no próximo acesso e invalida os tokens anteriores. */
+	public void replacePassword(String newPasswordHash, boolean mustChangePassword) {
+		this.passwordHash = Objects.requireNonNull(newPasswordHash);
+		this.mustChangePassword = mustChangePassword;
+		this.tokenVersion++;
+	}
+
+	public int getTokenVersion() {
+		return tokenVersion;
 	}
 
 	public boolean isMustChangePassword() {

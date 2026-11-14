@@ -43,7 +43,7 @@ class RateLimitPropertiesValidationTest {
 	@Test
 	void limitesNaoPositivosOuAbsurdosImpedemAInicializacao() {
 		for (String property : new String[] {"login-per-minute=0", "register-per-minute=-1", "slots-per-minute=0",
-				"login-failures-per-email-and-ip=0", "login-per-minute=2000000", "login-failure-window-minutes=99999"}) {
+				"login-failures-per-email-and-ip=0", "password-change-attempts=0", "password-change-attempts=-3", "login-per-minute=2000000", "login-failure-window-minutes=99999"}) {
 			runner.withPropertyValues("queuecare.rate-limit." + property)
 					.run(context -> assertNotNull(context.getStartupFailure(), property + " deveria ser recusado"));
 		}
