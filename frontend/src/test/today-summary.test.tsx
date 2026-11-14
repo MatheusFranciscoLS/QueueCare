@@ -97,4 +97,44 @@ describe('resumo do dia na tela inicial', () => {
     await user.click(screen.getByRole('button', { name: 'Atualizar resumo' }))
     expect(await screen.findByRole('region', { name: /Hoje,/ })).toHaveTextContent('Nenhum atendimento por vir hoje.')
   })
+
+
+  it('ATTENDANT vinculado também vê o resumo', async () => {
+    await homeAs('ATTENDANT', {
+      'GET /api/agenda/workplace': () => json(200, WORKPLACE),
+      [`GET /api/agenda?date=${today}`]: () => json(200, [item('a', 'SCHEDULED', '2099-01-01T10:00:00Z', '2099-01-01T11:00:00Z')]),
+      'GET /api/agenda/queue': () => json(200, []),
+    })
+    const summary = await screen.findByRole('region', { name: /Hoje,/ })
+    expect(within(summary).getByText('Agendados').nextSibling).toHaveTextContent('1')
+  })
+
+  it('com a tela aberta, quando o dia do negócio vira (fuso do negócio, não do aparelho) o resumo é refeito para o dia novo', async () => {
+    vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval', 'Date'], shouldAdvanceTime: true })
+    try {
+      vi.setSystemTime(new Date('2026-11-15T01:59:30Z')) // 22:59:30 de sábado 14/11 em São Paulo
+      const asked: string[] = []
+      const day = (date: string) => () => {
+        asked.push(date)
+        return json(200, [])
+      }
+      await homeAs('PROVIDER', {
+        'GET /api/agenda/workplace': () => json(200, WORKPLACE),
+        'GET /api/agenda?date=2026-11-14': day('2026-11-14'),
+        'GET /api/agenda?date=2026-11-15': day('2026-11-15'),
+        'GET /api/agenda/queue': () => json(200, []),
+      })
+      expect(await screen.findByRole('region', { name: /Hoje, sábado, 14/ })).toBeInTheDocument()
+      expect(asked).toEqual(['2026-11-14'])
+
+      await act(async () => {
+        vi.setSystemTime(new Date('2026-11-15T03:01:00Z')) // já é domingo 15/11 às 00:01 em São Paulo
+        vi.advanceTimersByTime(60_000)
+      })
+      expect(await screen.findByRole('region', { name: /Hoje, domingo, 15/ })).toBeInTheDocument()
+      expect(asked).toEqual(['2026-11-14', '2026-11-15'])
+    } finally {
+      vi.useRealTimers()
+    }
+  })
 })

@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { agendaApi, type AgendaItem, type QueueItem } from '../api/agenda'
 import { longDate, timeIn, todayIn } from '../api/dates'
@@ -15,7 +15,6 @@ interface Today {
   date: string
   items: AgendaItem[]
   queue: QueueItem[]
-  loadedAt: Date
 }
 
 /** Resumo do dia do prestador e do atendente. Falhar aqui nunca esconde os atalhos da tela inicial: só avisa e oferece atualizar. */
@@ -26,9 +25,26 @@ export function TodaySummary() {
     const workplace = await api.workplace()
     const date = todayIn(workplace.timeZone)
     const [items, queue] = await Promise.all([api.day(date), api.queue()])
-    return { ...workplace, date, items, queue, loadedAt: new Date() }
+    return { ...workplace, date, items, queue }
   }, [api])
   const { data, error, loading, reload } = useLoad<Today>(load)
+  // O relógio anda com a tela aberta: a cada minuto (e ao voltar à aba) o "próximo" é recalculado e, se o dia do NEGÓCIO virou, o resumo é refeito.
+  const [now, setNow] = useState(() => new Date())
+  useEffect(() => {
+    const tick = () => setNow(new Date())
+    const onVisible = () => document.visibilityState === 'visible' && tick()
+    const id = setInterval(tick, 60_000)
+    document.addEventListener('visibilitychange', onVisible)
+    return () => {
+      clearInterval(id)
+      document.removeEventListener('visibilitychange', onVisible)
+    }
+  }, [])
+  const staleDay = data !== undefined && todayIn(data.timeZone, now) !== data.date
+  useEffect(() => {
+    // oxlint-disable-next-line react/set-state-in-effect -- refazer a leitura quando o dia do negócio vira é o uso legítimo do efeito
+    if (staleDay) void reload()
+  }, [staleDay, reload, now])
 
   if (loading && !data) return <Loading>Carregando o resumo de hoje…</Loading>
   // Sem negócio configurado ou atendente sem vínculo: as telas de Agenda e Fila já explicam; o resumo não repete.
@@ -43,7 +59,7 @@ export function TodaySummary() {
       </p>
     )
   }
-  const { scheduled, checkedIn, completed, next } = summarize(data.items, data.loadedAt)
+  const { scheduled, checkedIn, completed, next } = summarize(data.items, now)
   return (
     <section className="today" aria-labelledby="today-title">
       <h2 id="today-title">Hoje, {longDate(data.date)}</h2>
