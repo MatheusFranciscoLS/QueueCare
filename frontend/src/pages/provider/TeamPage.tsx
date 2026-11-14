@@ -69,8 +69,21 @@ function CreateAccount({ onCreated, setNotice }: { onCreated: () => Promise<void
   const [reveal, setReveal] = useState(false)
   const [errors, setErrors] = useState<{ name?: string; email?: string; password?: string; form?: string }>({})
   const [busy, setBusy] = useState(false)
+  // Credencial recém-criada, mostrada UMA vez para o prestador entregar ao atendente. Só em memória desta tela: nunca em
+  // localStorage, sessionStorage nem log, e some ao limpar, ao sair da tela ou ao sair da conta.
+  const [created, setCreated] = useState<{ name: string; email: string; password: string } | null>(null)
+  const [copyMessage, setCopyMessage] = useState<string | null>(null)
   const once = useSingleFlight()
   const focusFirstInvalid = useFocusFirstInvalid()
+
+  async function copy(text: string) {
+    try {
+      await navigator.clipboard.writeText(text)
+      setCopyMessage('Senha copiada.')
+    } catch {
+      setCopyMessage('Não foi possível copiar automaticamente: selecione a senha acima e copie.')
+    }
+  }
 
   async function submit(event: FormEvent) {
     event.preventDefault()
@@ -87,14 +100,17 @@ function CreateAccount({ onCreated, setNotice }: { onCreated: () => Promise<void
       }
       setErrors({})
       setNotice(null)
+      setCreated(null)
+      setCopyMessage(null)
       setBusy(true)
       try {
         await api.createAccount({ name: name.trim(), email: email.trim(), initialPassword: password })
+        // Só depois do SUCESSO a senha enviada passa a ser exibida para entrega; falha nunca a apresenta como "conta criada".
+        setCreated({ name: name.trim(), email: email.trim(), password })
         setName('')
         setEmail('')
         setPassword('')
         setReveal(false)
-        setNotice('Conta criada. Entregue a senha provisória ao atendente: ela só vale para o primeiro acesso, quando ele escolherá a própria senha.')
         await onCreated()
       } catch (e) {
         setErrors({ form: describeError(e) })
@@ -111,6 +127,34 @@ function CreateAccount({ onCreated, setNotice }: { onCreated: () => Promise<void
   }
 
   return (
+    <>
+    {created && (
+      <div role="status" className="notice">
+        <p>
+          Conta de <strong>{created.name}</strong> ({created.email}) criada. Entregue esta senha provisória ao atendente por um canal seguro: ela só vale para o primeiro acesso e <strong>não será mostrada de novo</strong>.
+        </p>
+        <label htmlFor="created-password">Senha provisória</label>
+        <input id="created-password" readOnly value={created.password} onFocus={(e) => e.currentTarget.select()} />
+        <p className="actions">
+          <button type="button" className="button secondary" onClick={() => copy(created.password)}>
+            Copiar senha
+          </button>
+          <button
+            type="button"
+            className="button"
+            onClick={() => {
+              setCreated(null)
+              setCopyMessage(null)
+            }}
+          >
+            Já entreguei, limpar da tela
+          </button>
+        </p>
+        <p role="status" className="hint" hidden={!copyMessage}>
+          {copyMessage}
+        </p>
+      </div>
+    )}
     <form onSubmit={submit} noValidate>
       <Field label="Nome" name="staff-name" disabled={busy} value={name} error={errors.name} onChange={edit('name', setName)} />
       <Field label="E-mail" name="staff-email" type="email" autoComplete="off" disabled={busy} value={email} error={errors.email} onChange={edit('email', setEmail)} />
@@ -146,6 +190,7 @@ function CreateAccount({ onCreated, setNotice }: { onCreated: () => Promise<void
         {busy ? 'Criando…' : 'Criar conta'}
       </button>
     </form>
+    </>
   )
 }
 

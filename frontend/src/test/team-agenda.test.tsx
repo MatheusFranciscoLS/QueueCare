@@ -86,11 +86,11 @@ describe('equipe', () => {
     await user.type(screen.getByLabelText('Senha provisória'), 'provisoria-123')
     await user.click(screen.getByRole('button', { name: 'Criar conta' }))
 
-    expect(await screen.findByText('Bruno Novo')).toBeInTheDocument()
-    expect(screen.getByText(/Conta criada\. Entregue a senha provisória/)).toBeVisible()
+    expect((await screen.findAllByText('Bruno Novo')).length).toBeGreaterThan(0) // na lista e no painel de entrega
+    expect(screen.getByText(/criada\. Entregue esta senha provisória/)).toBeVisible()
     expect(calls.find((c) => c.path === '/api/provider/staff/accounts')?.body).toEqual({ name: 'Bruno Novo', email: 'bruno@exemplo.test', initialPassword: 'provisoria-123' })
     expect(screen.getByLabelText('Nome')).toHaveValue('') // formulário limpo; a senha não fica na tela
-    expect(screen.getByLabelText('Senha provisória')).toHaveValue('')
+    expect(screen.getAllByLabelText('Senha provisória').some((el) => (el as HTMLInputElement).value === 'provisoria-123')).toBe(true) // fica visível só no painel de entrega
   })
 
   it('valida antes de enviar e "Gerar senha" preenche uma senha válida e visível', async () => {
@@ -485,5 +485,99 @@ describe('botão Hoje com a página aberta de um dia para o outro', () => {
     } finally {
       vi.useRealTimers()
     }
+  })
+})
+
+describe('senha provisória depois da criação (entrega ao atendente)', () => {
+  async function createdPanel(options: { clipboard?: 'ok' | 'fail' } = {}) {
+    const { calls, user } = await loginAs('PROVIDER', {
+      'GET /api/provider/staff': () => json(200, []),
+      'POST /api/provider/staff/accounts': () => json(201, { userId: 'u-10', name: 'Bruno Novo', email: 'bruno@exemplo.test' }),
+    })
+    await user.click(menu('Equipe'))
+    await screen.findByText(/ainda não tem atendentes/)
+    await user.type(screen.getByLabelText('Nome'), 'Bruno Novo')
+    await user.type(screen.getByLabelText('E-mail'), 'bruno@exemplo.test')
+    await user.type(screen.getByLabelText('Senha provisória'), 'provisoria-123')
+    await user.click(screen.getByRole('button', { name: 'Criar conta' }))
+    await screen.findByText(/criada\. Entregue esta senha provisória/)
+    // userEvent instala o seu próprio clipboard: espiona o que está valendo agora
+    const writeText = vi.spyOn(navigator.clipboard, 'writeText')
+    if (options.clipboard === 'fail') writeText.mockRejectedValue(new Error('negado'))
+    return { calls, user, writeText }
+  }
+
+  it('a senha enviada continua visível depois do sucesso, com aviso de que não será mostrada de novo', async () => {
+    await createdPanel()
+
+    const shown = document.getElementById('created-password') as HTMLInputElement
+    expect(shown.value).toBe('provisoria-123')
+    expect(shown).toHaveAttribute('readonly')
+    expect(screen.getByText(/não será mostrada de novo/)).toBeInTheDocument()
+    expect(screen.getByText(/canal seguro/)).toBeInTheDocument()
+  })
+
+  it('"Copiar senha" entrega EXATAMENTE a senha enviada à API', async () => {
+    const { calls, user, writeText } = await createdPanel()
+
+    await user.click(screen.getByRole('button', { name: 'Copiar senha' }))
+
+    expect(writeText).toHaveBeenCalledWith('provisoria-123')
+    expect((calls.find((c) => c.path === '/api/provider/staff/accounts')!.body as { initialPassword: string }).initialPassword).toBe('provisoria-123')
+    expect(await screen.findByText('Senha copiada.')).toBeVisible()
+  })
+
+  it('se copiar falhar, avisa para copiar manualmente e a senha segue visível', async () => {
+    const { user } = await createdPanel({ clipboard: 'fail' })
+
+    await user.click(screen.getByRole('button', { name: 'Copiar senha' }))
+
+    expect(await screen.findByText(/Não foi possível copiar automaticamente/)).toBeVisible()
+    expect((document.getElementById('created-password') as HTMLInputElement).value).toBe('provisoria-123')
+  })
+
+  it('"Já entreguei" limpa a senha da tela', async () => {
+    const { user } = await createdPanel()
+
+    await user.click(screen.getByRole('button', { name: 'Já entreguei, limpar da tela' }))
+
+    expect(document.getElementById('created-password')).toBeNull()
+    expect(screen.queryByText('provisoria-123')).not.toBeInTheDocument()
+  })
+
+  it('nunca grava a senha em localStorage, sessionStorage ou cookie', async () => {
+    await createdPanel()
+
+    expect(JSON.stringify({ ...window.localStorage })).not.toContain('provisoria-123')
+    expect(JSON.stringify({ ...window.sessionStorage })).not.toContain('provisoria-123')
+    expect(document.cookie).not.toContain('provisoria-123')
+  })
+
+  it('uma falha na criação NÃO apresenta a senha como se a conta existisse', async () => {
+    const { user } = await loginAs('PROVIDER', {
+      'GET /api/provider/staff': () => json(200, []),
+      'POST /api/provider/staff/accounts': () => problem(409, 'x', { reason: 'ACCOUNT_CONFLICT' }),
+    })
+    await user.click(menu('Equipe'))
+    await screen.findByText(/ainda não tem atendentes/)
+    await user.type(screen.getByLabelText('Nome'), 'Bruno')
+    await user.type(screen.getByLabelText('E-mail'), 'ja@exemplo.test')
+    await user.type(screen.getByLabelText('Senha provisória'), 'provisoria-123')
+
+    await user.click(screen.getByRole('button', { name: 'Criar conta' }))
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('Não foi possível criar a conta')
+    expect(document.getElementById('created-password')).toBeNull()
+    expect(screen.queryByText(/criada\. Entregue/)).not.toBeInTheDocument()
+  })
+
+  it('a senha some quando o prestador sai da conta', async () => {
+    const { user } = await createdPanel()
+
+    await user.click(screen.getByRole('button', { name: 'Sair' }))
+    expect(await screen.findByRole('heading', { name: 'Entrar' })).toBeInTheDocument()
+
+    expect(screen.queryByText('provisoria-123')).not.toBeInTheDocument()
+    expect(document.getElementById('created-password')).toBeNull()
   })
 })
