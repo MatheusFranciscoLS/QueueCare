@@ -10,6 +10,7 @@ import { BusinessPage } from './pages/provider/BusinessPage'
 import { ServicesPage } from './pages/provider/ServicesPage'
 import { AgendaPage } from './pages/agenda/AgendaPage'
 import { BookPage } from './pages/customer/BookPage'
+import { MyAppointmentsPage } from './pages/customer/MyAppointmentsPage'
 import { TeamPage } from './pages/provider/TeamPage'
 import { RegisterPage } from './pages/RegisterPage'
 
@@ -32,6 +33,7 @@ export function App() {
           </Route>
           <Route element={<RequireRole roles={['CUSTOMER']} />}>
             <Route path="/agendar" element={<BookPage />} />
+            <Route path="/meus-agendamentos" element={<MyAppointmentsPage />} />
           </Route>
           <Route element={<RequireRole roles={['PROVIDER', 'ATTENDANT']} />}>
             <Route path="/agenda" element={<AgendaPage />} />

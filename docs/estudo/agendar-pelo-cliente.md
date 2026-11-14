@@ -26,4 +26,4 @@ O cliente escolhe prestador, serviço, dia e horário livre, confirma, e a tela 
 3. **Por que os limites de data usam o fuso do negócio?** "Hoje" é o dia do negócio, que pode ser diferente do dia do aparelho.
 
 ## Limitações e o que falta
-- Meus agendamentos e cancelamento pelo cliente (próximo PR); sem busca de prestadores (só os 50 primeiros, com aviso).
+- sem busca de prestadores (só os 50 primeiros, com aviso).

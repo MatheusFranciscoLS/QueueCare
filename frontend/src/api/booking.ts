@@ -40,6 +40,8 @@ export function bookingApi(request: Request) {
     services: (providerId: string) => request<CatalogService[]>(`/api/catalog/providers/${encodeURIComponent(providerId)}/services`),
     slots: (providerId: string, serviceId: string, date: string) =>
       request<FreeSlot[]>(`/api/providers/${encodeURIComponent(providerId)}/slots?serviceId=${encodeURIComponent(serviceId)}&date=${encodeURIComponent(date)}`),
+    mine: (page = 0, size = 50) => request<BookedAppointment[]>(`/api/appointments/mine?page=${page}&size=${size}`),
+    cancel: (appointmentId: string) => request<BookedAppointment>(`/api/appointments/${encodeURIComponent(appointmentId)}/cancel`, { method: 'POST' }),
     book: (input: { providerId: string; serviceId: string; localStart: string }) => request<BookedAppointment>('/api/appointments', { method: 'POST', body: input }),
   }
 }

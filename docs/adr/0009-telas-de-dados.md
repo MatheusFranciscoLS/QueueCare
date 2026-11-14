@@ -22,6 +22,8 @@ As telas do prestador (negócio, serviços, expediente) são as primeiras que ca
 
 11. **Agendar (cliente):** passos em sequência (prestador, serviço, dia, horário, confirmação); trocar uma escolha descarta as seguintes; cada lista é um componente com a escolha na chave (trocar de dia ou de serviço refaz a lista do zero, nunca aparece o horário de outro dia). Os limites do dia (hoje e 90 dias à frente) são do FUSO DO NEGÓCIO. A reserva envia o horário LOCAL do negócio, como a API espera. Recusa da API (409 `SLOT_TAKEN`, 422 de antecedência, passado, fora do expediente, horário de verão) mostra o motivo, descarta o horário escolhido e refaz a lista de horários; durante o envio TODAS as escolhas (prestador, serviço, dia, horário, atualizar) ficam bloqueadas, o estado de envio fica no componente pai, e a confirmação mostra uma cópia do que foi enviado; um segundo clique é ignorado.
 
+12. **Meus agendamentos (cliente):** lista da API (`/mine`, 50 mais recentes, aviso se cheia) com data e hora no FUSO DO NEGÓCIO; cancelar pede confirmação e usa envio único. Sucesso marca o item como cancelado na hora (mesmo se o GET seguinte falhar). Recusa por prazo (`TOO_LATE`) só mostra o motivo, pois nada mudou; recusas em que o servidor já mudou (`ALREADY_CANCELLED`, `NOT_CANCELLABLE`, `CONCURRENT_UPDATE`) mostram o motivo e REFAZEM a lista, para a tela refletir a situação real.
+
 ## Alternativas descartadas
 - **Biblioteca de cache de dados (React Query):** mais conceitos do que três telas pedem; reavaliar com muitas listas.
 - **Salvar cada janela do expediente separadamente:** a API só tem a substituição do conjunto, que evita estados intermediários inválidos e corridas.
