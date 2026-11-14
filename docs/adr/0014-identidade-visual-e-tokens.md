@@ -30,3 +30,4 @@ A agenda e a fila passam a usar a lista `.timeline`: um traço vertical com um p
 
 ## Atualização (PR 3/10): entrada e carregamento
 Um componente único `Loading` (`pages/Loading.tsx`) substitui os "Carregando…" soltos: mantém `role="status"` e o texto (leitores de tela e testes) e acrescenta três pontos animados, decorativos (`aria-hidden`), que respeitam `prefers-reduced-motion`. Login e cadastro ganham faixa de destaque no cartão e uma frase de apresentação. Nenhuma regra de negócio mudou.
+- (revisão do PR 39) Com `prefers-reduced-motion: reduce` os pontos de carregamento ficam parados (`animation: none`), pois encurtar só a duração não para uma animação infinita; verificado em navegador real nos dois modos. O cadastro também ganhou a frase de apresentação.

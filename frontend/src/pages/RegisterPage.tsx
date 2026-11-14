@@ -50,6 +50,7 @@ export function RegisterPage() {
   return (
     <section className="card narrow">
       <h1>Criar conta de cliente</h1>
+      <p className="lead">Escolha o serviço e o horário e acompanhe os seus agendamentos.</p>
       <form onSubmit={submit} noValidate>
         <Field label="Nome" name="name" autoComplete="name" value={name} error={errors.name} onChange={(e) => { setName(e.target.value); setErrors((x) => ({ ...x, name: undefined })) }} />
         <Field label="E-mail" name="email" type="email" autoComplete="username" value={email} error={errors.email} onChange={(e) => { setEmail(e.target.value); setErrors((x) => ({ ...x, email: undefined })) }} />

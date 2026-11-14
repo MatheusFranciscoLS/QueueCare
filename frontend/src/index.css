@@ -631,3 +631,12 @@ input[type='date'] {
   margin: calc(var(--space-2) * -1) 0 var(--space-4);
   color: var(--muted);
 }
+
+/* Movimento reduzido: fica no FIM do arquivo para vencer as regras acima. Os pontos de carregamento ficam parados
+   (a animação repete sem fim, então só encurtar a duração não a pararia). */
+@media (prefers-reduced-motion: reduce) {
+  .loading-dots i {
+    animation: none;
+    opacity: 0.7;
+  }
+}
