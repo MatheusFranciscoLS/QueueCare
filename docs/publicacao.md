@@ -2,7 +2,7 @@
 
 **Regra do dono: custo zero e NENHUM cartão.** Em qualquer passo, se um site pedir cartão, **pare e avise**: não cadastre nada e não troque de provedor por conta própria. Os planos gratuitos mudam: confira a página oficial de cada serviço na hora.
 
-Arquitetura: **Cloudflare Pages** (site) + **Render Free** (API) + **Neon Free** (PostgreSQL).
+Arquitetura EM USO: **Vercel** (site, conta que o Matheus já tinha) + **Render Free** (API) + **Neon Free** (PostgreSQL). A Cloudflare Pages é a alternativa documentada no ADR 0013; a Vercel Hobby é para uso pessoal, o que serve a um portfólio.
 
 ## O que já está pronto no repositório
 - `backend/Dockerfile` e `render.yaml` (plano gratuito, segredos só no painel), `application-prod.yml` e o front com `VITE_API_URL` e aviso de "servidor acordando".
@@ -12,7 +12,7 @@ Arquitetura: **Cloudflare Pages** (site) + **Render Free** (API) + **Neon Free**
 Para cada serviço, entre com o e-mail ou o GitHub, **não cadastre cartão**. Se pedir, pare.
 1. **Neon** (neon.com): criar conta e um projeto PostgreSQL 16. Anote: a URL **com pooler** (host terminado em `-pooler`) e a URL **direta** (sem `-pooler`), o usuário e a senha.
 2. **Render** (render.com): criar conta sem cartão. Não adicione meio de pagamento em nenhum momento.
-3. **Cloudflare** (pages): criar conta e conectar o GitHub ao repositório.
+3. **Vercel**: entrar com o GitHub e importar o repositório (ou, se preferir a alternativa, Cloudflare Pages).
 
 ## Parte 2: banco (Neon)
 - As migrations criam a extensão `btree_gist` sozinhas (V1). Elas rodam na PRIMEIRA subida da API, pela URL direta.
@@ -51,11 +51,11 @@ unset ADMIN_EMAIL ADMIN_PASSWORD DB_PASSWORD JWT_SECRET DB_URL DB_DIRECT_URL DB_
 ```
 Saída "ADMIN criado" = pronto (o `unset` do fim limpa as variáveis). A senha só vale para o primeiro login (a troca é obrigatória).
 
-## Parte 5: site (Cloudflare Pages)
-- Projeto a partir do repositório; **diretório raiz:** `frontend`; **comando de build:** `npm ci && npm run build`; **saída:** `dist`.
-- Variável de build: `VITE_API_URL` = endereço da API no Render (só a origem, `https://...`).
-- Depois de publicar, coloque o endereço do site em `CORS_ALLOWED_ORIGINS` no Render e reinicie a API.
-- Apenas hospedagem estática: não use Pages Functions nem Workers.
+## Parte 5: site (Vercel)
+- Projeto a partir do repositório; **diretório raiz:** `frontend`; framework Vite; saída `dist`; Node 22. O `frontend/vercel.json` reescreve as rotas do React e define cabeçalhos de segurança.
+- Variável de ambiente (produção e preview): `VITE_API_URL` = endereço da API no Render (só a origem, `https://...`).
+- **Proteção de deploy (SSO) desligada**: o site é público. Depois de publicar, coloque o endereço do site em `CORS_ALLOWED_ORIGINS` no Render e reinicie a API.
+- Alternativa: Cloudflare Pages (comando `npm ci && npm run build`, saída `dist`, mesma variável); usar apenas hospedagem estática.
 
 ## Parte 6: conferir
 1. Abra o site: a primeira resposta pode demorar (aviso amarelo). Entre com o admin e troque a senha.
@@ -63,7 +63,7 @@ Saída "ADMIN criado" = pronto (o `unset` do fim limpa as variáveis). A senha s
 3. Painéis de uso do Neon e do Render: confira todo mês os limites (Neon 100 CU-h e 5 GB de transferência; Render 750 h).
 
 ## Desligar tudo (quando quiser)
-Exportar o banco (`pg_dump`) → excluir o serviço no Render → excluir o projeto no Neon → excluir o projeto na Cloudflare → **revogar os tokens e apagar os segredos** do GitHub → conferir que nada ficou ativo.
+Exportar o banco (`pg_dump`) → excluir o serviço no Render → excluir o projeto no Neon → excluir o projeto na Vercel (ou na Cloudflare) → **revogar os tokens e apagar os segredos** do GitHub → conferir que nada ficou ativo.
 
 ## Se algo não couber
 - O Render pedir cartão, ou a API não subir com 512 MB: **parar**. Alternativa honesta: publicar só o site com dados simulados (com aviso) e gravar um vídeo do sistema rodando no computador.
