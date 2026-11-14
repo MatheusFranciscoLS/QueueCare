@@ -5,7 +5,7 @@ Escrito em português do Brasil: conversa, comentários, mensagens de commit e d
 ## 1. O projeto
 Plataforma Full Stack de agendamento e fila de atendimento para pequenos prestadores de serviço (oficina de assistência técnica, clínica pequena, barbearia...). Perfis: ADMIN (administrador de contas, sem acesso a agendas nem a dados de clientes), PROVIDER (prestador), ATTENDANT (atendente), CUSTOMER (cliente).
 
-Stack: React + TypeScript · Java 21 + Spring Boot · Spring Security · Spring Data JPA · PostgreSQL · Flyway · JUnit + MockMvc + Testcontainers · Playwright · Docker · GitHub Actions · (fase 2) hospedagem de custo zero: Cloudflare Pages + Koyeb + Neon (ADR 0013) · (fase 3) documentação em inglês.
+Stack: React + TypeScript · Java 21 + Spring Boot · Spring Security · Spring Data JPA · PostgreSQL · Flyway · JUnit + MockMvc + Testcontainers · Playwright · Docker · GitHub Actions · (fase 2) hospedagem de custo zero: Cloudflare Pages + Render Free + Neon, sem cartão (ADR 0013) · (fase 3) documentação em inglês.
 Monólito modular Spring Boot (sem microsserviços, sem RabbitMQ no MVP). Não ampliar o escopo: veja `docs/roadmap.md`.
 
 Leia antes de qualquer tarefa: `docs/regras.md`, `docs/modelo-dados.md`, `docs/arquitetura.md` e os ADRs em `docs/adr/`. O repositório é a fonte oficial das decisões, não a memória da conversa.
