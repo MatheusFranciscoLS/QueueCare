@@ -13,6 +13,7 @@ Um arquivo (`docs/openapi.json`) descreve TODA a API: caminhos, dados, quem pode
 - Toda operação diz quem pode chamar, vindo do `@PreAuthorize` real.
 - Só login e cadastro são públicos; nada sensível (senha, hash, versão das credenciais) aparece.
 - O esquema de erro tem todos os campos com os tipos certos; 401 e 403 por perfil têm corpo vazio, 403 de troca de senha e 429 são problem+json: o contrato diz exatamente isso e testes de resposta real conferem.
+- O 429 só aparece nas rotas realmente limitadas (login, cadastro, troca de senha, criação de contas, catálogo, horários livres), e testes de resposta real provam os dois sentidos: limitada devolve 429, não limitada nunca devolve.
 - O gerador FALHA diante de uma expressão `@PreAuthorize` que não entende.
 - Desligado por padrão (mutação ligando por padrão derruba o teste).
 

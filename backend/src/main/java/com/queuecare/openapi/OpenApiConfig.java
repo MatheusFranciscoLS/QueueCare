@@ -18,6 +18,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import com.queuecare.security.RateLimitedRoutes;
+import org.springdoc.core.customizers.OpenApiCustomizer;
 import org.springdoc.core.customizers.OperationCustomizer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -83,8 +85,6 @@ class OpenApiConfig {
 				operation.getResponses().addApiResponse("401", new ApiResponse().description("Sem token ou token inválido. Corpo vazio; o cabeçalho WWW-Authenticate: Bearer indica o esquema."));
 				operation.getResponses().addApiResponse("403", problem("O perfil não tem permissão (corpo vazio) ou a troca de senha é obrigatória (application/problem+json com reason PASSWORD_CHANGE_REQUIRED)."));
 			}
-			operation.getResponses().addApiResponse("429", problem("Muitos pedidos (application/problem+json sem detalhes).")
-					.addHeaderObject("Retry-After", new Header().description("Segundos até poder tentar de novo.").schema(new IntegerSchema())));
 			return operation;
 		};
 	}
@@ -101,6 +101,17 @@ class OpenApiConfig {
 			roles.add(m.group(1));
 		}
 		return roles;
+	}
+
+	/** O 429 só existe onde a API realmente limita: a lista vem da MESMA fonte que o RateLimitFilter usa (RateLimitedRoutes). */
+	@Bean
+	OpenApiCustomizer rateLimitResponses() {
+		return openApi -> openApi.getPaths().forEach((path, item) -> item.readOperationsMap().forEach((method, operation) -> {
+			if (RateLimitedRoutes.covers(method.name(), path)) {
+				operation.getResponses().addApiResponse("429", problem("Muitos pedidos (application/problem+json sem detalhes).")
+						.addHeaderObject("Retry-After", new Header().description("Segundos até poder tentar de novo.").schema(new IntegerSchema())));
+			}
+		}));
 	}
 
 	private static ApiResponse problem(String description) {

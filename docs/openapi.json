@@ -693,25 +693,6 @@
               }
             },
             "description" : "O perfil não tem permissão (corpo vazio) ou a troca de senha é obrigatória (application/problem+json com reason PASSWORD_CHANGE_REQUIRED)."
-          },
-          "429" : {
-            "content" : {
-              "application/problem+json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/Problem"
-                }
-              }
-            },
-            "description" : "Muitos pedidos (application/problem+json sem detalhes).",
-            "headers" : {
-              "Retry-After" : {
-                "description" : "Segundos até poder tentar de novo.",
-                "schema" : {
-                  "format" : "int32",
-                  "type" : "integer"
-                }
-              }
-            }
           }
         },
         "tags" : [ "admin-user-controller" ]
@@ -746,25 +727,6 @@
               }
             },
             "description" : "O perfil não tem permissão (corpo vazio) ou a troca de senha é obrigatória (application/problem+json com reason PASSWORD_CHANGE_REQUIRED)."
-          },
-          "429" : {
-            "content" : {
-              "application/problem+json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/Problem"
-                }
-              }
-            },
-            "description" : "Muitos pedidos (application/problem+json sem detalhes).",
-            "headers" : {
-              "Retry-After" : {
-                "description" : "Segundos até poder tentar de novo.",
-                "schema" : {
-                  "format" : "int32",
-                  "type" : "integer"
-                }
-              }
-            }
           }
         },
         "tags" : [ "admin-user-controller" ]
@@ -799,25 +761,6 @@
               }
             },
             "description" : "O perfil não tem permissão (corpo vazio) ou a troca de senha é obrigatória (application/problem+json com reason PASSWORD_CHANGE_REQUIRED)."
-          },
-          "429" : {
-            "content" : {
-              "application/problem+json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/Problem"
-                }
-              }
-            },
-            "description" : "Muitos pedidos (application/problem+json sem detalhes).",
-            "headers" : {
-              "Retry-After" : {
-                "description" : "Segundos até poder tentar de novo.",
-                "schema" : {
-                  "format" : "int32",
-                  "type" : "integer"
-                }
-              }
-            }
           }
         },
         "tags" : [ "admin-user-controller" ]
@@ -862,25 +805,6 @@
               }
             },
             "description" : "O perfil não tem permissão (corpo vazio) ou a troca de senha é obrigatória (application/problem+json com reason PASSWORD_CHANGE_REQUIRED)."
-          },
-          "429" : {
-            "content" : {
-              "application/problem+json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/Problem"
-                }
-              }
-            },
-            "description" : "Muitos pedidos (application/problem+json sem detalhes).",
-            "headers" : {
-              "Retry-After" : {
-                "description" : "Segundos até poder tentar de novo.",
-                "schema" : {
-                  "format" : "int32",
-                  "type" : "integer"
-                }
-              }
-            }
           }
         },
         "tags" : [ "admin-user-controller" ]
@@ -925,25 +849,6 @@
               }
             },
             "description" : "O perfil não tem permissão (corpo vazio) ou a troca de senha é obrigatória (application/problem+json com reason PASSWORD_CHANGE_REQUIRED)."
-          },
-          "429" : {
-            "content" : {
-              "application/problem+json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/Problem"
-                }
-              }
-            },
-            "description" : "Muitos pedidos (application/problem+json sem detalhes).",
-            "headers" : {
-              "Retry-After" : {
-                "description" : "Segundos até poder tentar de novo.",
-                "schema" : {
-                  "format" : "int32",
-                  "type" : "integer"
-                }
-              }
-            }
           }
         },
         "tags" : [ "agenda-controller" ]
@@ -979,25 +884,6 @@
               }
             },
             "description" : "O perfil não tem permissão (corpo vazio) ou a troca de senha é obrigatória (application/problem+json com reason PASSWORD_CHANGE_REQUIRED)."
-          },
-          "429" : {
-            "content" : {
-              "application/problem+json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/Problem"
-                }
-              }
-            },
-            "description" : "Muitos pedidos (application/problem+json sem detalhes).",
-            "headers" : {
-              "Retry-After" : {
-                "description" : "Segundos até poder tentar de novo.",
-                "schema" : {
-                  "format" : "int32",
-                  "type" : "integer"
-                }
-              }
-            }
           }
         },
         "tags" : [ "agenda-controller" ]
@@ -1030,25 +916,6 @@
               }
             },
             "description" : "O perfil não tem permissão (corpo vazio) ou a troca de senha é obrigatória (application/problem+json com reason PASSWORD_CHANGE_REQUIRED)."
-          },
-          "429" : {
-            "content" : {
-              "application/problem+json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/Problem"
-                }
-              }
-            },
-            "description" : "Muitos pedidos (application/problem+json sem detalhes).",
-            "headers" : {
-              "Retry-After" : {
-                "description" : "Segundos até poder tentar de novo.",
-                "schema" : {
-                  "format" : "int32",
-                  "type" : "integer"
-                }
-              }
-            }
           }
         },
         "tags" : [ "agenda-controller" ]
@@ -1091,25 +958,6 @@
               }
             },
             "description" : "O perfil não tem permissão (corpo vazio) ou a troca de senha é obrigatória (application/problem+json com reason PASSWORD_CHANGE_REQUIRED)."
-          },
-          "429" : {
-            "content" : {
-              "application/problem+json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/Problem"
-                }
-              }
-            },
-            "description" : "Muitos pedidos (application/problem+json sem detalhes).",
-            "headers" : {
-              "Retry-After" : {
-                "description" : "Segundos até poder tentar de novo.",
-                "schema" : {
-                  "format" : "int32",
-                  "type" : "integer"
-                }
-              }
-            }
           }
         },
         "tags" : [ "appointment-controller" ]
@@ -1164,25 +1012,6 @@
               }
             },
             "description" : "O perfil não tem permissão (corpo vazio) ou a troca de senha é obrigatória (application/problem+json com reason PASSWORD_CHANGE_REQUIRED)."
-          },
-          "429" : {
-            "content" : {
-              "application/problem+json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/Problem"
-                }
-              }
-            },
-            "description" : "Muitos pedidos (application/problem+json sem detalhes).",
-            "headers" : {
-              "Retry-After" : {
-                "description" : "Segundos até poder tentar de novo.",
-                "schema" : {
-                  "format" : "int32",
-                  "type" : "integer"
-                }
-              }
-            }
           }
         },
         "tags" : [ "appointment-controller" ]
@@ -1224,25 +1053,6 @@
               }
             },
             "description" : "O perfil não tem permissão (corpo vazio) ou a troca de senha é obrigatória (application/problem+json com reason PASSWORD_CHANGE_REQUIRED)."
-          },
-          "429" : {
-            "content" : {
-              "application/problem+json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/Problem"
-                }
-              }
-            },
-            "description" : "Muitos pedidos (application/problem+json sem detalhes).",
-            "headers" : {
-              "Retry-After" : {
-                "description" : "Segundos até poder tentar de novo.",
-                "schema" : {
-                  "format" : "int32",
-                  "type" : "integer"
-                }
-              }
-            }
           }
         },
         "tags" : [ "appointment-controller" ]
@@ -1284,25 +1094,6 @@
               }
             },
             "description" : "O perfil não tem permissão (corpo vazio) ou a troca de senha é obrigatória (application/problem+json com reason PASSWORD_CHANGE_REQUIRED)."
-          },
-          "429" : {
-            "content" : {
-              "application/problem+json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/Problem"
-                }
-              }
-            },
-            "description" : "Muitos pedidos (application/problem+json sem detalhes).",
-            "headers" : {
-              "Retry-After" : {
-                "description" : "Segundos até poder tentar de novo.",
-                "schema" : {
-                  "format" : "int32",
-                  "type" : "integer"
-                }
-              }
-            }
           }
         },
         "tags" : [ "appointment-controller" ]
@@ -1344,25 +1135,6 @@
               }
             },
             "description" : "O perfil não tem permissão (corpo vazio) ou a troca de senha é obrigatória (application/problem+json com reason PASSWORD_CHANGE_REQUIRED)."
-          },
-          "429" : {
-            "content" : {
-              "application/problem+json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/Problem"
-                }
-              }
-            },
-            "description" : "Muitos pedidos (application/problem+json sem detalhes).",
-            "headers" : {
-              "Retry-After" : {
-                "description" : "Segundos até poder tentar de novo.",
-                "schema" : {
-                  "format" : "int32",
-                  "type" : "integer"
-                }
-              }
-            }
           }
         },
         "tags" : [ "appointment-controller" ]
@@ -1690,25 +1462,6 @@
               }
             },
             "description" : "O perfil não tem permissão (corpo vazio) ou a troca de senha é obrigatória (application/problem+json com reason PASSWORD_CHANGE_REQUIRED)."
-          },
-          "429" : {
-            "content" : {
-              "application/problem+json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/Problem"
-                }
-              }
-            },
-            "description" : "Muitos pedidos (application/problem+json sem detalhes).",
-            "headers" : {
-              "Retry-After" : {
-                "description" : "Segundos até poder tentar de novo.",
-                "schema" : {
-                  "format" : "int32",
-                  "type" : "integer"
-                }
-              }
-            }
           }
         },
         "tags" : [ "me-controller" ]
@@ -1741,25 +1494,6 @@
               }
             },
             "description" : "O perfil não tem permissão (corpo vazio) ou a troca de senha é obrigatória (application/problem+json com reason PASSWORD_CHANGE_REQUIRED)."
-          },
-          "429" : {
-            "content" : {
-              "application/problem+json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/Problem"
-                }
-              }
-            },
-            "description" : "Muitos pedidos (application/problem+json sem detalhes).",
-            "headers" : {
-              "Retry-After" : {
-                "description" : "Segundos até poder tentar de novo.",
-                "schema" : {
-                  "format" : "int32",
-                  "type" : "integer"
-                }
-              }
-            }
           }
         },
         "tags" : [ "provider-controller" ]
@@ -1800,25 +1534,6 @@
               }
             },
             "description" : "O perfil não tem permissão (corpo vazio) ou a troca de senha é obrigatória (application/problem+json com reason PASSWORD_CHANGE_REQUIRED)."
-          },
-          "429" : {
-            "content" : {
-              "application/problem+json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/Problem"
-                }
-              }
-            },
-            "description" : "Muitos pedidos (application/problem+json sem detalhes).",
-            "headers" : {
-              "Retry-After" : {
-                "description" : "Segundos até poder tentar de novo.",
-                "schema" : {
-                  "format" : "int32",
-                  "type" : "integer"
-                }
-              }
-            }
           }
         },
         "tags" : [ "provider-controller" ]
@@ -1859,25 +1574,6 @@
               }
             },
             "description" : "O perfil não tem permissão (corpo vazio) ou a troca de senha é obrigatória (application/problem+json com reason PASSWORD_CHANGE_REQUIRED)."
-          },
-          "429" : {
-            "content" : {
-              "application/problem+json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/Problem"
-                }
-              }
-            },
-            "description" : "Muitos pedidos (application/problem+json sem detalhes).",
-            "headers" : {
-              "Retry-After" : {
-                "description" : "Segundos até poder tentar de novo.",
-                "schema" : {
-                  "format" : "int32",
-                  "type" : "integer"
-                }
-              }
-            }
           }
         },
         "tags" : [ "provider-controller" ]
@@ -1913,25 +1609,6 @@
               }
             },
             "description" : "O perfil não tem permissão (corpo vazio) ou a troca de senha é obrigatória (application/problem+json com reason PASSWORD_CHANGE_REQUIRED)."
-          },
-          "429" : {
-            "content" : {
-              "application/problem+json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/Problem"
-                }
-              }
-            },
-            "description" : "Muitos pedidos (application/problem+json sem detalhes).",
-            "headers" : {
-              "Retry-After" : {
-                "description" : "Segundos até poder tentar de novo.",
-                "schema" : {
-                  "format" : "int32",
-                  "type" : "integer"
-                }
-              }
-            }
           }
         },
         "tags" : [ "provider-controller" ]
@@ -1978,25 +1655,6 @@
               }
             },
             "description" : "O perfil não tem permissão (corpo vazio) ou a troca de senha é obrigatória (application/problem+json com reason PASSWORD_CHANGE_REQUIRED)."
-          },
-          "429" : {
-            "content" : {
-              "application/problem+json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/Problem"
-                }
-              }
-            },
-            "description" : "Muitos pedidos (application/problem+json sem detalhes).",
-            "headers" : {
-              "Retry-After" : {
-                "description" : "Segundos até poder tentar de novo.",
-                "schema" : {
-                  "format" : "int32",
-                  "type" : "integer"
-                }
-              }
-            }
           }
         },
         "tags" : [ "provider-controller" ]
@@ -2032,25 +1690,6 @@
               }
             },
             "description" : "O perfil não tem permissão (corpo vazio) ou a troca de senha é obrigatória (application/problem+json com reason PASSWORD_CHANGE_REQUIRED)."
-          },
-          "429" : {
-            "content" : {
-              "application/problem+json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/Problem"
-                }
-              }
-            },
-            "description" : "Muitos pedidos (application/problem+json sem detalhes).",
-            "headers" : {
-              "Retry-After" : {
-                "description" : "Segundos até poder tentar de novo.",
-                "schema" : {
-                  "format" : "int32",
-                  "type" : "integer"
-                }
-              }
-            }
           }
         },
         "tags" : [ "provider-controller" ]
@@ -2091,25 +1730,6 @@
               }
             },
             "description" : "O perfil não tem permissão (corpo vazio) ou a troca de senha é obrigatória (application/problem+json com reason PASSWORD_CHANGE_REQUIRED)."
-          },
-          "429" : {
-            "content" : {
-              "application/problem+json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/Problem"
-                }
-              }
-            },
-            "description" : "Muitos pedidos (application/problem+json sem detalhes).",
-            "headers" : {
-              "Retry-After" : {
-                "description" : "Segundos até poder tentar de novo.",
-                "schema" : {
-                  "format" : "int32",
-                  "type" : "integer"
-                }
-              }
-            }
           }
         },
         "tags" : [ "provider-controller" ]
@@ -2161,25 +1781,6 @@
               }
             },
             "description" : "O perfil não tem permissão (corpo vazio) ou a troca de senha é obrigatória (application/problem+json com reason PASSWORD_CHANGE_REQUIRED)."
-          },
-          "429" : {
-            "content" : {
-              "application/problem+json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/Problem"
-                }
-              }
-            },
-            "description" : "Muitos pedidos (application/problem+json sem detalhes).",
-            "headers" : {
-              "Retry-After" : {
-                "description" : "Segundos até poder tentar de novo.",
-                "schema" : {
-                  "format" : "int32",
-                  "type" : "integer"
-                }
-              }
-            }
           }
         },
         "tags" : [ "provider-controller" ]
@@ -2215,25 +1816,6 @@
               }
             },
             "description" : "O perfil não tem permissão (corpo vazio) ou a troca de senha é obrigatória (application/problem+json com reason PASSWORD_CHANGE_REQUIRED)."
-          },
-          "429" : {
-            "content" : {
-              "application/problem+json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/Problem"
-                }
-              }
-            },
-            "description" : "Muitos pedidos (application/problem+json sem detalhes).",
-            "headers" : {
-              "Retry-After" : {
-                "description" : "Segundos até poder tentar de novo.",
-                "schema" : {
-                  "format" : "int32",
-                  "type" : "integer"
-                }
-              }
-            }
           }
         },
         "tags" : [ "staff-controller" ]
@@ -2274,25 +1856,6 @@
               }
             },
             "description" : "O perfil não tem permissão (corpo vazio) ou a troca de senha é obrigatória (application/problem+json com reason PASSWORD_CHANGE_REQUIRED)."
-          },
-          "429" : {
-            "content" : {
-              "application/problem+json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/Problem"
-                }
-              }
-            },
-            "description" : "Muitos pedidos (application/problem+json sem detalhes).",
-            "headers" : {
-              "Retry-After" : {
-                "description" : "Segundos até poder tentar de novo.",
-                "schema" : {
-                  "format" : "int32",
-                  "type" : "integer"
-                }
-              }
-            }
           }
         },
         "tags" : [ "staff-controller" ]
@@ -2388,25 +1951,6 @@
               }
             },
             "description" : "O perfil não tem permissão (corpo vazio) ou a troca de senha é obrigatória (application/problem+json com reason PASSWORD_CHANGE_REQUIRED)."
-          },
-          "429" : {
-            "content" : {
-              "application/problem+json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/Problem"
-                }
-              }
-            },
-            "description" : "Muitos pedidos (application/problem+json sem detalhes).",
-            "headers" : {
-              "Retry-After" : {
-                "description" : "Segundos até poder tentar de novo.",
-                "schema" : {
-                  "format" : "int32",
-                  "type" : "integer"
-                }
-              }
-            }
           }
         },
         "tags" : [ "staff-controller" ]
@@ -2441,25 +1985,6 @@
               }
             },
             "description" : "O perfil não tem permissão (corpo vazio) ou a troca de senha é obrigatória (application/problem+json com reason PASSWORD_CHANGE_REQUIRED)."
-          },
-          "429" : {
-            "content" : {
-              "application/problem+json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/Problem"
-                }
-              }
-            },
-            "description" : "Muitos pedidos (application/problem+json sem detalhes).",
-            "headers" : {
-              "Retry-After" : {
-                "description" : "Segundos até poder tentar de novo.",
-                "schema" : {
-                  "format" : "int32",
-                  "type" : "integer"
-                }
-              }
-            }
           }
         },
         "tags" : [ "staff-controller" ]
@@ -2542,108 +2067,6 @@
           }
         },
         "tags" : [ "slot-controller" ]
-      }
-    },
-    "/api/test/provider-only" : {
-      "get" : {
-        "description" : "Perfis: PROVIDER.",
-        "operationId" : "providerOnly",
-        "responses" : {
-          "200" : {
-            "content" : {
-              "*/*" : {
-                "schema" : {
-                  "type" : "string"
-                }
-              }
-            },
-            "description" : "OK"
-          },
-          "401" : {
-            "description" : "Sem token ou token inválido. Corpo vazio; o cabeçalho WWW-Authenticate: Bearer indica o esquema."
-          },
-          "403" : {
-            "content" : {
-              "application/problem+json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/Problem"
-                }
-              }
-            },
-            "description" : "O perfil não tem permissão (corpo vazio) ou a troca de senha é obrigatória (application/problem+json com reason PASSWORD_CHANGE_REQUIRED)."
-          },
-          "429" : {
-            "content" : {
-              "application/problem+json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/Problem"
-                }
-              }
-            },
-            "description" : "Muitos pedidos (application/problem+json sem detalhes).",
-            "headers" : {
-              "Retry-After" : {
-                "description" : "Segundos até poder tentar de novo.",
-                "schema" : {
-                  "format" : "int32",
-                  "type" : "integer"
-                }
-              }
-            }
-          }
-        },
-        "tags" : [ "probe-controller" ]
-      }
-    },
-    "/api/test/staff" : {
-      "get" : {
-        "description" : "Perfis: PROVIDER, ATTENDANT.",
-        "operationId" : "staff",
-        "responses" : {
-          "200" : {
-            "content" : {
-              "*/*" : {
-                "schema" : {
-                  "type" : "string"
-                }
-              }
-            },
-            "description" : "OK"
-          },
-          "401" : {
-            "description" : "Sem token ou token inválido. Corpo vazio; o cabeçalho WWW-Authenticate: Bearer indica o esquema."
-          },
-          "403" : {
-            "content" : {
-              "application/problem+json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/Problem"
-                }
-              }
-            },
-            "description" : "O perfil não tem permissão (corpo vazio) ou a troca de senha é obrigatória (application/problem+json com reason PASSWORD_CHANGE_REQUIRED)."
-          },
-          "429" : {
-            "content" : {
-              "application/problem+json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/Problem"
-                }
-              }
-            },
-            "description" : "Muitos pedidos (application/problem+json sem detalhes).",
-            "headers" : {
-              "Retry-After" : {
-                "description" : "Segundos até poder tentar de novo.",
-                "schema" : {
-                  "format" : "int32",
-                  "type" : "integer"
-                }
-              }
-            }
-          }
-        },
-        "tags" : [ "probe-controller" ]
       }
     }
   },

@@ -22,7 +22,8 @@ import org.springframework.test.context.TestPropertySource;
  * ou uma regra de perfil sem atualizar o contrato quebra este teste. Para atualizar o arquivo, rode
  * {@code ./mvnw test -Dtest=OpenApiContractTest -Dopenapi.update=true} e revise o diff.
  */
-@TestPropertySource(properties = "springdoc.api-docs.enabled=true")
+// As rotas de sonda dos testes (/api/test/**) nunca entram no contrato publicado.
+@TestPropertySource(properties = { "springdoc.api-docs.enabled=true", "springdoc.paths-to-exclude=/api/test/**" })
 class OpenApiContractTest extends AuthIntegrationTestBase {
 
 	private static final ObjectMapper MAPPER = new ObjectMapper().enable(SerializationFeature.INDENT_OUTPUT).enable(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS);
@@ -123,7 +124,24 @@ class OpenApiContractTest extends AuthIntegrationTestBase {
 		assertTrue(unauthorized.get("description").asText().contains("WWW-Authenticate"));
 		assertTrue(responses.at("/403/description").asText().contains("PASSWORD_CHANGE_REQUIRED"));
 		assertEquals("#/components/schemas/Problem", responses.at("/403/content/application~1problem+json/schema/$ref").asText());
-		assertEquals("#/components/schemas/Problem", responses.at("/429/content/application~1problem+json/schema/$ref").asText());
-		assertEquals("integer", responses.at("/429/headers/Retry-After/schema/type").asText());
+		assertFalse(responses.has("429"), "cancelar não passa por limite de requisições");
+	}
+
+	@Test
+	void respostaDe429SoExisteNasRotasRealmenteLimitadas() throws Exception {
+		JsonNode paths = spec().get("paths");
+		java.util.Set<String> expected = java.util.Set.of("post /api/auth/login", "post /api/auth/register", "post /api/auth/change-password", "post /api/admin/providers",
+				"post /api/provider/staff/accounts", "get /api/catalog/providers", "get /api/catalog/providers/{providerId}/services", "get /api/providers/{providerId}/slots");
+		java.util.Set<String> found = new java.util.TreeSet<>();
+		paths.fieldNames().forEachRemaining(path -> paths.get(path).fieldNames().forEachRemaining(method -> {
+			JsonNode op = paths.get(path).get(method);
+			if (op.path("responses").has("429")) {
+				found.add(method + " " + path);
+				assertEquals("#/components/schemas/Problem", op.at("/responses/429/content/application~1problem+json/schema/$ref").asText());
+				assertEquals("integer", op.at("/responses/429/headers/Retry-After/schema/type").asText());
+			}
+		}));
+		assertEquals(new java.util.TreeSet<>(expected), found, "429 só nas rotas limitadas");
+		assertFalse(paths.toString().contains("/api/test/"), "rotas de sonda dos testes não entram no contrato");
 	}
 }

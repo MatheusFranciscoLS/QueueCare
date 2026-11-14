@@ -19,7 +19,7 @@ import org.springframework.test.web.servlet.MvcResult;
  * O que o contrato OpenAPI promete para 401, 403 e 429 é exatamente o que a API ENTREGA (status, Content-Type, cabeçalhos e corpo):
  * 401 e 403 por perfil vêm da cadeia de segurança com corpo vazio; a troca de senha obrigatória e o 429 têm corpo problem+json.
  */
-@TestPropertySource(properties = "queuecare.rate-limit.login-per-minute=1")
+@TestPropertySource(properties = { "queuecare.rate-limit.login-per-minute=1", "queuecare.rate-limit.slots-per-minute=1" })
 class OpenApiErrorBehaviorTest extends AuthIntegrationTestBase {
 
 	@Test
@@ -59,5 +59,17 @@ class OpenApiErrorBehaviorTest extends AuthIntegrationTestBase {
 				.andExpect(jsonPath("$.status").value(429)).andExpect(jsonPath("$.title").value("Too Many Requests")).andReturn();
 		assertTrue(result.getResponse().getContentType().startsWith("application/problem+json"), result.getResponse().getContentType());
 		assertNotNull(result.getResponse().getHeader("Retry-After"));
+	}
+
+	@Test
+	void catalogoLimitadoRecebe429ProblemJsonMasRotaNaoLimitadaNuncaRecebe() throws Exception {
+		String customer = "Bearer " + validToken(seedUser("cliente@exemplo.test", "CUSTOMER", true));
+		mvc.perform(get("/api/catalog/providers").header(HttpHeaders.AUTHORIZATION, customer)).andExpect(status().isOk());
+		MvcResult limited = mvc.perform(get("/api/catalog/providers").header(HttpHeaders.AUTHORIZATION, customer)).andExpect(status().isTooManyRequests()).andReturn();
+		assertTrue(limited.getResponse().getContentType().startsWith("application/problem+json"));
+		// uma rota que o contrato NÃO marca com 429 realmente nunca o devolve, por mais que se repita
+		for (int i = 0; i < 6; i++) {
+			mvc.perform(get("/api/appointments/mine").header(HttpHeaders.AUTHORIZATION, customer)).andExpect(status().isOk());
+		}
 	}
 }
