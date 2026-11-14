@@ -33,6 +33,7 @@ export function Layout() {
           <NavLink to="/expediente">Expediente</NavLink>
           <NavLink to="/equipe">Equipe</NavLink>
           <NavLink to="/agenda">Agenda</NavLink>
+          <NavLink to="/fila">Fila</NavLink>
         </nav>
       )}
       {user && !user.mustChangePassword && user.role === 'CUSTOMER' && (
@@ -44,6 +45,7 @@ export function Layout() {
       {user && !user.mustChangePassword && user.role === 'ATTENDANT' && (
         <nav className="menu" aria-label="Menu do atendente">
           <NavLink to="/agenda">Agenda</NavLink>
+          <NavLink to="/fila">Fila</NavLink>
         </nav>
       )}
       <main className="content">

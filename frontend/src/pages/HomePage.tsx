@@ -33,7 +33,10 @@ export function HomePage() {
           <h2>No dia a dia</h2>
           <ul>
             <li>
-              <Link to="/agenda">Agenda</Link>: os agendamentos do dia, com cancelamento
+              <Link to="/agenda">Agenda</Link>: os agendamentos do dia, com chegada, conclusão e cancelamento
+            </li>
+            <li>
+              <Link to="/fila">Fila</Link>: quem já chegou e espera, por ordem de chegada
             </li>
             <li>
               <Link to="/equipe">Equipe</Link>: criar contas de atendentes, vincular e desativar
@@ -59,7 +62,10 @@ export function HomePage() {
           <h2>No dia a dia</h2>
           <ul>
             <li>
-              <Link to="/agenda">Agenda</Link>: os agendamentos do dia do prestador, com cancelamento
+              <Link to="/agenda">Agenda</Link>: os agendamentos do dia do prestador, com chegada, conclusão e cancelamento
+            </li>
+            <li>
+              <Link to="/fila">Fila</Link>: quem já chegou e espera, por ordem de chegada
             </li>
           </ul>
         </>
