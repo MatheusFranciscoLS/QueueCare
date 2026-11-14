@@ -121,7 +121,7 @@ function Row({
     <li className="row" ref={rowRef} tabIndex={-1}>
       <span>
         <strong>{longDate(todayIn(zone, new Date(item.startsAt)))}</strong>, {timeIn(item.startsAt, zone)}–{timeIn(item.endsAt, zone)} · {what}{' '}
-        <span className="badge">{STATUS_LABEL[status] ?? status}</span>
+        <span className="badge" data-status={status}>{STATUS_LABEL[status] ?? status}</span>
       </span>
       {status === 'SCHEDULED' && (
         <span className="actions">

@@ -9,6 +9,11 @@ export function Layout() {
     <div className="shell">
       <header className="topbar">
         <Link to="/" className="brand">
+          <span className="brand-mark" aria-hidden="true">
+            <i />
+            <i />
+            <i />
+          </span>
           QueueCare
         </Link>
         {user && (

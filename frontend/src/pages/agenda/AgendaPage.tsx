@@ -251,7 +251,7 @@ function AppointmentRow({
         <strong>
           {timeIn(item.startsAt, timeZone)}–{timeIn(item.endsAt, timeZone)}
         </strong>{' '}
-        · {item.serviceName ?? 'Serviço'} · {customer} <span className="badge">{STATUS_LABEL[status] ?? status}</span>
+        · {item.serviceName ?? 'Serviço'} · {customer} <span className="badge" data-status={status}>{STATUS_LABEL[status] ?? status}</span>
       </span>
       {status === 'SCHEDULED' && (
         <span className="actions">
