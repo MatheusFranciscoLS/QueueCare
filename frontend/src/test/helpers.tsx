@@ -1,8 +1,8 @@
 import { render } from '@testing-library/react'
-import { MemoryRouter } from 'react-router-dom'
+import { MemoryRouter, useNavigate } from 'react-router-dom'
 import { vi } from 'vitest'
 import { App } from '../App'
-import { AuthProvider } from '../auth/session'
+import { AuthProvider, useAuth, type AuthApi } from '../auth/session'
 
 export type Handler = (request: { path: string; method: string; body: unknown; authorization: string | null }) => Response | Promise<Response>
 
@@ -60,3 +60,23 @@ export function token(accessToken = 't-1', expiresIn = 900, mustChangePassword =
 export const PASSWORD = ['senha', 'forte', '123'].join('-')
 export const NEW_PASSWORD = ['nova', 'senha', 'forte', '456'].join('-')
 export const WRONG_PASSWORD = ['errada', '1234'].join('-')
+
+/** Como renderApp, mas devolve a sessão e a navegação para o teste "digitar a URL" e mexer na sessão direto. */
+export function renderWithHarness(path = '/entrar') {
+  let api!: AuthApi
+  let navigate!: ReturnType<typeof useNavigate>
+  function Harness() {
+    api = useAuth()
+    navigate = useNavigate()
+    return null
+  }
+  render(
+    <MemoryRouter initialEntries={[path]}>
+      <AuthProvider>
+        <Harness />
+        <App />
+      </AuthProvider>
+    </MemoryRouter>,
+  )
+  return { api: () => api, navigate: () => navigate }
+}

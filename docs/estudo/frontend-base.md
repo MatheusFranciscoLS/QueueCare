@@ -33,4 +33,4 @@ A interface já entra, cadastra, obriga a trocar a senha provisória e sai, com 
 3. **Como o front reage a um token que deixou de valer em outro aparelho?** Todo 401 de chamada autenticada encerra a sessão e leva à entrada.
 
 ## Limitações e o que falta
-- Sem telas de negócio ainda; sem teste ponta a ponta com navegador real (Playwright entra depois).
+- As telas de negócio do prestador estão em `telas-do-prestador.md`; sem teste ponta a ponta com navegador real (Playwright entra depois).
