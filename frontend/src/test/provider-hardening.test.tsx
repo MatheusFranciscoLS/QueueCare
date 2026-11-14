@@ -358,3 +358,43 @@ describe('serviços: edição durante o GET posterior à gravação', () => {
     expect(document.getElementById('duration-s-1')).toHaveValue(45)
   })
 })
+
+describe('serviços: campos bloqueados durante a gravação', () => {
+  it('edição: nome, duração, Salvar e Cancelar ficam desabilitados enquanto o PUT está pendente', async () => {
+    const slowPut = deferred<Response>()
+    const { user } = await loginAsProvider({
+      'GET /api/provider/services': () => json(200, [{ id: 's-1', name: 'Troca de óleo', durationMinutes: 60, active: true }]),
+      'PUT /api/provider/services/s-1': () => slowPut.promise,
+    })
+    await user.click(menu('/servicos'))
+    await screen.findByText('Troca de óleo')
+    await user.click(screen.getByRole('button', { name: 'Editar' }))
+    await user.type(screen.getByLabelText('Nome'), ' completa')
+
+    await user.click(screen.getByRole('button', { name: 'Salvar' }))
+
+    expect(screen.getByLabelText('Nome')).toBeDisabled()
+    expect(document.getElementById('duration-s-1')).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Salvar' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Cancelar' })).toBeDisabled()
+    await act(async () => slowPut.resolve(json(200, { id: 's-1', name: 'Troca de óleo completa', durationMinutes: 60, active: true })))
+  })
+
+  it('novo serviço: campos e botão ficam desabilitados enquanto o POST está pendente', async () => {
+    const slowPost = deferred<Response>()
+    const { user } = await loginAsProvider({
+      'GET /api/provider/services': () => json(200, []),
+      'POST /api/provider/services': () => slowPost.promise,
+    })
+    await user.click(menu('/servicos'))
+    await screen.findByText(/ainda não tem serviços/)
+    await user.type(screen.getByLabelText('Nome do serviço'), 'Revisão')
+
+    await user.click(screen.getByRole('button', { name: 'Adicionar serviço' }))
+
+    expect(screen.getByLabelText('Nome do serviço')).toBeDisabled()
+    expect(screen.getByLabelText('Duração (minutos)')).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Salvando…' })).toBeDisabled()
+    await act(async () => slowPost.resolve(json(201, { id: 's-9', name: 'Revisão', durationMinutes: 60, active: true })))
+  })
+})

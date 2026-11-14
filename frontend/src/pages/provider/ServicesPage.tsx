@@ -92,10 +92,11 @@ function NewService({ onCreated }: { onCreated: () => Promise<void> }) {
 
   return (
     <form onSubmit={submit} noValidate>
-      <Field label="Nome do serviço" name="new-name" value={name} error={errors.name} onChange={(e) => { setName(e.target.value); setErrors((x) => ({ ...x, name: undefined })) }} />
+      <Field label="Nome do serviço" name="new-name" disabled={busy} value={name} error={errors.name} onChange={(e) => { setName(e.target.value); setErrors((x) => ({ ...x, name: undefined })) }} />
       <Field
         label="Duração (minutos)"
         name="new-duration"
+        disabled={busy}
         type="number"
         inputMode="numeric"
         min={MIN_MINUTES}
@@ -181,8 +182,8 @@ function ServiceRow({ service, onChanged }: { service: Service; onChanged: () =>
   }
   return (
     <li className="row editing">
-      <Field label="Nome" name={`name-${service.id}`} value={name} error={errors.name} onChange={(e) => setName(e.target.value)} />
-      <Field label="Duração (minutos)" name={`duration-${service.id}`} type="number" inputMode="numeric" min={MIN_MINUTES} max={MAX_MINUTES} step={5} value={duration} error={errors.duration} onChange={(e) => setDuration(e.target.value)} />
+      <Field label="Nome" name={`name-${service.id}`} disabled={busy} value={name} error={errors.name} onChange={(e) => setName(e.target.value)} />
+      <Field label="Duração (minutos)" name={`duration-${service.id}`} disabled={busy} type="number" inputMode="numeric" min={MIN_MINUTES} max={MAX_MINUTES} step={5} value={duration} error={errors.duration} onChange={(e) => setDuration(e.target.value)} />
       <p role="alert" className="error" hidden={!errors.form}>
         {errors.form}
       </p>
@@ -193,6 +194,7 @@ function ServiceRow({ service, onChanged }: { service: Service; onChanged: () =>
         <button
           type="button"
           className="button secondary"
+          disabled={busy}
           onClick={() => {
             setEditing(false)
             setName(service.name)
