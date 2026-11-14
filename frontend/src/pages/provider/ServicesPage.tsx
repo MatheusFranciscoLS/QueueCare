@@ -6,6 +6,7 @@ import { describeError } from '../../api/messages'
 import { providerApi, type Service } from '../../api/provider'
 import { useAuth } from '../../auth/session'
 import { Field } from '../Field'
+import { RefreshWarning } from '../RefreshWarning'
 import { useLoad } from '../useLoad'
 import { useSingleFlight } from '../useSingleFlight'
 
@@ -42,6 +43,7 @@ export function ServicesPage() {
   return (
     <section className="card">
       <h1>Serviços</h1>
+      {error !== undefined && data && <RefreshWarning onRetry={reload} />}
       {data && data.length === 0 && <p className="notice">Você ainda não tem serviços. Cadastre o primeiro abaixo.</p>}
       <ul className="rows">
         {data?.map((service) => (
@@ -79,7 +81,9 @@ function NewService({ onCreated }: { onCreated: () => void }) {
         setDuration('60')
         onCreated()
       } catch (e) {
-        setErrors(e instanceof ApiError && e.status === 400 ? { name: e.fieldErrors.name, duration: e.fieldErrors.durationMinutes, form: describeError(e) } : { form: describeError(e) })
+        // Erro de campo aparece no campo; o aviso geral só quando não há campo a apontar (sem repetir o mesmo texto).
+        if (e instanceof ApiError && e.status === 400 && (e.fieldErrors.name || e.fieldErrors.durationMinutes)) setErrors({ name: e.fieldErrors.name, duration: e.fieldErrors.durationMinutes })
+        else setErrors({ form: describeError(e) })
       } finally {
         setBusy(false)
       }

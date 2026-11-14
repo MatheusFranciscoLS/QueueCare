@@ -270,6 +270,10 @@ input[type='time'] {
   width: auto;
 }
 
+.notice.warning {
+  border: 1px solid var(--danger);
+}
+
 [hidden] {
   display: none !important;
 }

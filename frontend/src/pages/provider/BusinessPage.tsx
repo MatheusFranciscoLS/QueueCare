@@ -7,6 +7,7 @@ import { DEFAULT_TIME_ZONE, timeZones } from '../../api/timezones'
 import { useAuth } from '../../auth/session'
 import { Field } from '../Field'
 import { useFocusFirstInvalid } from '../useFocusFirstInvalid'
+import { RefreshWarning } from '../RefreshWarning'
 import { useLoad } from '../useLoad'
 import { useSingleFlight } from '../useSingleFlight'
 
@@ -19,8 +20,13 @@ export function BusinessPage() {
   const { data, error, loading, reload } = useLoad<Business>(load)
 
   if (loading && !data) return <p role="status">Carregando…</p>
-  if (error && !isNotConfigured(error)) return <p role="alert" className="error">{describeError(error)}</p>
-  return <BusinessForm key={data?.id ?? 'novo'} business={data} onSaved={reload} />
+  if (error && !data && !isNotConfigured(error)) return <p role="alert" className="error">{describeError(error)}</p>
+  return (
+    <>
+      {error !== undefined && data && <RefreshWarning onRetry={reload} />}
+      <BusinessForm key={data?.id ?? 'novo'} business={data} onSaved={reload} />
+    </>
+  )
 }
 
 function BusinessForm({ business, onSaved }: { business?: Business; onSaved: () => void }) {

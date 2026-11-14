@@ -5,6 +5,8 @@ export interface Loaded<T> {
   error: unknown
   loading: boolean
   reload: () => void
+  /** Sobe a cada carregamento BEM-SUCEDIDO (mesmo com conteúdo igual): serve de chave para refazer editores. */
+  version: number
 }
 
 /**
@@ -15,6 +17,7 @@ export function useLoad<T>(load: () => Promise<T>): Loaded<T> {
   const [data, setData] = useState<T>()
   const [error, setError] = useState<unknown>()
   const [loading, setLoading] = useState(true)
+  const [version, setVersion] = useState(0)
   const run = useRef(0)
 
   const start = useCallback(
@@ -26,6 +29,7 @@ export function useLoad<T>(load: () => Promise<T>): Loaded<T> {
           if (run.current !== mine) return
           setData(value)
           setError(undefined)
+          setVersion((v) => v + 1)
           setLoading(false)
         },
         (e) => {
@@ -47,5 +51,5 @@ export function useLoad<T>(load: () => Promise<T>): Loaded<T> {
   }, [start])
 
   const reload = useCallback(() => start(true), [start])
-  return { data, error, loading, reload }
+  return { data, error, loading, reload, version }
 }

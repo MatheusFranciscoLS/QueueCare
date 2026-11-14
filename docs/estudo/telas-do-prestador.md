@@ -14,12 +14,17 @@ O prestador já configura sozinho o negócio, os serviços e o expediente pela i
 2. `pages/useLoad.ts` e `pages/useSingleFlight.ts`: os padrões compartilhados.
 3. `pages/provider/*`: as três telas.
 
-## Provas por teste (75 no total; 48 novos)
+## Provas por teste (97 no total; 70 novos)
 - Expediente (lógica pura): conversões de hora, ordenação, vazio, janelas coladas aceitas, sobreposição (inclusive fora de ordem e uma dentro da outra), limite de 70.
 - Negócio: cadastro sem negócio, edição, erro de campo da API no campo certo, validação no navegador, falha do servidor.
 - Serviços: criar, editar e desativar, validação, convite para cadastrar o negócio primeiro.
 - Expediente (tela): mostra o gravado, salva o conjunto completo, não envia sobreposição, lista vazia envia `[]`, erro do servidor não vira "salvo".
-- Perfis: só o prestador vê o menu.
+- Perfis: só o prestador vê o menu; CUSTOMER, ATTENDANT e ADMIN digitando as URLs do prestador voltam ao início sem nenhuma chamada à API.
+- `useLoad`: resposta antiga nunca sobrescreve a nova, resposta depois de desmontar é descartada, recarregar depois de gravar respeita a ordem, falha ao atualizar mantém o dado e expõe o erro, versão sobe só em sucesso.
+- Atualização que falha depois de gravar (serviços, expediente e negócio): dado antigo visível, aviso e tentar de novo.
+- Expediente durante a gravação: controles bloqueados; reflete o que o servidor devolveu (diferente do enviado ou idêntico); 70 horários salvam e o 71º não pode ser adicionado; erros por dia ligados aos campos com foco.
+- Serviços: erros de campo sem duplicar no aviso geral; rascunho preservado durante recarregamento.
+- Mutações: sem o bloqueio dos controles e sem o aviso de atualização, os testes falham.
 
 ## Três perguntas de entrevista
 1. **Por que o expediente envia o conjunto completo em vez de uma janela por vez?** A API substitui tudo de forma atômica; janelas isoladas permitiriam estados intermediários inválidos e corridas.

@@ -5,6 +5,8 @@ import { describeError } from '../../api/messages'
 import { providerApi, type AvailabilityWindow } from '../../api/provider'
 import { countWindows, DAYS, fromWindows, MAX_WINDOWS, toWindows, validateSchedule, type Schedule } from '../../api/schedule'
 import { useAuth } from '../../auth/session'
+import { RefreshWarning } from '../RefreshWarning'
+import { useFocusFirstInvalid } from '../useFocusFirstInvalid'
 import { useLoad } from '../useLoad'
 import { useSingleFlight } from '../useSingleFlight'
 
@@ -12,7 +14,7 @@ export function AvailabilityPage() {
   const { request } = useAuth()
   const api = useMemo(() => providerApi(request), [request])
   const load = useCallback(() => api.getAvailability(), [api])
-  const { data, error, loading, reload } = useLoad<AvailabilityWindow[]>(load)
+  const { data, error, loading, reload, version } = useLoad<AvailabilityWindow[]>(load)
   // O aviso "salvo" fica aqui (e não no editor) porque o editor é refeito quando o servidor devolve o conjunto gravado.
   const [saved, setSaved] = useState(false)
 
@@ -28,8 +30,14 @@ export function AvailabilityPage() {
     )
   }
   if (error && !data) return <p role="alert" className="error">{describeError(error)}</p>
-  // A chave muda quando o servidor devolve outro conjunto: a tela passa a refletir exatamente o que ficou gravado.
-  return <Editor key={JSON.stringify(data ?? [])} windows={data ?? []} saved={saved} setSaved={setSaved} onSaved={reload} />
+  // O editor é refeito a CADA carregamento bem-sucedido (a chave é a versão, não o conteúdo): a tela passa a refletir exatamente o
+  // que o servidor devolveu, inclusive quando ele devolve o mesmo conjunto que já estava na tela.
+  return (
+    <>
+      {error !== undefined && data && <RefreshWarning onRetry={reload} />}
+      <Editor key={version} windows={data ?? []} saved={saved} setSaved={setSaved} onSaved={reload} />
+    </>
+  )
 }
 
 function Editor({ windows, saved, setSaved, onSaved }: { windows: AvailabilityWindow[]; saved: boolean; setSaved: (value: boolean) => void; onSaved: () => void }) {
@@ -40,6 +48,7 @@ function Editor({ windows, saved, setSaved, onSaved }: { windows: AvailabilityWi
   const [formError, setFormError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const once = useSingleFlight()
+  const focusFirstInvalid = useFocusFirstInvalid()
 
   const change = (update: (current: Schedule) => Schedule) => {
     setSchedule(update)
@@ -52,6 +61,7 @@ function Editor({ windows, saved, setSaved, onSaved }: { windows: AvailabilityWi
       const found = validateSchedule(schedule)
       if (Object.keys(found.perDay).length > 0 || found.total) {
         setErrors(found)
+        focusFirstInvalid()
         return
       }
       setErrors({ perDay: {} })
@@ -84,6 +94,9 @@ function Editor({ windows, saved, setSaved, onSaved }: { windows: AvailabilityWi
                 Início
                 <input
                   type="time"
+                  disabled={busy}
+                  aria-invalid={errors.perDay[day.key] ? true : undefined}
+                  aria-describedby={errors.perDay[day.key] ? `day-error-${day.key}` : undefined}
                   aria-label={`${day.label}, horário ${index + 1}, início`}
                   value={slot.start}
                   onChange={(e) => change((s) => ({ ...s, [day.key]: s[day.key].map((x, i) => (i === index ? { ...x, start: e.target.value } : x)) }))}
@@ -93,12 +106,15 @@ function Editor({ windows, saved, setSaved, onSaved }: { windows: AvailabilityWi
                 Fim
                 <input
                   type="time"
+                  disabled={busy}
+                  aria-invalid={errors.perDay[day.key] ? true : undefined}
+                  aria-describedby={errors.perDay[day.key] ? `day-error-${day.key}` : undefined}
                   aria-label={`${day.label}, horário ${index + 1}, fim`}
                   value={slot.end}
                   onChange={(e) => change((s) => ({ ...s, [day.key]: s[day.key].map((x, i) => (i === index ? { ...x, end: e.target.value } : x)) }))}
                 />
               </label>
-              <button type="button" className="button secondary" aria-label={`Remover horário ${index + 1} de ${day.label}`} onClick={() => change((s) => ({ ...s, [day.key]: s[day.key].filter((_, i) => i !== index) }))}>
+              <button type="button" className="button secondary" disabled={busy} aria-label={`Remover horário ${index + 1} de ${day.label}`} onClick={() => change((s) => ({ ...s, [day.key]: s[day.key].filter((_, i) => i !== index) }))}>
                 Remover
               </button>
             </div>
@@ -106,14 +122,14 @@ function Editor({ windows, saved, setSaved, onSaved }: { windows: AvailabilityWi
           <button
             type="button"
             className="button secondary"
-            disabled={countWindows(schedule) >= MAX_WINDOWS}
+            disabled={busy || countWindows(schedule) >= MAX_WINDOWS}
             aria-label={`Adicionar horário em ${day.label}`}
             onClick={() => change((s) => ({ ...s, [day.key]: [...s[day.key], { start: '08:00', end: '12:00' }] }))}
           >
             Adicionar horário
           </button>
           {errors.perDay[day.key] && (
-            <p role="alert" className="error">
+            <p role="alert" id={`day-error-${day.key}`} className="error">
               {errors.perDay[day.key]}
             </p>
           )}
