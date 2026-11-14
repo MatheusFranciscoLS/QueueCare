@@ -5,7 +5,7 @@ Escrito em português do Brasil: conversa, comentários, mensagens de commit e d
 ## 1. O projeto
 Plataforma Full Stack de agendamento e fila de atendimento para pequenos prestadores de serviço (oficina de assistência técnica, clínica pequena, barbearia...). Perfis: ADMIN (administrador de contas, sem acesso a agendas nem a dados de clientes), PROVIDER (prestador), ATTENDANT (atendente), CUSTOMER (cliente).
 
-Stack: React + TypeScript · Java 21 + Spring Boot · Spring Security · Spring Data JPA · PostgreSQL · Flyway · JUnit + MockMvc + Testcontainers · Playwright · Docker · GitHub Actions · (fase 2) AWS + Terraform · (fase 3) documentação em inglês.
+Stack: React + TypeScript · Java 21 + Spring Boot · Spring Security · Spring Data JPA · PostgreSQL · Flyway · JUnit + MockMvc + Testcontainers · Playwright · Docker · GitHub Actions · (fase 2) hospedagem de custo zero: Cloudflare Pages + Koyeb + Neon (ADR 0013) · (fase 3) documentação em inglês.
 Monólito modular Spring Boot (sem microsserviços, sem RabbitMQ no MVP). Não ampliar o escopo: veja `docs/roadmap.md`.
 
 Leia antes de qualquer tarefa: `docs/regras.md`, `docs/modelo-dados.md`, `docs/arquitetura.md` e os ADRs em `docs/adr/`. O repositório é a fonte oficial das decisões, não a memória da conversa.
@@ -50,7 +50,7 @@ Condições combinadas com o ChatGPT (revisor independente):
 Compilar; executar os testes relevantes; revisar erros, segurança e permissões; checar regressões; atualizar documentação. **Nunca afirmar que testou sem ter rodado.** Relatar falhas com a saída real.
 
 ## 7. Divisão de trabalho
-- **Matheus:** dono do produto; decide o rumo, aprova o que envolve custo ou exposição pública, faz logins e contas (AWS com orçamento e alertas antes de criar qualquer recurso) e recebe os resumos.
+- **Matheus:** dono do produto; decide o rumo, aprova o que envolve custo ou exposição pública, faz logins e contas (hospedagem SÓ em plano gratuito e sem cartão: se um serviço pedir cartão, parar e avisar) e recebe os resumos.
 - **Claude (esta sessão):** decide junto com o ChatGPT e implementa (código, testes, CI, Docker, documentação e material de estudo) e mescla conforme a seção 5.
 - **ChatGPT (projeto "QueueCare | Desenvolvimento Full Stack"):** revisor independente de PRs, cenários de teste, entrevista técnica. **Você conversa diretamente com ele** (o Matheus não é o mensageiro): antes de decisões importantes, ADRs, mudanças de ambiente e a cada PR, discuta com ele e traga ao Matheus uma recomendação única em linguagem simples, com as divergências. O passo a passo (links do projeto do ChatGPT e armadilhas do navegador) fica fora do repositório, em `C:\dev\QueueCare-local\COMO-CONVERSAR-COM-O-CHATGPT.md`, porque contém links privados.
 - Assuntos que não são do QueueCare (carreira, currículos etc.) NÃO são tratados aqui.
