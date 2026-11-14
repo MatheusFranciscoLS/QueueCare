@@ -93,7 +93,7 @@ public class StaffService {
 	@Transactional
 	public StaffMember createAttendantAccount(UUID ownerUserId, String name, String email, String initialPassword) {
 		Provider provider = providers.findByUserId(ownerUserId).orElseThrow(ProviderNotConfiguredException::new);
-		UserAccount attendant = provisioner.create(UserRole.ATTENDANT, name, email, initialPassword, true);
+		UserAccount attendant = provisioner.provision(UserRole.ATTENDANT, name, email, initialPassword, true);
 		staff.saveAndFlush(new ProviderStaff(provider.getId(), attendant.getId(), clock.instant()));
 		audit.record(ownerUserId, AuditAction.ATTENDANT_ACCOUNT_CREATED, attendant.getId(), UserRole.ATTENDANT);
 		return StaffMember.from(attendant);

@@ -41,6 +41,7 @@ queuecare:
   #   slots-per-minute: 120
   #   login-failures-per-email-and-ip: 5
   #   login-failure-window-minutes: 15
+  #   account-creations-per-hour: 30   # criar contas para outras pessoas (ADMIN e prestador), por usuário
   # Espera máxima pelo bloqueio da linha do prestador ao editar janelas/negócio (padrão 3s); estourou = 409 RESOURCE_BUSY.
   # scheduling:
   #   provider-lock-timeout: 3s

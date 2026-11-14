@@ -31,9 +31,27 @@ public class AccountProvisioner {
 		this.clock = clock;
 	}
 
-	/** Cria o usuário (e-mail repetido: {@code EmailAlreadyRegisteredException}, HTTP 409). Participa da transação do chamador. */
+	/** Cadastro público: e-mail repetido é {@code EmailAlreadyRegisteredException} (409 "e-mail já cadastrado"). */
 	@Transactional
-	public UserAccount create(UserRole role, String name, String email, String rawPassword, boolean mustChangePassword) {
+	UserAccount registerPublic(UserRole role, String name, String email, String rawPassword) {
+		return create(role, name, email, rawPassword, false);
+	}
+
+	/**
+	 * Criação de conta POR OUTRA PESSOA (ADMIN, prestador): e-mail repetido é {@link AccountConflictException}, uma resposta
+	 * UNIFORME (409 com o mesmo corpo para qualquer perfil da conta existente) que não confirma nem descreve a conta.
+	 * Participa da transação do chamador.
+	 */
+	@Transactional
+	public UserAccount provision(UserRole role, String name, String email, String rawPassword, boolean mustChangePassword) {
+		try {
+			return create(role, name, email, rawPassword, mustChangePassword);
+		} catch (EmailAlreadyRegisteredException e) {
+			throw new AccountConflictException();
+		}
+	}
+
+	private UserAccount create(UserRole role, String name, String email, String rawPassword, boolean mustChangePassword) {
 		AuthService.validatePassword(rawPassword);
 		String normalizedEmail = AuthService.normalizeEmail(email);
 		if (users.findByEmail(normalizedEmail).isPresent()) {

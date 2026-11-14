@@ -45,12 +45,12 @@ class ProvisioningConstraintsTest extends DatabaseTestBase {
 		}
 	}
 
-	private UUID insertAudit(Connection c, UUID actor, String action, String targetRole) throws SQLException {
+	private UUID insertAudit(Connection c, UUID actor, String action, UUID target, String targetRole) throws SQLException {
 		try (PreparedStatement ps = c.prepareStatement(
 				"INSERT INTO audit_log (actor_user_id, action, target_user_id, target_role) VALUES (?, ?, ?, ?) RETURNING id")) {
 			ps.setObject(1, actor);
 			ps.setString(2, action);
-			ps.setObject(3, actor);
+			ps.setObject(3, target);
 			ps.setString(4, targetRole);
 			try (ResultSet rs = ps.executeQuery()) {
 				rs.next();
@@ -63,7 +63,8 @@ class ProvisioningConstraintsTest extends DatabaseTestBase {
 	void auditoriaAceitaInsercaoEmasRecusaAlteracaoEExclusao() throws SQLException {
 		try (Connection c = dataSource.getConnection(); Statement st = c.createStatement()) {
 			UUID actor = PostgresTestSupport.insertUser(c, "admin@exemplo.test", "ADMIN");
-			UUID id = insertAudit(c, actor, "PROVIDER_ACCOUNT_CREATED", "PROVIDER");
+			UUID target = PostgresTestSupport.insertUser(c, "alvo@exemplo.test", "PROVIDER");
+			UUID id = insertAudit(c, actor, "PROVIDER_ACCOUNT_CREATED", target, "PROVIDER");
 
 			assertSqlState("23000", () -> st.executeUpdate("UPDATE audit_log SET action = 'ADMIN_BOOTSTRAPPED' WHERE id = '" + id + "'"));
 			assertSqlState("23000", () -> st.executeUpdate("UPDATE audit_log SET actor_user_id = actor_user_id"));
@@ -80,12 +81,30 @@ class ProvisioningConstraintsTest extends DatabaseTestBase {
 	void auditoriaConfereAcaoEPerfilEUsuarioAuditadoNaoPodeSerApagado() throws SQLException {
 		try (Connection c = dataSource.getConnection(); Statement st = c.createStatement()) {
 			UUID actor = PostgresTestSupport.insertUser(c, "admin@exemplo.test", "ADMIN");
+			UUID target = PostgresTestSupport.insertUser(c, "alvo@exemplo.test", "PROVIDER");
 
-			assertSqlState(CHECK_VIOLATION, () -> insertAudit(c, actor, "ACAO_INVENTADA", "PROVIDER"));
-			assertSqlState(CHECK_VIOLATION, () -> insertAudit(c, actor, "PROVIDER_ACCOUNT_CREATED", "ROOT"));
-			assertSqlState(FOREIGN_KEY_VIOLATION, () -> insertAudit(c, UUID.randomUUID(), "PROVIDER_ACCOUNT_CREATED", "PROVIDER"));
-			insertAudit(c, actor, "ADMIN_BOOTSTRAPPED", "ADMIN");
+			assertSqlState(CHECK_VIOLATION, () -> insertAudit(c, actor, "ACAO_INVENTADA", target, "PROVIDER"));
+			assertSqlState(CHECK_VIOLATION, () -> insertAudit(c, actor, "PROVIDER_ACCOUNT_CREATED", target, "ROOT"));
+			assertSqlState(FOREIGN_KEY_VIOLATION, () -> insertAudit(c, UUID.randomUUID(), "PROVIDER_ACCOUNT_CREATED", target, "PROVIDER"));
+			assertSqlState(FOREIGN_KEY_VIOLATION, () -> insertAudit(c, actor, "PROVIDER_ACCOUNT_CREATED", UUID.randomUUID(), "PROVIDER"));
+			insertAudit(c, actor, "PROVIDER_ACCOUNT_CREATED", target, "PROVIDER");
 			assertSqlState(FOREIGN_KEY_VIOLATION, () -> st.executeUpdate("DELETE FROM users WHERE id = '" + actor + "'"));
+			assertSqlState(FOREIGN_KEY_VIOLATION, () -> st.executeUpdate("DELETE FROM users WHERE id = '" + target + "'"));
+		}
+	}
+
+	/** O registro sem alvo, sem perfil, ou com perfil que não é o do usuário-alvo é recusado PELO BANCO. */
+	@Test
+	void auditoriaExigeAlvoEPerfilCoerentesComOUsuario() throws SQLException {
+		try (Connection c = dataSource.getConnection()) {
+			UUID actor = PostgresTestSupport.insertUser(c, "admin@exemplo.test", "ADMIN");
+			UUID target = PostgresTestSupport.insertUser(c, "alvo@exemplo.test", "PROVIDER");
+
+			assertSqlState(NOT_NULL_VIOLATION, () -> insertAudit(c, actor, "PROVIDER_ACCOUNT_CREATED", null, "PROVIDER"));
+			assertSqlState(NOT_NULL_VIOLATION, () -> insertAudit(c, actor, "PROVIDER_ACCOUNT_CREATED", target, null));
+			assertSqlState(FOREIGN_KEY_VIOLATION, () -> insertAudit(c, actor, "PROVIDER_ACCOUNT_CREATED", target, "ATTENDANT")); // perfil que não confere
+			assertSqlState(FOREIGN_KEY_VIOLATION, () -> insertAudit(c, actor, "PROVIDER_ACCOUNT_CREATED", target, "ADMIN"));
+			insertAudit(c, actor, "PROVIDER_ACCOUNT_CREATED", target, "PROVIDER"); // o certo passa
 		}
 	}
 

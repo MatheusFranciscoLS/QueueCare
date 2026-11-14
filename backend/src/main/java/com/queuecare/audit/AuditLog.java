@@ -32,10 +32,10 @@ public class AuditLog {
 	@Enumerated(EnumType.STRING)
 	private AuditAction action;
 
-	@Column(name = "target_user_id", updatable = false)
+	@Column(name = "target_user_id", nullable = false, updatable = false)
 	private UUID targetUserId;
 
-	@Column(name = "target_role", updatable = false)
+	@Column(name = "target_role", nullable = false, updatable = false)
 	@Enumerated(EnumType.STRING)
 	private UserRole targetRole;
 
@@ -47,8 +47,8 @@ public class AuditLog {
 		this.occurredAt = Objects.requireNonNull(occurredAt);
 		this.actorUserId = Objects.requireNonNull(actorUserId);
 		this.action = Objects.requireNonNull(action);
-		this.targetUserId = targetUserId;
-		this.targetRole = targetRole;
+		this.targetUserId = Objects.requireNonNull(targetUserId);
+		this.targetRole = Objects.requireNonNull(targetRole);
 	}
 
 	public UUID getId() {

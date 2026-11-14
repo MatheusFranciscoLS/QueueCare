@@ -14,10 +14,13 @@ CREATE TABLE audit_log (
     occurred_at    timestamptz NOT NULL DEFAULT now(),
     actor_user_id  uuid        NOT NULL REFERENCES users (id) ON DELETE RESTRICT,
     action         varchar(40) NOT NULL,
-    target_user_id uuid        REFERENCES users (id) ON DELETE RESTRICT,
-    target_role    varchar(20),
+    target_user_id uuid        NOT NULL,
+    target_role    varchar(20) NOT NULL,
+    -- O alvo e o perfil registrado têm de ser os de um usuário real (FK composta sobre users_id_role_uk, do V2): não existe
+    -- registro sem alvo nem com perfil que não confere. Consequência: o perfil de um usuário auditado não muda (RESTRICT).
+    CONSTRAINT audit_log_target_fk FOREIGN KEY (target_user_id, target_role) REFERENCES users (id, role) ON UPDATE RESTRICT ON DELETE RESTRICT,
     CONSTRAINT audit_log_action_check CHECK (action IN ('ADMIN_BOOTSTRAPPED', 'PROVIDER_ACCOUNT_CREATED', 'ATTENDANT_ACCOUNT_CREATED')),
-    CONSTRAINT audit_log_target_role_check CHECK (target_role IS NULL OR target_role IN ('ADMIN', 'PROVIDER', 'ATTENDANT', 'CUSTOMER'))
+    CONSTRAINT audit_log_target_role_check CHECK (target_role IN ('ADMIN', 'PROVIDER', 'ATTENDANT', 'CUSTOMER'))
 );
 CREATE INDEX audit_log_actor_idx ON audit_log (actor_user_id, occurred_at);
 

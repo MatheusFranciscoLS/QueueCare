@@ -35,6 +35,15 @@ public class AdminBootstrapService {
 		}
 	}
 
+	/** Regra de formato de e-mail compartilhada com os DTOs de criação de conta (as mesmas anotações). */
+	static final class EmailInput {
+		@jakarta.validation.constraints.Email
+		@jakarta.validation.constraints.Size(max = 254)
+		String value;
+	}
+
+	private static final jakarta.validation.Validator VALIDATOR = jakarta.validation.Validation.buildDefaultValidatorFactory().getValidator();
+
 	static final int MIN_ADMIN_PASSWORD_CHARACTERS = 12;
 	/** Chave do bloqueio consultivo que serializa o bootstrap (constante arbitrária, exclusiva deste uso). */
 	private static final long BOOTSTRAP_LOCK_KEY = 7_201_100_001L;
@@ -54,15 +63,17 @@ public class AdminBootstrapService {
 
 	@Transactional
 	public Result bootstrap(String email, String password) {
-		validate(email, password);
 		entityManager.createNativeQuery("select pg_advisory_xact_lock(?1)").setParameter(1, BOOTSTRAP_LOCK_KEY).getResultList();
+		// Idempotência ANTES de validar a entrada: com um ADMIN já criado, o comando executado de novo SEM as variáveis (que o
+		// operador removeu) termina com sucesso e nada muda; só se valida a entrada quando ainda há o que criar.
 		if (users.existsByRole(UserRole.ADMIN)) {
 			return Result.ALREADY_EXISTS;
 		}
+		validate(email, password);
 		if (users.findByEmail(AuthService.normalizeEmail(email)).isPresent()) {
 			throw new BootstrapException("o e-mail informado já pertence a uma conta que não é ADMIN; use outro e-mail");
 		}
-		UserAccount admin = provisioner.create(UserRole.ADMIN, ADMIN_NAME, email, password, false);
+		UserAccount admin = provisioner.provision(UserRole.ADMIN, ADMIN_NAME, email, password, false);
 		audit.record(admin.getId(), AuditAction.ADMIN_BOOTSTRAPPED, admin.getId(), UserRole.ADMIN);
 		return Result.CREATED;
 	}
@@ -71,9 +82,8 @@ public class AdminBootstrapService {
 		if (email == null || email.isBlank() || password == null || password.isEmpty()) {
 			throw new BootstrapException("ADMIN_EMAIL e ADMIN_PASSWORD são obrigatórios");
 		}
-		String trimmed = email.trim();
-		int at = trimmed.indexOf('@');
-		if (trimmed.length() > 254 || at < 1 || at != trimmed.lastIndexOf('@') || at == trimmed.length() - 1 || trimmed.chars().anyMatch(Character::isWhitespace)) {
+		// A MESMA regra de formato dos DTOs de criação de conta (@Email e tamanho máximo), não uma expressão improvisada.
+		if (!VALIDATOR.validateValue(EmailInput.class, "value", email.trim()).isEmpty()) {
 			throw new BootstrapException("ADMIN_EMAIL inválido");
 		}
 		if (password.codePointCount(0, password.length()) < MIN_ADMIN_PASSWORD_CHARACTERS

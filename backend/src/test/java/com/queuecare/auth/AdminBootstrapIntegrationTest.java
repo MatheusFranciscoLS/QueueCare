@@ -143,4 +143,47 @@ class AdminBootstrapIntegrationTest extends AuthIntegrationTestBase {
 		assertFalse(context.containsBean("adminBootstrapRunner"), "o executor do bootstrap só existe com queuecare.bootstrap-admin.enabled=true");
 		assertEquals(0L, count("SELECT count(*) FROM users WHERE role = 'ADMIN'"));
 	}
+
+	/** Com o ADMIN já criado e as variáveis removidas (como o ADR manda), executar de novo é sucesso sem mudar nada. */
+	@Test
+	void comandoRepetidoSemAsVariaveisOuComEntradaInvalidaTerminaComSucessoSemAlterarNada() {
+		service.bootstrap("dono@exemplo.test", STRONG);
+		Map<String, Object> before = jdbc.queryForMap("SELECT id, email, password_hash, active FROM users");
+
+		for (String[] in : new String[][] {{null, null}, {"", ""}, {"dono@exemplo.test", null}, {null, STRONG}, {"nao-e-email", "curta"}}) {
+			assertEquals(Result.ALREADY_EXISTS, service.bootstrap(in[0], in[1]), String.valueOf(in[0]));
+		}
+
+		assertEquals(before, jdbc.queryForMap("SELECT id, email, password_hash, active FROM users"));
+		assertEquals(1L, count("SELECT count(*) FROM audit_log"));
+	}
+
+	/** O formato do e-mail no bootstrap é EXATAMENTE o da criação de prestador (mesmas anotações): aceita e recusa os mesmos endereços. */
+	@Test
+	void formatoDeEmailDoBootstrapEOMesmoDosOutrosFluxos() throws Exception {
+		String adminBearer = null;
+		List<String> addresses = List.of("a@exemplo.test", "nome.sobrenome+tag@exemplo.com.br", "a@b", "sem-arroba", "a@@b.test", "@exemplo.test", "a@",
+				"a b@exemplo.test", "a@exemplo .test", "\"quoted\"@exemplo.test", "a@exemplo..test", ".a@exemplo.test", "a.@exemplo.test", "nome@[127.0.0.1]",
+				"á@exemplo.test", "a".repeat(250) + "@exemplo.test", "a@" + "b".repeat(64) + ".test", "<a@exemplo.test>", "a@exemplo.test.");
+		for (String address : addresses) {
+			jdbc.execute("TRUNCATE appointment_events, appointments, availability_windows, services, providers, users CASCADE");
+			boolean bootstrapAccepts;
+			try {
+				bootstrapAccepts = service.bootstrap(address, STRONG) == Result.CREATED;
+			} catch (BootstrapException e) {
+				bootstrapAccepts = false;
+			}
+			jdbc.execute("TRUNCATE appointment_events, appointments, availability_windows, services, providers, users CASCADE");
+			adminBearer = "Bearer " + validToken(seedUser("admin@exemplo.test", "ADMIN", true));
+			String json = "{\"name\":\"X\",\"email\":" + jsonString(address) + ",\"initialPassword\":\"senha-inicial-123\",\"businessName\":\"N\",\"timeZone\":\"America/Sao_Paulo\","
+					+ "\"minimumNoticeMinutes\":0,\"cancellationDeadlineMinutes\":0}";
+			int status = mvc.perform(post("/api/admin/providers").header("Authorization", adminBearer).contentType(MediaType.APPLICATION_JSON).content(json))
+					.andReturn().getResponse().getStatus();
+			assertEquals(status != 400, bootstrapAccepts, "bootstrap e criação de prestador discordam sobre \"" + address + "\" (status " + status + ")");
+		}
+	}
+
+	private static String jsonString(String s) {
+		return "\"" + s.replace("\\", "\\\\").replace("\"", "\\\"") + "\"";
+	}
 }

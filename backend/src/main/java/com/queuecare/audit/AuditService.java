@@ -2,6 +2,7 @@ package com.queuecare.audit;
 
 import com.queuecare.scheduling.persistence.UserRole;
 import java.time.Clock;
+import java.util.Objects;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
@@ -24,6 +25,8 @@ public class AuditService {
 
 	@Transactional(propagation = Propagation.MANDATORY)
 	public void record(UUID actorUserId, AuditAction action, UUID targetUserId, UserRole targetRole) {
+		Objects.requireNonNull(targetUserId, "alvo obrigatório");
+		Objects.requireNonNull(targetRole, "perfil do alvo obrigatório");
 		repository.saveAndFlush(new AuditLog(clock.instant(), actorUserId, action, targetUserId, targetRole));
 	}
 }

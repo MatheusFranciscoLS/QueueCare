@@ -18,6 +18,8 @@ import org.springframework.validation.annotation.Validated;
  * @param loginFailuresPerEmailAndIp tentativas de login SEM sucesso permitidas para o par e-mail + endereço dentro da janela;
  *        a seguinte recebe 429 (a contagem é reservada ANTES de conferir a senha, de forma atômica, então tentativas
  *        simultâneas não furam o limite). Login com sucesso zera a contagem
+ * @param accountCreationsPerHour tentativas de criar contas para outras pessoas (ADMIN e prestador) por hora e por usuário autenticado,
+ *        com ou sem sucesso: limita a descoberta de e-mails já cadastrados pelo "deu conflito"
  * @param loginFailureWindowMinutes duração do bloqueio por falhas de login (a janela das tentativas)
  *
  * Todos os valores são VALIDADOS na inicialização (mínimo 1, máximo razoável): uma variável de ambiente digitada errada
@@ -33,7 +35,8 @@ public record RateLimitProperties(
 		@DefaultValue("10") @Min(1) @Max(MAX_PER_MINUTE) int registerPerMinute,
 		@DefaultValue("120") @Min(1) @Max(MAX_PER_MINUTE) int slotsPerMinute,
 		@DefaultValue("5") @Min(1) @Max(MAX_PER_MINUTE) int loginFailuresPerEmailAndIp,
-		@DefaultValue("15") @Min(1) @Max(MAX_WINDOW_MINUTES) int loginFailureWindowMinutes) {
+		@DefaultValue("15") @Min(1) @Max(MAX_WINDOW_MINUTES) int loginFailureWindowMinutes,
+		@DefaultValue("30") @Min(1) @Max(MAX_PER_MINUTE) int accountCreationsPerHour) {
 
 	/** Teto só para recusar valores absurdos (erro de digitação); os testes usam valores altos mas abaixo disto. */
 	public static final int MAX_PER_MINUTE = 1_000_000;

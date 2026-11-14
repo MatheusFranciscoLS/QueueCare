@@ -78,7 +78,7 @@ public class AuthService {
 	/** O cadastro público SEMPRE cria CUSTOMER, sem troca de senha obrigatória (a senha é da própria pessoa). */
 	@Transactional
 	public UserAccount registerCustomer(String name, String email, String rawPassword) {
-		return provisioner.create(UserRole.CUSTOMER, name, email, rawPassword, false);
+		return provisioner.registerPublic(UserRole.CUSTOMER, name, email, rawPassword);
 	}
 
 	/**

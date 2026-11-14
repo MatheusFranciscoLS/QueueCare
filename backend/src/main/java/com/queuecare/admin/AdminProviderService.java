@@ -35,7 +35,7 @@ public class AdminProviderService {
 	@Transactional
 	public CreatedProvider createProvider(UUID adminUserId, String name, String email, String initialPassword, String businessName, String timeZone,
 			int minimumNoticeMinutes, int cancellationDeadlineMinutes) {
-		UserAccount user = provisioner.create(UserRole.PROVIDER, name, email, initialPassword, true);
+		UserAccount user = provisioner.provision(UserRole.PROVIDER, name, email, initialPassword, true);
 		Provider provider = providerAdmin.createBusiness(user.getId(), businessName, timeZone, minimumNoticeMinutes, cancellationDeadlineMinutes);
 		audit.record(adminUserId, AuditAction.PROVIDER_ACCOUNT_CREATED, user.getId(), UserRole.PROVIDER);
 		return new CreatedProvider(user.getId(), user.getName(), user.getEmail(), provider.getId(), provider.getBusinessName());

@@ -9,7 +9,8 @@ Ninguém vira prestador, atendente ou administrador por SQL manual: cada perfil 
 - **`POST /api/admin/providers`:** usuário PROVIDER + negócio + auditoria, tudo na mesma transação.
 - **`POST /api/provider/staff/accounts`:** atendente NOVO + vínculo ao negócio de quem chamou + auditoria, numa transação. `role` e `providerId` do corpo são ignorados.
 - **`must_change_password`:** conta criada por outra pessoa só consulta `GET /api/me` e (PR seguinte) troca a senha; o resto é 403 `PASSWORD_CHANGE_REQUIRED`, lido do banco a cada requisição.
-- **`audit_log`:** somente de acréscimo (gatilho no banco), sem colunas para segredos.
+- **`audit_log`:** somente de acréscimo (gatilho no banco), sem colunas para segredos, com alvo e perfil obrigatórios e conferidos pelo banco (FK composta).
+- **Conflito de e-mail uniforme:** criar conta para outra pessoa e o e-mail já existir dá sempre o mesmo 409, qualquer que seja o perfil da conta existente; tentativas limitadas por usuário (30 por hora por padrão).
 
 ## Como ler o código
 1. `V3__provisionamento_de_contas.sql`: perfil ADMIN, coluna da troca de senha, tabela e gatilho da auditoria.
@@ -26,6 +27,10 @@ Ninguém vira prestador, atendente ou administrador por SQL manual: cada perfil 
 - Perfis: ADMIN é recusado em toda rota de negócio; os demais perfis, na criação de prestador.
 - Troca pendente: todos os perfis, todas as rotas, variações de caminho de `/api/me`, estado lido do banco nos dois sentidos.
 - Segredos: nada de senha ou hash em resposta, auditoria ou log do bootstrap.
+- Idempotência real: com o ADMIN criado, rodar o comando de novo sem as variáveis (ou com lixo) termina em sucesso sem mudar nada.
+- Formato de e-mail: bootstrap e criação de prestador aceitam e recusam exatamente os mesmos 19 endereços de teste.
+- Auditoria: sem alvo, sem perfil ou com perfil que não confere é recusado pelo PostgreSQL.
+- Enumeração: o corpo do conflito é idêntico para sete e-mails de perfis, estados e caixas diferentes; o limite por hora responde 429 com `Retry-After` de mais de um minuto.
 - Mutação: sem o filtro e sem o bloqueio consultivo os testes correspondentes falham.
 
 ## Três perguntas de entrevista
