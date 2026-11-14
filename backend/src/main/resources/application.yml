@@ -18,6 +18,13 @@ spring:
     enabled: true
     locations: classpath:db/migration
 
+# Contrato OpenAPI gerado do código. Desligado por padrão (não expõe a API sem necessidade); OPENAPI_ENABLED=true liga o /v3/api-docs.
+springdoc:
+  api-docs:
+    enabled: ${OPENAPI_ENABLED:false}
+  swagger-ui:
+    enabled: false
+
 management:
   endpoints:
     web:
