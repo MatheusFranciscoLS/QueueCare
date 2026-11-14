@@ -12,10 +12,10 @@ Scheduling and queue management for small service providers (repair shops, small
 
 ## Technical highlights
 - **No double booking, even under concurrency:** two layers, application validation plus a PostgreSQL **exclusion constraint** (`btree_gist` over `tstzrange`); two simultaneous requests for the same slot yield one success and one `409`. Tested against a real PostgreSQL.
-- **Authorization in the API**, not only in the UI: role rules on routes and `@PreAuthorize`; the provider a staff member operates on always comes from the database. Cross-provider access returns the same `404` as a missing record.
+- **Authorization in the API**, not only in the UI: role rules on routes and `@PreAuthorize`; the provider a staff member operates on always comes from the database. For appointment and attendance operations, touching a record that belongs to another provider returns the same `404` as a missing record.
 - **Time zones done properly:** UTC storage, IANA zone per provider, local-time input with explicit handling of nonexistent/ambiguous daylight-saving times.
 - **Credential lifecycle:** short-lived JWT validated against a per-user version on every request, forced password change, rate limits and login lockout, append-only audit log.
-- **Frontend discipline:** token only in memory; every mutation handles stale responses, partial failures, double submits and focus management; each pattern is covered by tests that were checked with mutations (a test must fail when the behavior is removed).
+- **Frontend discipline:** token only in memory; every mutation handles stale responses, partial failures, double submits and focus management; each pattern is covered by tests that were verified with manual mutation checks (a test must fail when the behavior is removed).
 - **API contract generated from code** and verified in CI: [`docs/openapi.json`](docs/openapi.json) (roles per operation are read from the real `@PreAuthorize`).
 
 ## Tests
@@ -29,8 +29,16 @@ Prerequisites: JDK 21, Node 22+, Docker (or PostgreSQL 16).
 ```bash
 cp .env.example .env                       # change the values; never commit .env
 docker compose --env-file .env -f infra/docker-compose.yml up -d
-cd backend && ./mvnw verify                # build and tests
-cd ../frontend && npm ci && npm run dev    # http://localhost:5173 (proxies /api to :8080)
+cd backend && ./mvnw verify                # build and tests (does not keep the API running)
+```
+Start the API (terminal 1) and the frontend (terminal 2). The API needs `DB_URL`, `DB_USER`, `DB_PASSWORD` and `JWT_SECRET` (see `.env.example`; `JWT_SECRET` must be Base64 of at least 32 random bytes, e.g. `openssl rand -base64 32`, so replace the placeholder first):
+```bash
+# terminal 1: load the variables from .env and run the API on http://localhost:8080
+set -a; source .env; set +a
+cd backend && ./mvnw spring-boot:run
+
+# terminal 2: the frontend on http://localhost:5173 (proxies /api to :8080)
+cd frontend && npm ci && npm run dev
 ```
 The first administrator is created once with an explicit command (see [ADR 0005](docs/adr/0005-provisionamento-de-contas.md)); no migration inserts users.
 

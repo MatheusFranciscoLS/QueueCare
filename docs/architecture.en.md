@@ -14,7 +14,7 @@ Spring Boot API (Java 21)  --JPA/Flyway-->  PostgreSQL 16
 ```
 
 ## Roles and access
-**ADMIN** (accounts only, no access to schedules), **PROVIDER** (business, services, working hours, team, schedule), **ATTENDANT** (schedule, check-in, completion, queue) and **CUSTOMER** (catalog, booking, my appointments). Authorization is enforced **in the API** (route rules and `@PreAuthorize`), not only in the UI. The business a staff member operates on is always resolved from the database, never from the request (ADR 0004).
+**ADMIN** (accounts only, no access to schedules), **PROVIDER** (business, services, working hours, team, schedule), **ATTENDANT** (schedule, check-in, completion, queue) and **CUSTOMER** (catalog, booking, my appointments). Authorization is enforced **in the API** (route rules and `@PreAuthorize`), not only in the UI. The business a staff member operates on is always resolved from the database, never from the request (ADR 0004). For appointment and attendance operations, touching a record that belongs to another provider returns the same `404` as a missing record.
 
 ## Key decisions (ADRs in `docs/adr/`, written in Portuguese)
 | ADR | Decision |
