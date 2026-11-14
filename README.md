@@ -1,6 +1,6 @@
 # QueueCare
 
-Plataforma de agendamento e fila de atendimento para pequenos prestadores de serviço (oficina de assistência técnica, clínica pequena, barbearia, consultoria).
+Plataforma de agendamento e fila de atendimento para pequenos prestadores de serviço (oficina de assistência técnica, clínica pequena, barbearia, consultoria). English version: [README.en.md](README.en.md).
 
 > Em construção. Projeto Full Stack de portfólio: React + TypeScript, Java 21 + Spring Boot, PostgreSQL. Roteiro em [`docs/roadmap.md`](docs/roadmap.md).
 
