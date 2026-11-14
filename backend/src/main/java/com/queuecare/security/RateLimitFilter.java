@@ -32,13 +32,18 @@ final class RateLimitFilter extends OncePerRequestFilter {
 
 	private static final Duration WINDOW = Duration.ofMinutes(1);
 
-	private static final RequestMatcher LOGIN = PathPatternRequestMatcher.withDefaults().matcher(HttpMethod.POST, "/api/auth/login");
-	private static final RequestMatcher REGISTER = PathPatternRequestMatcher.withDefaults().matcher(HttpMethod.POST, "/api/auth/register");
 	private static final Duration HOUR = Duration.ofHours(1);
-	private static final RequestMatcher CREATE_PROVIDER = PathPatternRequestMatcher.withDefaults().matcher(HttpMethod.POST, "/api/admin/providers");
-	private static final RequestMatcher CREATE_ATTENDANT = PathPatternRequestMatcher.withDefaults().matcher(HttpMethod.POST, "/api/provider/staff/accounts");
-	private static final RequestMatcher CATALOG = PathPatternRequestMatcher.withDefaults().matcher(HttpMethod.GET, "/api/catalog/**");
-	private static final RequestMatcher SLOTS = PathPatternRequestMatcher.withDefaults().matcher(HttpMethod.GET, "/api/providers/*/slots");
+	// Casamentos montados da lista ÚNICA de rotas limitadas (RateLimitedRoutes), que o contrato OpenAPI também usa.
+	private static final RequestMatcher LOGIN = matcher(RateLimitedRoutes.LOGIN);
+	private static final RequestMatcher REGISTER = matcher(RateLimitedRoutes.REGISTER);
+	private static final RequestMatcher CREATE_PROVIDER = matcher(RateLimitedRoutes.CREATE_PROVIDER);
+	private static final RequestMatcher CREATE_ATTENDANT = matcher(RateLimitedRoutes.CREATE_ATTENDANT);
+	private static final RequestMatcher CATALOG = matcher(RateLimitedRoutes.CATALOG);
+	private static final RequestMatcher SLOTS = matcher(RateLimitedRoutes.SLOTS);
+
+	private static RequestMatcher matcher(RateLimitedRoutes.Route route) {
+		return PathPatternRequestMatcher.withDefaults().matcher(route.method(), route.pattern());
+	}
 
 	private final RateLimiter limiter;
 	private final RateLimitProperties properties;
