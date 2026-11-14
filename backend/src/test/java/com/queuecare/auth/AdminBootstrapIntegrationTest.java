@@ -42,6 +42,7 @@ class AdminBootstrapIntegrationTest extends AuthIntegrationTestBase {
 		Map<String, Object> admin = jdbc.queryForMap("SELECT id, role, active, must_change_password, email, password_hash FROM users");
 		assertEquals("ADMIN", admin.get("role"));
 		assertEquals(true, admin.get("active"));
+		assertEquals(true, admin.get("must_change_password"), "o primeiro ADMIN troca a senha no primeiro login (ADR 0006)");
 		assertEquals("dono@exemplo.test", admin.get("email"));
 		assertTrue(((String) admin.get("password_hash")).startsWith("$2") && !((String) admin.get("password_hash")).contains(STRONG));
 		Map<String, Object> audit = jdbc.queryForMap("SELECT actor_user_id, action, target_user_id, target_role FROM audit_log");
@@ -185,5 +186,23 @@ class AdminBootstrapIntegrationTest extends AuthIntegrationTestBase {
 
 	private static String jsonString(String s) {
 		return "\"" + s.replace("\\", "\\\\").replace("\"", "\\\"") + "\"";
+	}
+
+	/** Política do primeiro ADMIN: entra, só consegue trocar a senha, troca, e então opera (a senha do bootstrap deixa de valer). */
+	@Test
+	void primeiroAdminTrocaASenhaNoPrimeiroLoginEEntaoOpera() throws Exception {
+		service.bootstrap("dono@exemplo.test", STRONG);
+		String login = mvc.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON).content(json("email", "dono@exemplo.test", "password", STRONG)))
+				.andExpect(status().isOk()).andExpect(jsonPath("$.mustChangePassword").value(true)).andReturn().getResponse().getContentAsString();
+		String first = "Bearer " + com.jayway.jsonpath.JsonPath.read(login, "$.accessToken");
+		String provider = "{\"name\":\"X\",\"email\":\"p@exemplo.test\",\"initialPassword\":\"senha-inicial-123\",\"businessName\":\"N\",\"timeZone\":\"America/Sao_Paulo\",\"minimumNoticeMinutes\":0,\"cancellationDeadlineMinutes\":0}";
+		mvc.perform(post("/api/admin/providers").header("Authorization", first).contentType(MediaType.APPLICATION_JSON).content(provider)).andExpect(status().isForbidden());
+
+		String changed = mvc.perform(post("/api/auth/change-password").header("Authorization", first).contentType(MediaType.APPLICATION_JSON)
+				.content(json("currentPassword", STRONG, "newPassword", "senha-do-admin-nova-456"))).andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+		String second = "Bearer " + com.jayway.jsonpath.JsonPath.read(changed, "$.accessToken");
+
+		mvc.perform(post("/api/admin/providers").header("Authorization", second).contentType(MediaType.APPLICATION_JSON).content(provider)).andExpect(status().isCreated());
+		mvc.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON).content(json("email", "dono@exemplo.test", "password", STRONG))).andExpect(status().isUnauthorized());
 	}
 }

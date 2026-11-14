@@ -2,7 +2,10 @@ package com.queuecare.auth;
 
 import com.queuecare.auth.AuthExceptions.EmailAlreadyRegisteredException;
 import com.queuecare.auth.AuthExceptions.InvalidCredentialsException;
+import com.queuecare.auth.AuthExceptions.InvalidCurrentPasswordException;
 import com.queuecare.auth.AuthExceptions.InvalidPasswordException;
+import com.queuecare.auth.AuthExceptions.SelfResetException;
+import com.queuecare.auth.AuthExceptions.TargetUserNotFoundException;
 import com.queuecare.auth.AuthExceptions.TooManyLoginAttemptsException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
@@ -46,6 +49,27 @@ class ApiExceptionHandler {
 	@ExceptionHandler(EmailAlreadyRegisteredException.class)
 	ProblemDetail emailAlreadyRegistered(EmailAlreadyRegisteredException e) {
 		return ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, "e-mail já cadastrado");
+	}
+
+	@ExceptionHandler(InvalidCurrentPasswordException.class)
+	ProblemDetail invalidCurrentPassword(InvalidCurrentPasswordException e) {
+		ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, "senha atual incorreta");
+		problem.setProperty("reason", "INVALID_CURRENT_PASSWORD");
+		return problem;
+	}
+
+	@ExceptionHandler(TargetUserNotFoundException.class)
+	ProblemDetail targetNotFound(TargetUserNotFoundException e) {
+		ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, "usuário não encontrado");
+		problem.setProperty("reason", "USER_NOT_FOUND");
+		return problem;
+	}
+
+	@ExceptionHandler(SelfResetException.class)
+	ProblemDetail selfReset(SelfResetException e) {
+		ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, "para trocar a própria senha use a troca de senha");
+		problem.setProperty("reason", "USE_PASSWORD_CHANGE");
+		return problem;
 	}
 
 	@ExceptionHandler(AccountConflictException.class)

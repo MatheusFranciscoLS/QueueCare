@@ -33,11 +33,34 @@ class ActiveUserJwtConverter implements Converter<Jwt, AbstractOAuth2TokenAuthen
 		UserAccount user = users.findById(userId)
 				.filter(UserAccount::isActive)
 				.orElseThrow(() -> new InvalidBearerTokenException("usuário inválido ou inativo"));
+		// Troca ou redefinição de senha invalida TODO token anterior: a versão do token tem de ser a atual do banco (ausente = 0).
+		if (tokenVersionOf(jwt) != user.getTokenVersion()) {
+			throw new InvalidBearerTokenException("token emitido antes da última troca de senha");
+		}
 		// Conta com senha inicial: SÓ a autoridade de troca de senha, nenhum perfil. Assim nenhuma rota por perfil abre, e o
 		// PasswordChangeRequiredFilter fecha também as rotas que exigem apenas estar autenticado.
 		List<GrantedAuthority> authorities = user.isMustChangePassword()
 				? List.of(new SimpleGrantedAuthority(PasswordChangeRequiredFilter.AUTHORITY))
 				: List.of(new SimpleGrantedAuthority("ROLE_" + user.getRole().name()));
 		return new JwtAuthenticationToken(jwt, authorities, user.getId().toString());
+	}
+
+	/**
+	 * Versão das credenciais gravada no token. Claim AUSENTE vale 0 (tokens anteriores a este recurso). Claim PRESENTE precisa ser
+	 * um número inteiro dentro da faixa de int: null, texto, decimal (0.5), booleano ou número fora da faixa NUNCA viram 0; viram
+	 * um valor impossível (-1), que não confere com nenhuma versão do banco.
+	 */
+	static long tokenVersionOf(Jwt jwt) {
+		if (!jwt.getClaims().containsKey("ver")) {
+			return 0;
+		}
+		Object claim = jwt.getClaims().get("ver");
+		if (claim instanceof Integer i) {
+			return i;
+		}
+		if (claim instanceof Long l && l >= Integer.MIN_VALUE && l <= Integer.MAX_VALUE) {
+			return l;
+		}
+		return -1;
 	}
 }

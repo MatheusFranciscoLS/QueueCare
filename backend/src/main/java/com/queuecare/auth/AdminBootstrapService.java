@@ -73,7 +73,7 @@ public class AdminBootstrapService {
 		if (users.findByEmail(AuthService.normalizeEmail(email)).isPresent()) {
 			throw new BootstrapException("o e-mail informado já pertence a uma conta que não é ADMIN; use outro e-mail");
 		}
-		UserAccount admin = provisioner.provision(UserRole.ADMIN, ADMIN_NAME, email, password, false);
+		UserAccount admin = provisioner.provision(UserRole.ADMIN, ADMIN_NAME, email, password, true);
 		audit.record(admin.getId(), AuditAction.ADMIN_BOOTSTRAPPED, admin.getId(), UserRole.ADMIN);
 		return Result.CREATED;
 	}

@@ -22,6 +22,8 @@ import org.springframework.validation.annotation.Validated;
  *        simultâneas não furam o limite). Login com sucesso zera a contagem
  * @param accountCreationsPerHour tentativas de criar contas para outras pessoas (ADMIN e prestador) por hora e por usuário autenticado,
  *        com ou sem sucesso: limita a descoberta de e-mails já cadastrados pelo "deu conflito"
+ * @param passwordChangeAttempts tentativas de trocar a senha (senha atual conferida) por usuário dentro da janela abaixo; a seguinte
+ *        recebe 429. Protege contra quem tem um token roubado e tenta adivinhar a senha atual. Sucesso zera a contagem
  * @param loginFailureWindowMinutes duração do bloqueio por falhas de login (a janela das tentativas)
  *
  * Todos os valores são VALIDADOS na inicialização (mínimo 1, máximo razoável): uma variável de ambiente digitada errada
@@ -38,6 +40,7 @@ public record RateLimitProperties(
 		@DefaultValue("10") @Min(1) @Max(MAX_PER_MINUTE) int registerPerMinute,
 		@DefaultValue("120") @Min(1) @Max(MAX_PER_MINUTE) int slotsPerMinute,
 		@DefaultValue("5") @Min(1) @Max(MAX_PER_MINUTE) int loginFailuresPerEmailAndIp,
+		@DefaultValue("5") @Min(1) @Max(MAX_PER_MINUTE) int passwordChangeAttempts,
 		@DefaultValue("15") @Min(1) @Max(MAX_WINDOW_MINUTES) int loginFailureWindowMinutes,
 		@DefaultValue("30") @Min(1) @Max(MAX_PER_MINUTE) int accountCreationsPerHour) {
 

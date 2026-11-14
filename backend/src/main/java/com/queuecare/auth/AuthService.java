@@ -119,7 +119,7 @@ public class AuthService {
 		return issueToken(user.get());
 	}
 
-	private IssuedToken issueToken(UserAccount user) {
+	IssuedToken issueToken(UserAccount user) {
 		Instant now = clock.instant();
 		Instant expiresAt = now.plus(jwtProperties.accessTokenTtl());
 		JwtClaimsSet claims = JwtClaimsSet.builder()
@@ -129,13 +129,14 @@ public class AuthService {
 				.issuedAt(now)
 				.expiresAt(expiresAt)
 				.claim("role", user.getRole().name())
+				.claim("ver", user.getTokenVersion())
 				.build();
 		JwsHeader header = JwsHeader.with(MacAlgorithm.HS256).build();
 		String token = jwtEncoder.encode(JwtEncoderParameters.from(header, claims)).getTokenValue();
 		return new IssuedToken(token, jwtProperties.accessTokenTtl().toSeconds(), user.isMustChangePassword());
 	}
 
-	static void validatePassword(String rawPassword) {
+	public static void validatePassword(String rawPassword) {
 		if (rawPassword == null || rawPassword.codePointCount(0, rawPassword.length()) < MIN_PASSWORD_CHARACTERS) {
 			throw new InvalidPasswordException("a senha deve ter ao menos " + MIN_PASSWORD_CHARACTERS + " caracteres");
 		}

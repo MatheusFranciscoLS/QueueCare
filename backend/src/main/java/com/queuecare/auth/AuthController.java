@@ -1,5 +1,6 @@
 package com.queuecare.auth;
 
+import com.queuecare.auth.AuthDtos.ChangePasswordRequest;
 import com.queuecare.auth.AuthDtos.LoginRequest;
 import com.queuecare.auth.AuthDtos.RegisterRequest;
 import com.queuecare.auth.AuthDtos.TokenResponse;
@@ -21,8 +22,11 @@ class AuthController {
 
 	private final AuthService authService;
 
-	AuthController(AuthService authService) {
+	private final PasswordService passwordService;
+
+	AuthController(AuthService authService, PasswordService passwordService) {
 		this.authService = authService;
+		this.passwordService = passwordService;
 	}
 
 	@PostMapping("/register")
@@ -35,6 +39,14 @@ class AuthController {
 	@PostMapping("/login")
 	TokenResponse login(@Valid @RequestBody LoginRequest request, HttpServletRequest http) {
 		AuthService.IssuedToken token = authService.login(request.email(), request.password(), http.getRemoteAddr());
+		return new TokenResponse(token.accessToken(), "Bearer", token.expiresInSeconds(), token.mustChangePassword());
+	}
+
+	/** Trocar a própria senha (exige login; é a única rota, além de /api/me, aberta a conta com troca pendente). Devolve token novo. */
+	@PostMapping("/change-password")
+	TokenResponse changePassword(@org.springframework.security.core.annotation.AuthenticationPrincipal org.springframework.security.oauth2.jwt.Jwt jwt,
+			@Valid @RequestBody ChangePasswordRequest request) {
+		AuthService.IssuedToken token = passwordService.changePassword(java.util.UUID.fromString(jwt.getSubject()), request.currentPassword(), request.newPassword());
 		return new TokenResponse(token.accessToken(), "Bearer", token.expiresInSeconds(), token.mustChangePassword());
 	}
 

@@ -42,10 +42,14 @@ queuecare:
   #   slots-per-minute: 120
   #   login-failures-per-email-and-ip: 5
   #   login-failure-window-minutes: 15
+  #   password-change-attempts: 5      # tentativas de senha atual na troca de senha, por usuário
   #   account-creations-per-hour: 30   # criar contas para outras pessoas (ADMIN e prestador), por usuário
   # Espera máxima pelo bloqueio da linha do prestador ao editar janelas/negócio (padrão 3s); estourou = 409 RESOURCE_BUSY.
   # scheduling:
   #   provider-lock-timeout: 3s
+  # Espera máxima pelo bloqueio da linha do usuário na troca/redefinição de senha (padrão 3s); estourou = 409 RESOURCE_BUSY.
+  # security:
+  #   user-lock-timeout: 3s
   # Tamanho máximo do corpo de qualquer requisição, em bytes (padrão 65536 = 64 KB; acima disso: 413).
   # http:
   #   max-body-bytes: 65536
