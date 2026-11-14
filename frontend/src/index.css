@@ -632,6 +632,7 @@ input[type='date'] {
   color: var(--muted);
 }
 
+<<<<<<< HEAD
 /* Movimento reduzido: fica no FIM do arquivo para vencer as regras acima. Os pontos de carregamento ficam parados
    (a animação repete sem fim, então só encurtar a duração não a pararia). */
 @media (prefers-reduced-motion: reduce) {
@@ -639,4 +640,84 @@ input[type='date'] {
     animation: none;
     opacity: 0.7;
   }
+=======
+/* resumo do dia (início do prestador e do atendente) */
+.today {
+  margin: var(--space-4) 0 var(--space-6);
+}
+
+.today h2 {
+  margin-top: 0;
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-3);
+  margin: var(--space-3) 0;
+}
+
+.stats div {
+  padding: var(--space-3) var(--space-4);
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--muted);
+  border-radius: var(--radius-sm);
+}
+
+.stats dt {
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.stats dd {
+  margin: 0;
+  font-family: var(--font-heading);
+  font-size: 1.75rem;
+  font-weight: 800;
+  line-height: 1.2;
+  font-variant-numeric: tabular-nums;
+}
+
+.stats [data-status='SCHEDULED'] {
+  border-left-color: var(--st-scheduled);
+}
+
+.stats [data-status='CHECKED_IN'] {
+  border-left-color: var(--st-waiting);
+}
+
+.stats [data-status='COMPLETED'] {
+  border-left-color: var(--st-done);
+}
+
+.next {
+  margin: 0;
+}
+
+.shortcuts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+  gap: var(--space-3);
+  padding: 0;
+  margin: 0 0 var(--space-4);
+  list-style: none;
+}
+
+.shortcuts li {
+  padding: var(--space-3) var(--space-4);
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+}
+
+.shortcuts a {
+  font-weight: 700;
+}
+
+.shortcuts span {
+  display: block;
+  color: var(--muted);
+  font-size: 0.9rem;
+>>>>>>> d45c70d (UI 4/10: início do prestador e do atendente com resumo do dia)
 }

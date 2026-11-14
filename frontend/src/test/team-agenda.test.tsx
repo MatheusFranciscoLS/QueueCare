@@ -6,6 +6,9 @@ import { generatePassword } from '../auth/generatePassword'
 import { validateNewPassword } from '../auth/passwordPolicy'
 import { json, mockApi, PASSWORD, problem, renderWithHarness, token, USER, type Call } from './helpers'
 
+// O resumo da tela inicial tem testes próprios (today-summary.test.tsx); aqui ele sairia do caminho das contagens de chamadas à agenda.
+vi.mock('../pages/TodaySummary', () => ({ TodaySummary: () => null }))
+
 afterEach(() => vi.unstubAllGlobals())
 
 type Routes = Record<string, (call: Call) => Response | Promise<Response>>
