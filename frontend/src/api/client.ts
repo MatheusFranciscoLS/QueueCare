@@ -2,6 +2,9 @@
  * Cliente HTTP da API. Todas as chamadas passam por aqui: o token Bearer é anexado em um só lugar e os erros da API
  * (application/problem+json) viram {@link ApiError} com status, código estável (`reason`) e erros por campo.
  */
+import { apiUrl } from './base'
+import { trackRequest } from './slow'
+
 export class ApiError extends Error {
   readonly status: number
   readonly reason?: string
@@ -37,8 +40,9 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}):
   if (options.token) headers.Authorization = `Bearer ${options.token}`
 
   let response: Response
+  const done = trackRequest()
   try {
-    response = await fetch(path, {
+    response = await fetch(apiUrl(path), {
       method: options.method ?? 'GET',
       headers,
       body: options.body === undefined ? undefined : JSON.stringify(options.body),
@@ -48,6 +52,8 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}):
   } catch (e) {
     if (e instanceof DOMException && e.name === 'AbortError') throw e
     throw new ApiError(0, 'sem conexão com o servidor', 'NETWORK')
+  } finally {
+    done()
   }
 
   if (response.ok) {

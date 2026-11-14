@@ -1,6 +1,7 @@
 import { Link, NavLink, Outlet } from 'react-router-dom'
 import { ROLE_LABEL } from '../auth/roles'
 import { useAuth } from '../auth/session'
+import { WakingBanner } from './WakingBanner'
 
 export function Layout() {
   const { user, logout } = useAuth()
@@ -55,6 +56,7 @@ export function Layout() {
         </nav>
       )}
       <main className="content">
+        <WakingBanner />
         <Outlet />
       </main>
     </div>
