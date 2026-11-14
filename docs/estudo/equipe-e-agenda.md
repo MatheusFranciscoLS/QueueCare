@@ -14,7 +14,7 @@ O prestador cuida da equipe e o dono e o atendente enxergam e cancelam os agenda
 2. `pages/provider/TeamPage.tsx` e `pages/agenda/AgendaPage.tsx`.
 3. `AgendaService.resolveProvider` e `AgendaController.workplace` no backend.
 
-## Provas por teste (136 no front, 402 no backend)
+## Provas por teste (139 no front, 402 no backend)
 - Datas puras: hoje no fuso do negócio (não do aparelho), soma de dias atravessando mês, ano e fevereiro bissexto, datas inválidas, hora em fusos diferentes.
 - Senha gerada: aleatória, válida, sem caracteres ambíguos.
 - Equipe: criar, validar, e-mail repetido com resposta uniforme, vincular (inexistente, já vinculado, sucesso), confirmações (nada enviado antes), bloqueio durante a gravação, falha ao atualizar.
@@ -30,3 +30,7 @@ O prestador cuida da equipe e o dono e o atendente enxergam e cancelam os agenda
 ## Limitações e o que falta
 - A agenda não atualiza sozinha (precisa recarregar o dia); check-in e fila ainda não existem (roadmap).
 - Reserva pelo cliente depende do endpoint de listar prestadores.
+
+## Revisão: dois ajustes
+- "Hoje" calcula a data NO MOMENTO do clique (a tela pode ficar aberta de um dia para o outro); teste com relógio simulado atravessando a meia-noite do negócio.
+- Depois de cancelar, desvincular ou desativar com SUCESSO, o registro sai da lista na hora, mesmo que o GET seguinte falhe (o aviso de dados desatualizados continua); assim a tela não oferece uma ação que só receberia 409 ou 404.

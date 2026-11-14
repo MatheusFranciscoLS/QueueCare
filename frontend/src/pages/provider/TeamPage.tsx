@@ -19,6 +19,9 @@ export function TeamPage() {
   const { data, error, loading, reload } = useLoad<StaffMember[]>(load)
   // Um aviso por ação concluída (ex.: "Conta criada"); fica aqui porque as listas e formulários são refeitos ao recarregar.
   const [notice, setNotice] = useState<string | null>(null)
+  // Desvinculados/desativados com SUCESSO nesta tela: somem na hora, mesmo que o GET seguinte falhe (senão a lista antiga ainda
+  // ofereceria ações que só receberiam 404).
+  const [removed, setRemoved] = useState<ReadonlySet<string>>(new Set())
 
   if (loading && !data) return <p role="status">Carregando…</p>
   if (isNotConfigured(error)) {
@@ -33,6 +36,7 @@ export function TeamPage() {
   }
   if (error && !data) return <p role="alert" className="error">{describeError(error)}</p>
 
+  const members = data?.filter((m) => !removed.has(m.userId))
   return (
     <section className="card">
       <h1>Equipe</h1>
@@ -40,10 +44,10 @@ export function TeamPage() {
       <p role="status" className="notice" hidden={!notice}>
         {notice}
       </p>
-      {data && data.length === 0 && <p className="notice">Você ainda não tem atendentes. Crie uma conta ou vincule alguém abaixo.</p>}
+      {members && members.length === 0 && <p className="notice">Você ainda não tem atendentes. Crie uma conta ou vincule alguém abaixo.</p>}
       <ul className="rows">
-        {data?.map((member) => (
-          <MemberRow key={member.userId} member={member} onChanged={reload} setNotice={setNotice} />
+        {members?.map((member) => (
+          <MemberRow key={member.userId} member={member} onChanged={reload} onRemoved={() => setRemoved((current) => new Set(current).add(member.userId))} setNotice={setNotice} />
         ))}
       </ul>
       <h2>Criar conta de atendente</h2>
@@ -201,7 +205,7 @@ function LinkExisting({ onLinked, setNotice }: { onLinked: () => Promise<void>; 
 
 type Pending = 'unlink' | 'deactivate' | null
 
-function MemberRow({ member, onChanged, setNotice }: { member: StaffMember; onChanged: () => Promise<void>; setNotice: Notice }) {
+function MemberRow({ member, onChanged, onRemoved, setNotice }: { member: StaffMember; onChanged: () => Promise<void>; onRemoved: () => void; setNotice: Notice }) {
   const { request } = useAuth()
   const api = useMemo(() => staffApi(request), [request])
   const [confirming, setConfirming] = useState<Pending>(null)
@@ -216,6 +220,7 @@ function MemberRow({ member, onChanged, setNotice }: { member: StaffMember; onCh
       setBusy(true)
       try {
         await (action === 'unlink' ? api.unlink(member.userId) : api.deactivate(member.userId))
+        onRemoved() // some da lista agora; o GET seguinte só confirma
         setNotice(action === 'unlink' ? `${member.name} foi desvinculado da equipe.` : `A conta de ${member.name} foi desativada e saiu da equipe.`)
         await onChanged()
       } catch (e) {

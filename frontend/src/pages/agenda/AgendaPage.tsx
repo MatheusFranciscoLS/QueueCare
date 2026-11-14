@@ -43,7 +43,6 @@ export function AgendaPage() {
 
 function Day({ workplace }: { workplace: Workplace }) {
   const [date, setDate] = useState(() => todayIn(workplace.timeZone))
-  const today = todayIn(workplace.timeZone)
   return (
     <section className="card">
       <h1>Agenda</h1>
@@ -54,7 +53,7 @@ function Day({ workplace }: { workplace: Workplace }) {
         <button type="button" className="button secondary" onClick={() => setDate((d) => addDays(d, -1))}>
           Dia anterior
         </button>
-        <button type="button" className="button secondary" disabled={date === today} onClick={() => setDate(today)}>
+        <button type="button" className="button secondary" onClick={() => setDate(todayIn(workplace.timeZone))}>
           Hoje
         </button>
         <button type="button" className="button secondary" onClick={() => setDate((d) => addDays(d, 1))}>
@@ -84,19 +83,30 @@ function DayList({ date, timeZone }: { date: string; timeZone: string }) {
   const load = useCallback(() => api.day(date), [api, date])
   const { data, error, loading, reload } = useLoad<AgendaItem[]>(load)
   const [notice, setNotice] = useState<string | null>(null)
+  // Cancelados com SUCESSO nesta tela: somem da lista na hora, mesmo que o GET seguinte falhe (a lista antiga ainda os mostraria
+  // como "Agendado" com o botão de cancelar, que só receberia 409).
+  const [cancelled, setCancelled] = useState<ReadonlySet<string>>(new Set())
 
   if (loading && !data) return <p role="status">Carregando…</p>
   if (error && !data) return <p role="alert" className="error">{describeError(error)}</p>
+  const visible = data?.filter((item) => !cancelled.has(item.id))
   return (
     <>
       {error !== undefined && data && <RefreshWarning onRetry={reload} />}
       <p role="status" className="notice" hidden={!notice}>
         {notice}
       </p>
-      {data && data.length === 0 && <p className="notice">Nenhum agendamento neste dia.</p>}
+      {visible && visible.length === 0 && <p className="notice">Nenhum agendamento neste dia.</p>}
       <ul className="rows">
-        {data?.map((item) => (
-          <AppointmentRow key={item.id} item={item} timeZone={timeZone} onChanged={reload} setNotice={setNotice} />
+        {visible?.map((item) => (
+          <AppointmentRow
+            key={item.id}
+            item={item}
+            timeZone={timeZone}
+            onChanged={reload}
+            onCancelled={() => setCancelled((current) => new Set(current).add(item.id))}
+            setNotice={setNotice}
+          />
         ))}
       </ul>
     </>
@@ -105,7 +115,7 @@ function DayList({ date, timeZone }: { date: string; timeZone: string }) {
 
 const STATUS_LABEL: Record<string, string> = { SCHEDULED: 'Agendado', CHECKED_IN: 'Chegou', COMPLETED: 'Concluído' }
 
-function AppointmentRow({ item, timeZone, onChanged, setNotice }: { item: AgendaItem; timeZone: string; onChanged: () => Promise<void>; setNotice: (message: string | null) => void }) {
+function AppointmentRow({ item, timeZone, onChanged, onCancelled, setNotice }: { item: AgendaItem; timeZone: string; onChanged: () => Promise<void>; onCancelled: () => void; setNotice: (message: string | null) => void }) {
   const { request } = useAuth()
   const api = useMemo(() => agendaApi(request), [request])
   const [confirming, setConfirming] = useState(false)
@@ -121,6 +131,7 @@ function AppointmentRow({ item, timeZone, onChanged, setNotice }: { item: Agenda
       setBusy(true)
       try {
         await api.cancel(item.id)
+        onCancelled() // some da lista agora; o GET seguinte só confirma
         setNotice(`Agendamento de ${customer} cancelado.`)
         await onChanged()
       } catch (e) {

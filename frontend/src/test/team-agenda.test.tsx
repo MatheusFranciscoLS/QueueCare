@@ -221,7 +221,7 @@ describe('equipe', () => {
     expect(await screen.findByText(/Cadastre primeiro o seu negócio/)).toBeInTheDocument()
   })
 
-  it('falha ao atualizar depois de gravar mantém a equipe com aviso e deixa tentar de novo', async () => {
+  it('falha ao atualizar depois de gravar mostra o aviso e o registro afetado já saiu da lista', async () => {
     let gets = 0
     const { user } = await loginAs('PROVIDER', {
       'GET /api/provider/staff': () => (++gets === 2 ? problem(500, 'x') : json(200, [MEMBER])),
@@ -233,7 +233,7 @@ describe('equipe', () => {
     await user.click(screen.getByRole('button', { name: 'Confirmar' }))
 
     expect(await screen.findByText(/pode estar desatualizado/)).toBeInTheDocument()
-    expect(screen.getByText('Ana Atendente')).toBeInTheDocument()
+    expect(screen.queryByText('Ana Atendente')).not.toBeInTheDocument() // a conta foi desativada: não oferece mais ações
   })
 })
 
@@ -413,5 +413,77 @@ describe('acesso por perfil às telas novas', () => {
     }
 
     expect(calls.filter((c) => c.path.startsWith('/api/agenda') || c.path.startsWith('/api/provider'))).toHaveLength(0)
+  })
+})
+
+describe('depois de gravar com sucesso, o registro afetado deixa de oferecer ações (mesmo se o GET seguinte falhar)', () => {
+  it('agenda: o agendamento cancelado some e o aviso de dados desatualizados aparece', async () => {
+    let gets = 0
+    const today = todayIn('America/Sao_Paulo')
+    const item = { id: 'a-1', startsAt: `${today}T15:00:00Z`, endsAt: `${today}T16:00:00Z`, status: 'SCHEDULED', serviceId: 's-1', serviceName: 'Troca de óleo', customerId: 'c-1', customerName: 'Maria Souza' }
+    const { user } = await loginAs('ATTENDANT', {
+      'GET /api/agenda/workplace': () => json(200, { businessName: 'Oficina', timeZone: 'America/Sao_Paulo' }),
+      [`GET /api/agenda?date=${today}`]: () => (++gets === 1 ? json(200, [item]) : problem(500, 'x')),
+      'POST /api/appointments/a-1/cancel': () => json(200, { id: 'a-1', status: 'CANCELLED' }),
+    })
+    await user.click(menu('Agenda'))
+    await screen.findByText('12:00–13:00')
+    await user.click(screen.getByRole('button', { name: 'Cancelar agendamento' }))
+
+    await user.click(screen.getByRole('button', { name: 'Confirmar cancelamento' }))
+
+    expect(await screen.findByText(/pode estar desatualizado/)).toBeInTheDocument()
+    expect(screen.queryByText('12:00–13:00')).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Cancelar agendamento' })).not.toBeInTheDocument()
+    expect(screen.getByText('Agendamento de Maria Souza cancelado.')).toBeVisible()
+  })
+
+  it('equipe: desvinculado ou desativado some e não oferece mais ações', async () => {
+    let gets = 0
+    const { user } = await loginAs('PROVIDER', {
+      'GET /api/provider/staff': () => (++gets === 1 ? json(200, [{ userId: 'u-9', name: 'Ana Atendente', email: 'ana@exemplo.test' }]) : problem(500, 'x')),
+      'DELETE /api/provider/staff/u-9': () => new Response(null, { status: 204 }),
+    })
+    await user.click(menu('Equipe'))
+    await screen.findByText('Ana Atendente')
+    await user.click(screen.getByRole('button', { name: 'Desvincular' }))
+
+    await user.click(screen.getByRole('button', { name: 'Confirmar' }))
+
+    expect(await screen.findByText(/pode estar desatualizado/)).toBeInTheDocument()
+    expect(screen.queryByText('Ana Atendente')).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Desvincular' })).not.toBeInTheDocument()
+  })
+})
+
+describe('botão Hoje com a página aberta de um dia para o outro', () => {
+  it('usa a data do MOMENTO do clique, não a de quando a tela foi desenhada', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true, now: new Date('2026-11-14T02:55:00Z') }) // 23:55 de 13/11 em São Paulo
+    try {
+      const { calls } = mockApi({
+        'POST /api/auth/login': () => token('t-1', 7200), // validade longa: o teste avança 20 min de relógio
+        'GET /api/me': () => json(200, { ...USER, role: 'PROVIDER', name: 'Fulana Silva' }),
+        'GET /api/agenda/workplace': () => json(200, { businessName: 'Oficina', timeZone: 'America/Sao_Paulo' }),
+        'GET /api/agenda?date=2026-11-13': () => json(200, []),
+        'GET /api/agenda?date=2026-11-14': () => json(200, []),
+        'GET /api/agenda?date=2026-11-15': () => json(200, []),
+      })
+      const view = renderWithHarness()
+      await act(async () => view.api().login('x@exemplo.test', PASSWORD))
+      await screen.findByRole('heading', { name: 'Olá, Fulana Silva' })
+      const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
+      await user.click(menu('Agenda'))
+      await screen.findByText('Nenhum agendamento neste dia.')
+      expect(calls.at(-1)?.path).toBe('/api/agenda?date=2026-11-13')
+
+      await act(async () => {
+        vi.advanceTimersByTime(20 * 60 * 1000) // passa da meia-noite do negócio (agora 00:15 de 14/11)
+      })
+      await user.click(screen.getByRole('button', { name: 'Hoje' }))
+
+      await waitFor(() => expect(calls.at(-1)?.path).toBe('/api/agenda?date=2026-11-14')) // o dia NOVO, não o 13
+    } finally {
+      vi.useRealTimers()
+    }
   })
 })
