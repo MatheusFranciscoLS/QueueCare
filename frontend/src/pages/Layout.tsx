@@ -38,6 +38,7 @@ export function Layout() {
       {user && !user.mustChangePassword && user.role === 'CUSTOMER' && (
         <nav className="menu" aria-label="Menu do cliente">
           <NavLink to="/agendar">Agendar</NavLink>
+          <NavLink to="/meus-agendamentos">Meus agendamentos</NavLink>
         </nav>
       )}
       {user && !user.mustChangePassword && user.role === 'ATTENDANT' && (

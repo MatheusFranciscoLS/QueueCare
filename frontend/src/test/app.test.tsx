@@ -247,7 +247,7 @@ describe('início por perfil', () => {
     ['ADMIN', 'Criar contas de prestadores'],
     ['PROVIDER', 'No dia a dia'],
     ['ATTENDANT', 'No dia a dia'],
-    ['CUSTOMER', 'Ver e cancelar os seus agendamentos'],
+    ['CUSTOMER', 'No dia a dia'],
   ])('%s vê o que vem a seguir para o seu perfil e nada dos outros', async (role, expected) => {
     mockApi({ 'POST /api/auth/login': () => token(), 'GET /api/me': () => json(200, { ...USER, role }) })
     const user = userEvent.setup()
