@@ -1,5 +1,6 @@
 package com.queuecare.scheduling.web;
 
+import com.queuecare.scheduling.application.AttendanceService;
 import com.queuecare.scheduling.application.BookingRequest;
 import com.queuecare.scheduling.application.BookingService;
 import com.queuecare.scheduling.application.CancellationService;
@@ -40,14 +41,16 @@ class AppointmentController {
 
 	private final BookingService bookingService;
 	private final CancellationService cancellationService;
+	private final AttendanceService attendanceService;
 	private final AppointmentRepository appointments;
 	private final com.queuecare.scheduling.persistence.ProviderRepository providers;
 	private final com.queuecare.scheduling.persistence.ServiceOfferingRepository services;
 
-	AppointmentController(BookingService bookingService, CancellationService cancellationService, AppointmentRepository appointments,
+	AppointmentController(BookingService bookingService, CancellationService cancellationService, AttendanceService attendanceService, AppointmentRepository appointments,
 			com.queuecare.scheduling.persistence.ProviderRepository providers, com.queuecare.scheduling.persistence.ServiceOfferingRepository services) {
 		this.bookingService = bookingService;
 		this.cancellationService = cancellationService;
+		this.attendanceService = attendanceService;
 		this.appointments = appointments;
 		this.providers = providers;
 		this.services = services;
@@ -104,6 +107,20 @@ class AppointmentController {
 	@PreAuthorize("hasAnyRole('CUSTOMER','PROVIDER','ATTENDANT')")
 	AppointmentResponse cancel(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID id) {
 		return respond(List.of(cancellationService.cancel(id, userId(jwt)))).get(0);
+	}
+
+	/** A pessoa chegou. Só a equipe do prestador; o prestador vem do usuário autenticado. */
+	@PostMapping("/{id}/check-in")
+	@PreAuthorize("hasAnyRole('PROVIDER','ATTENDANT')")
+	AppointmentResponse checkIn(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID id) {
+		return respond(List.of(attendanceService.checkIn(id, userId(jwt)))).get(0);
+	}
+
+	/** Atendimento concluído. Só a equipe do prestador. */
+	@PostMapping("/{id}/complete")
+	@PreAuthorize("hasAnyRole('PROVIDER','ATTENDANT')")
+	AppointmentResponse complete(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID id) {
+		return respond(List.of(attendanceService.complete(id, userId(jwt)))).get(0);
 	}
 
 	private static UUID userId(Jwt jwt) {

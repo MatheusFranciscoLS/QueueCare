@@ -42,4 +42,31 @@ public final class AppointmentExceptions {
 			return reason;
 		}
 	}
+
+	/** O pedido de check-in ou de conclusão foi recusado por regra de negócio. */
+	public static class AttendanceRejectedException extends RuntimeException {
+
+		/** Motivos de recusa. */
+		public enum Reason {
+			/** O agendamento está cancelado (409). */
+			ALREADY_CANCELLED,
+			/** A situação atual não permite a transição: check-in só a partir de SCHEDULED, conclusão só a partir de CHECKED_IN (409). */
+			INVALID_STATE,
+			/** O check-in só vale no dia do agendamento, no fuso do prestador (422). */
+			WRONG_DAY,
+			/** Outra requisição alterou o mesmo agendamento ao mesmo tempo (409). */
+			CONCURRENT_UPDATE
+		}
+
+		private final Reason reason;
+
+		public AttendanceRejectedException(Reason reason) {
+			super(reason.name());
+			this.reason = reason;
+		}
+
+		public Reason reason() {
+			return reason;
+		}
+	}
 }

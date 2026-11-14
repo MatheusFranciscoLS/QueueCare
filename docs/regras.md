@@ -32,6 +32,10 @@ Observação: o Brasil não tem horário de verão desde 2019, então `America/S
 Detalhes definidos na implementação (`BookingTimeRules` e `LocalTimeResolver`, ver `docs/estudo/r5-fuso-antecedencia.md`): o início conta contra o momento atual e a antecedência mínima (igual ao limite é permitido); horário local inexistente ou ambíguo não é adivinhado: é devolvido como tal e a API decide.
 Teste: T6.
 
+## R6. Chegada, conclusão e fila
+A equipe do prestador (dono e atendente vinculado) registra a chegada (check-in) e a conclusão. Só se avança na ordem agendado, chegou, concluído; cancelado não chega; quem chegou não se cancela. O check-in só vale no dia do agendamento, no fuso do prestador. A fila do dia lista quem chegou e ainda não foi concluído, por ordem de chegada. Detalhes em ADR 0011 e `docs/estudo/chegada-e-fila.md`.
+Teste: T7.
+
 ## Testes que precisam existir
 | ID | Prova | Ferramenta |
 |---|---|---|
@@ -41,5 +45,6 @@ Teste: T6.
 | T4 | Cancelamento libera o horário e registra o evento | MockMvc + PostgreSQL |
 | T5 | Cliente não altera agendamento de outro | MockMvc |
 | T6 | Fuso e antecedência | JUnit |
+| T7 | Chegada e conclusão: isolamento, estados, dia, fila e concorrência | MockMvc + PostgreSQL |
 
 `@Version` (bloqueio otimista) pode ajudar em atualizações concorrentes, mas **não** substitui a garantia de exclusividade do horário no banco.

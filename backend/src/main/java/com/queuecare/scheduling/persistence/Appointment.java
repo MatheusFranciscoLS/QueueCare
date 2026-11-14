@@ -67,6 +67,16 @@ public class Appointment {
 		this.status = AppointmentStatus.CANCELLED;
 	}
 
+	/** A pessoa chegou (SCHEDULED para CHECKED_IN). O serviço confere a situação antes; aqui só se muda. */
+	public void checkIn() {
+		this.status = AppointmentStatus.CHECKED_IN;
+	}
+
+	/** Atendimento concluído (CHECKED_IN para COMPLETED). */
+	public void complete() {
+		this.status = AppointmentStatus.COMPLETED;
+	}
+
 	public UUID getId() {
 		return id;
 	}

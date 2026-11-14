@@ -8,7 +8,7 @@ Plataforma de agendamento e fila de atendimento para pequenos prestadores de ser
 - Login e perfis: prestador, atendente e cliente.
 - Cadastro de serviços e horários de atendimento.
 - Página pública de agendamento, agendar e cancelar.
-- Painel diário, check-in e fila simples, histórico.
+- Painel diário, check-in e fila simples, histórico (API de chegada, conclusão e fila pronta; telas a seguir).
 
 ## Decisões técnicas centrais
 - Sem reserva dupla, nem sob requisições simultâneas, e sem sobreposição entre serviços de durações diferentes (proteção no banco; ver [ADR 0002](docs/adr/0002-controle-de-concorrencia.md)).
