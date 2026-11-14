@@ -632,15 +632,6 @@ input[type='date'] {
   color: var(--muted);
 }
 
-<<<<<<< HEAD
-/* Movimento reduzido: fica no FIM do arquivo para vencer as regras acima. Os pontos de carregamento ficam parados
-   (a animação repete sem fim, então só encurtar a duração não a pararia). */
-@media (prefers-reduced-motion: reduce) {
-  .loading-dots i {
-    animation: none;
-    opacity: 0.7;
-  }
-=======
 /* resumo do dia (início do prestador e do atendente) */
 .today {
   margin: var(--space-4) 0 var(--space-6);
@@ -719,5 +710,13 @@ input[type='date'] {
   display: block;
   color: var(--muted);
   font-size: 0.9rem;
->>>>>>> d45c70d (UI 4/10: início do prestador e do atendente com resumo do dia)
+}
+
+/* Movimento reduzido: fica no FIM do arquivo para vencer as regras acima. Os pontos de carregamento ficam parados
+   (a animação repete sem fim, então só encurtar a duração não a pararia). */
+@media (prefers-reduced-motion: reduce) {
+  .loading-dots i {
+    animation: none;
+    opacity: 0.7;
+  }
 }
