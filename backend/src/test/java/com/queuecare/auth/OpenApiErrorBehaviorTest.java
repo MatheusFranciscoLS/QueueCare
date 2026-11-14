@@ -19,7 +19,7 @@ import org.springframework.test.web.servlet.MvcResult;
  * O que o contrato OpenAPI promete para 401, 403 e 429 é exatamente o que a API ENTREGA (status, Content-Type, cabeçalhos e corpo):
  * 401 e 403 por perfil vêm da cadeia de segurança com corpo vazio; a troca de senha obrigatória e o 429 têm corpo problem+json.
  */
-@TestPropertySource(properties = { "queuecare.rate-limit.login-per-minute=1", "queuecare.rate-limit.slots-per-minute=1" })
+@TestPropertySource(properties = { "queuecare.rate-limit.login-per-minute=1", "queuecare.rate-limit.slots-per-minute=1", "queuecare.rate-limit.password-change-attempts=1" })
 class OpenApiErrorBehaviorTest extends AuthIntegrationTestBase {
 
 	@Test
@@ -71,5 +71,17 @@ class OpenApiErrorBehaviorTest extends AuthIntegrationTestBase {
 		for (int i = 0; i < 6; i++) {
 			mvc.perform(get("/api/appointments/mine").header(HttpHeaders.AUTHORIZATION, customer)).andExpect(status().isOk());
 		}
+	}
+
+	@Test
+	void trocaDeSenhaAcimaDoLimiteDeTentativasRecebe429ProblemJsonComRetryAfter() throws Exception {
+		String token = "Bearer " + validToken(seedUser("cliente@exemplo.test", "CUSTOMER", true));
+		String wrong = json("currentPassword", PASSWORD + "-errada", "newPassword", PASSWORD + "-nova");
+		MvcResult first = mvc.perform(post("/api/auth/change-password").header(HttpHeaders.AUTHORIZATION, token).contentType(MediaType.APPLICATION_JSON).content(wrong)).andReturn();
+		assertTrue(first.getResponse().getStatus() != 429, "a primeira tentativa ainda é conferida");
+		MvcResult second = mvc.perform(post("/api/auth/change-password").header(HttpHeaders.AUTHORIZATION, token).contentType(MediaType.APPLICATION_JSON).content(wrong))
+				.andExpect(status().isTooManyRequests()).andExpect(jsonPath("$.status").value(429)).andReturn();
+		assertTrue(second.getResponse().getContentType().startsWith("application/problem+json"), second.getResponse().getContentType());
+		assertNotNull(second.getResponse().getHeader("Retry-After"));
 	}
 }

@@ -9,7 +9,7 @@ import org.springframework.validation.annotation.Validated;
 /**
  * Limites de requisições (ADR 0003). Os padrões são conservadores para uso humano normal; os testes usam valores bem diferentes.
  *
- * @param enabled liga ou desliga SÓ os limites por minuto (login, cadastro e horários livres); o bloqueio por
+ * @param enabled liga ou desliga SÓ os limites por minuto (login, cadastro, catálogo e horários livres); o bloqueio por
  *        falhas de login tem chave própria ({@code loginLockoutEnabled}). Padrão: ligado
  * @param accountCreationsEnabled liga ou desliga SÓ o limite por hora de criação de contas (proteção contra enumeração de e-mails);
  *        independente de {@code enabled}. Padrão: ligado
