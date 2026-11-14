@@ -29,7 +29,7 @@ describe('useLoad', () => {
     const load = vi.fn(() => calls.shift()!.promise)
     const { result } = renderHook(() => useLoad(load))
 
-    act(() => result.current.reload()) // segundo carregamento começa antes de o primeiro terminar
+    act(() => { void result.current.reload() }) // segundo carregamento começa antes de o primeiro terminar
     await act(async () => second.resolve('novo'))
     await act(async () => first.resolve('antigo'))
 
@@ -57,7 +57,7 @@ describe('useLoad', () => {
     const load = () => calls.shift()!.promise
     const { result } = renderHook(() => useLoad(load))
 
-    act(() => result.current.reload())
+    act(() => { void result.current.reload() })
     await act(async () => afterSave.resolve(['com o novo item']))
     await act(async () => beforeSave.resolve(['sem o novo item']))
 
@@ -74,11 +74,11 @@ describe('useLoad', () => {
     const { result } = renderHook(() => useLoad(load))
     await waitFor(() => expect(result.current.data).toBe('dado 1'))
 
-    act(() => result.current.reload())
+    act(() => { void result.current.reload() })
     await waitFor(() => expect(result.current.error).toBeInstanceOf(Error))
     expect(result.current.data).toBe('dado 1') // não apaga a tela
 
-    act(() => result.current.reload())
+    act(() => { void result.current.reload() })
     await waitFor(() => expect(result.current.data).toBe('dado 3'))
     expect(result.current.error).toBeUndefined()
   })
@@ -88,7 +88,7 @@ describe('useLoad', () => {
     const { result } = renderHook(() => useLoad(load))
     await waitFor(() => expect(result.current.version).toBe(1))
 
-    act(() => result.current.reload())
+    act(() => { void result.current.reload() })
     await waitFor(() => expect(result.current.version).toBe(2))
   })
 
@@ -101,8 +101,30 @@ describe('useLoad', () => {
     const { result } = renderHook(() => useLoad(load))
     await waitFor(() => expect(result.current.version).toBe(1))
     ok = false
-    act(() => result.current.reload())
+    act(() => { void result.current.reload() })
     await waitFor(() => expect(result.current.error).toBeDefined())
     expect(result.current.version).toBe(1)
+  })
+})
+
+describe('useLoad: a promessa de reload', () => {
+  it('termina quando o carregamento termina, com sucesso ou falha, e nunca rejeita', async () => {
+    const pending = deferred<string>()
+    let useSlow = false
+    const load = () => (useSlow ? pending.promise : Promise.resolve('inicial'))
+    const { result } = renderHook(() => useLoad(load))
+    await waitFor(() => expect(result.current.data).toBe('inicial'))
+    useSlow = true
+
+    let finished = false
+    act(() => {
+      void result.current.reload().then(() => (finished = true))
+    })
+    await act(async () => {})
+    expect(finished).toBe(false) // ainda esperando a resposta
+
+    await act(async () => pending.reject(new Error('falhou')))
+    await waitFor(() => expect(finished).toBe(true)) // terminou (e não rejeitou), mesmo com falha
+    expect(result.current.error).toBeInstanceOf(Error)
   })
 })

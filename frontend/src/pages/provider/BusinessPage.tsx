@@ -17,19 +17,21 @@ export function BusinessPage() {
   const { request } = useAuth()
   const api = useMemo(() => providerApi(request), [request])
   const load = useCallback(() => api.getBusiness(), [api])
-  const { data, error, loading, reload } = useLoad<Business>(load)
+  const { data, error, loading, reload, version } = useLoad<Business>(load)
+  // O aviso "salvo" fica aqui porque o formulário é refeito a cada carregamento bem-sucedido.
+  const [saved, setSaved] = useState(false)
 
   if (loading && !data) return <p role="status">Carregando…</p>
   if (error && !data && !isNotConfigured(error)) return <p role="alert" className="error">{describeError(error)}</p>
   return (
     <>
       {error !== undefined && data && <RefreshWarning onRetry={reload} />}
-      <BusinessForm key={data?.id ?? 'novo'} business={data} onSaved={reload} />
+      <BusinessForm key={version} business={data} saved={saved} setSaved={setSaved} onSaved={reload} />
     </>
   )
 }
 
-function BusinessForm({ business, onSaved }: { business?: Business; onSaved: () => void }) {
+function BusinessForm({ business, saved, setSaved, onSaved }: { business?: Business; saved: boolean; setSaved: (value: boolean) => void; onSaved: () => Promise<void> }) {
   const { request } = useAuth()
   const api = useMemo(() => providerApi(request), [request])
   const creating = !business
@@ -38,7 +40,6 @@ function BusinessForm({ business, onSaved }: { business?: Business; onSaved: () 
   const [notice, setNotice] = useState(String(business?.minimumNoticeMinutes ?? 0))
   const [deadline, setDeadline] = useState(String(business?.cancellationDeadlineMinutes ?? 0))
   const [errors, setErrors] = useState<Partial<Record<'name' | 'notice' | 'deadline' | 'form', string>>>({})
-  const [saved, setSaved] = useState(false)
   const [busy, setBusy] = useState(false)
   const once = useSingleFlight()
   const focusFirstInvalid = useFocusFirstInvalid()
@@ -71,7 +72,7 @@ function BusinessForm({ business, onSaved }: { business?: Business; onSaved: () 
       try {
         await (creating ? api.createBusiness(input) : api.updateBusiness(input))
         setSaved(true)
-        onSaved()
+        await onSaved() // o formulário continua bloqueado até o GET posterior terminar e passa a mostrar o que o SERVIDOR devolveu
       } catch (e) {
         if (e instanceof ApiError && e.status === 400) {
           const field = { name: e.fieldErrors.businessName, notice: e.fieldErrors.minimumNoticeMinutes, deadline: e.fieldErrors.cancellationDeadlineMinutes }
@@ -90,10 +91,10 @@ function BusinessForm({ business, onSaved }: { business?: Business; onSaved: () 
       <h1>{creating ? 'Cadastre o seu negócio' : 'Meu negócio'}</h1>
       {creating && <p className="notice">Antes de oferecer serviços e horários, diga como o seu negócio funciona.</p>}
       <form onSubmit={submit} noValidate>
-        <Field label="Nome do negócio" name="name" value={name} error={errors.name} onChange={(e) => { setName(e.target.value); clear('name') }} />
+        <Field label="Nome do negócio" name="name" disabled={busy} value={name} error={errors.name} onChange={(e) => { setName(e.target.value); clear('name') }} />
         <div className="field">
           <label htmlFor="zone">Fuso horário</label>
-          <select id="zone" value={zone} onChange={(e) => { setZone(e.target.value); setSaved(false) }}>
+          <select id="zone" disabled={busy} value={zone} onChange={(e) => { setZone(e.target.value); setSaved(false) }}>
             {zones.map((z) => (
               <option key={z} value={z}>
                 {z}
@@ -105,6 +106,7 @@ function BusinessForm({ business, onSaved }: { business?: Business; onSaved: () 
         <Field
           label="Antecedência mínima (minutos)"
           name="notice"
+          disabled={busy}
           type="number"
           inputMode="numeric"
           min={0}
@@ -116,6 +118,7 @@ function BusinessForm({ business, onSaved }: { business?: Business; onSaved: () 
         <Field
           label="Prazo para o cliente cancelar (minutos antes)"
           name="deadline"
+          disabled={busy}
           type="number"
           inputMode="numeric"
           min={0}

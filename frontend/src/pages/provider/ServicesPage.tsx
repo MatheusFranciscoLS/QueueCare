@@ -56,7 +56,7 @@ export function ServicesPage() {
   )
 }
 
-function NewService({ onCreated }: { onCreated: () => void }) {
+function NewService({ onCreated }: { onCreated: () => Promise<void> }) {
   const { request } = useAuth()
   const api = useMemo(() => providerApi(request), [request])
   const [name, setName] = useState('')
@@ -79,7 +79,7 @@ function NewService({ onCreated }: { onCreated: () => void }) {
         await api.createService({ name: name.trim(), durationMinutes: Number(duration) })
         setName('')
         setDuration('60')
-        onCreated()
+        await onCreated()
       } catch (e) {
         // Erro de campo aparece no campo; o aviso geral só quando não há campo a apontar (sem repetir o mesmo texto).
         if (e instanceof ApiError && e.status === 400 && (e.fieldErrors.name || e.fieldErrors.durationMinutes)) setErrors({ name: e.fieldErrors.name, duration: e.fieldErrors.durationMinutes })
@@ -115,7 +115,7 @@ function NewService({ onCreated }: { onCreated: () => void }) {
   )
 }
 
-function ServiceRow({ service, onChanged }: { service: Service; onChanged: () => void }) {
+function ServiceRow({ service, onChanged }: { service: Service; onChanged: () => Promise<void> }) {
   const { request } = useAuth()
   const api = useMemo(() => providerApi(request), [request])
   const [editing, setEditing] = useState(false)
@@ -137,7 +137,7 @@ function ServiceRow({ service, onChanged }: { service: Service; onChanged: () =>
       try {
         await api.updateService(service.id, { name: name.trim(), durationMinutes: Number(duration), active })
         setEditing(false)
-        onChanged()
+        await onChanged()
       } catch (e) {
         setErrors({ form: describeError(e) })
       } finally {

@@ -40,7 +40,7 @@ export function AvailabilityPage() {
   )
 }
 
-function Editor({ windows, saved, setSaved, onSaved }: { windows: AvailabilityWindow[]; saved: boolean; setSaved: (value: boolean) => void; onSaved: () => void }) {
+function Editor({ windows, saved, setSaved, onSaved }: { windows: AvailabilityWindow[]; saved: boolean; setSaved: (value: boolean) => void; onSaved: () => Promise<void> }) {
   const { request } = useAuth()
   const api = useMemo(() => providerApi(request), [request])
   const [schedule, setSchedule] = useState<Schedule>(() => fromWindows(windows))
@@ -70,7 +70,7 @@ function Editor({ windows, saved, setSaved, onSaved }: { windows: AvailabilityWi
       try {
         await api.replaceAvailability(toWindows(schedule))
         setSaved(true)
-        onSaved()
+        await onSaved() // continua bloqueado até o GET posterior terminar (sucesso ou falha): nenhuma edição cai na janela entre os dois
       } catch (e) {
         setFormError(describeError(e))
       } finally {

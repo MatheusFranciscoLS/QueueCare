@@ -266,3 +266,70 @@ describe('acesso direto às telas do prestador por outros perfis', () => {
     expect(calls.filter((c) => c.path.startsWith('/api/provider'))).toHaveLength(0)
   })
 })
+
+describe('janela entre o fim da gravação e o fim do GET posterior', () => {
+  it('expediente: continua bloqueado até o GET terminar; depois mostra o que o servidor devolveu', async () => {
+    const slowGet = deferred<Response>()
+    let gets = 0
+    const { user } = await loginAsProvider({
+      'GET /api/provider/availability': () => (++gets === 1 ? json(200, [{ dayOfWeek: 'MONDAY', start: '08:00:00', end: '12:00:00' }]) : slowGet.promise),
+      'PUT /api/provider/availability': () => json(200, [{ dayOfWeek: 'MONDAY', start: '08:00:00', end: '12:00:00' }]),
+    })
+    await user.click(menu('/expediente'))
+    await screen.findByLabelText('Segunda-feira, horário 1, início')
+
+    await user.click(screen.getByRole('button', { name: 'Salvar expediente' }))
+    await screen.findByText('Expediente salvo.') // o PUT terminou; o GET ainda está pendente
+
+    expect(screen.getByLabelText('Segunda-feira, horário 1, início')).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Adicionar horário em Terça-feira' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Remover horário 1 de Segunda-feira' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Salvando…' })).toBeDisabled()
+
+    await act(async () => slowGet.resolve(json(200, [{ dayOfWeek: 'TUESDAY', start: '09:00:00', end: '10:00:00' }])))
+
+    expect(await screen.findByLabelText('Terça-feira, horário 1, início')).toBeEnabled()
+    expect(screen.queryByLabelText('Segunda-feira, horário 1, início')).not.toBeInTheDocument()
+  })
+
+  it('expediente: se o GET posterior falhar, libera o editor (com o aviso) sem descartar nada', async () => {
+    let gets = 0
+    const { user } = await loginAsProvider({
+      'GET /api/provider/availability': () => (++gets === 1 ? json(200, []) : problem(503, 'fora')),
+      'PUT /api/provider/availability': () => json(200, [{ dayOfWeek: 'FRIDAY', start: '08:00:00', end: '12:00:00' }]),
+    })
+    await user.click(menu('/expediente'))
+    await screen.findByText(/hoje o seu negócio não recebe agendamentos/)
+    await user.click(screen.getByRole('button', { name: 'Adicionar horário em Sexta-feira' }))
+    await user.click(screen.getByRole('button', { name: 'Salvar expediente' }))
+
+    expect(await screen.findByText(/pode estar desatualizado/)).toBeInTheDocument()
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Salvar expediente' })).toBeEnabled())
+    expect(screen.getByLabelText('Sexta-feira, horário 1, início')).toBeEnabled()
+  })
+
+  it('negócio: bloqueia os campos durante a gravação e mostra os valores do SERVIDOR depois', async () => {
+    const slowPut = deferred<Response>()
+    let stored = { id: 'b-1', businessName: 'Oficina', timeZone: 'America/Sao_Paulo', minimumNoticeMinutes: 0, cancellationDeadlineMinutes: 0 }
+    const { user } = await loginAsProvider({
+      'GET /api/provider': () => json(200, stored),
+      'PUT /api/provider': () => slowPut.promise,
+    })
+    await user.click(menu('/meu-negocio'))
+    await screen.findByRole('heading', { name: 'Meu negócio' })
+    await user.type(screen.getByLabelText('Nome do negócio'), ' 2')
+
+    await user.click(screen.getByRole('button', { name: 'Salvar' }))
+
+    expect(screen.getByLabelText('Nome do negócio')).toBeDisabled()
+    expect(screen.getByLabelText('Fuso horário')).toBeDisabled()
+    expect(screen.getByLabelText('Antecedência mínima (minutos)')).toBeDisabled()
+    expect(screen.getByLabelText('Prazo para o cliente cancelar (minutos antes)')).toBeDisabled()
+    stored = { ...stored, businessName: 'Oficina 2 (normalizado pelo servidor)', minimumNoticeMinutes: 15 }
+    await act(async () => slowPut.resolve(json(200, stored)))
+
+    expect(await screen.findByDisplayValue('Oficina 2 (normalizado pelo servidor)')).toBeEnabled()
+    expect(screen.getByLabelText('Antecedência mínima (minutos)')).toHaveValue(15)
+    expect(screen.getByText('Salvo.')).toBeVisible()
+  })
+})
