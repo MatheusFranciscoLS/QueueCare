@@ -126,4 +126,22 @@ class AdminUserListIntegrationTest extends AuthIntegrationTestBase {
 		list(admin, "q", "alvo").andExpect(status().isOk()).andExpect(jsonPath("$[0].active").value(false));
 		assertEquals(1L, count("SELECT count(*) FROM audit_log WHERE action = 'USER_DEACTIVATED'"), "a leitura não grava auditoria");
 	}
+
+	/**
+	 * CONTRATO DA PAGINAÇÃO (ADR 0007 item 7): por deslocamento (offset). A ordem é estável e a travessia é exata enquanto o conjunto NÃO muda;
+	 * se uma conta nova entrar entre duas páginas, um item pode repetir (ou, com remoção, ser pulado). Quem consome (a tela) reinicia na
+	 * página 0 depois de qualquer mudança. Este teste fixa o comportamento para ninguém prometer mais do que isso.
+	 */
+	@Test
+	void paginacaoPorOffsetSoEExataEnquantoOConjuntoNaoMudaContratoDocumentado() throws Exception {
+		for (String e : List.of("bruno@exemplo.test", "carla@exemplo.test", "daniel@exemplo.test")) {
+			seedUser(e, "CUSTOMER", true);
+		}
+		assertEquals(List.of("admin@exemplo.test", "bruno@exemplo.test"), emails("size", "2", "page", "0"));
+
+		seedUser("aaron@exemplo.test", "CUSTOMER", true); // entra ANTES de tudo, entre uma página e outra
+
+		assertEquals(List.of("bruno@exemplo.test", "carla@exemplo.test"), emails("size", "2", "page", "1"), "bruno repete: é a limitação documentada do offset");
+		assertEquals(List.of("aaron@exemplo.test", "admin@exemplo.test"), emails("size", "2", "page", "0"), "reiniciar na página 0 mostra o conjunto novo");
+	}
 }
