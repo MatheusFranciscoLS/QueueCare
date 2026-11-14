@@ -137,4 +137,28 @@ describe('resumo do dia na tela inicial', () => {
       vi.useRealTimers()
     }
   })
+  it('virou o dia e a atualização falha: o resumo do dia anterior NÃO continua à mostra; avisa e "Atualizar resumo" recupera', async () => {
+    vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval', 'Date'], shouldAdvanceTime: true })
+    try {
+      vi.setSystemTime(new Date('2026-11-15T01:59:30Z')) // sábado 14/11, 22:59:30 em São Paulo
+      let newDayTries = 0
+      const user = await homeAs('PROVIDER', {
+        'GET /api/agenda/workplace': () => json(200, WORKPLACE),
+        'GET /api/agenda?date=2026-11-14': () => json(200, []),
+        'GET /api/agenda?date=2026-11-15': () => (++newDayTries <= 1 ? problem(500, 'x') : json(200, [])),
+        'GET /api/agenda/queue': () => json(200, []),
+      })
+      await screen.findByRole('region', { name: /Hoje, sábado, 14/ })
+      await act(async () => {
+        vi.setSystemTime(new Date('2026-11-15T03:01:00Z'))
+        vi.advanceTimersByTime(60_000)
+      })
+      expect(await screen.findByText(/Não foi possível atualizar o resumo de hoje/)).toBeInTheDocument()
+      expect(screen.queryByRole('region', { name: /Hoje,/ })).not.toBeInTheDocument()
+      await user.click(screen.getByRole('button', { name: 'Atualizar resumo' }))
+      expect(await screen.findByRole('region', { name: /Hoje, domingo, 15/ })).toBeInTheDocument()
+    } finally {
+      vi.useRealTimers()
+    }
+  })
 })

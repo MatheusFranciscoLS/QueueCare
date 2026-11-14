@@ -46,13 +46,14 @@ export function TodaySummary() {
     if (staleDay) void reload()
   }, [staleDay, reload, now])
 
-  if (loading && !data) return <Loading>Carregando o resumo de hoje…</Loading>
+  // Dia do negócio virado: o resumo antigo NUNCA é mostrado como se fosse o de hoje (nem enquanto atualiza, nem se a atualização falhar).
+  if (loading && (!data || staleDay)) return <Loading>{data ? 'Atualizando o resumo de hoje…' : 'Carregando o resumo de hoje…'}</Loading>
   // Sem negócio configurado ou atendente sem vínculo: as telas de Agenda e Fila já explicam; o resumo não repete.
   if (!data && (isNotConfigured(error) || (error instanceof ApiError && error.status === 403))) return null
-  if (!data) {
+  if (!data || staleDay) {
     return (
       <p className="hint">
-        Não foi possível carregar o resumo de hoje.{' '}
+        {data ? 'Não foi possível atualizar o resumo de hoje.' : 'Não foi possível carregar o resumo de hoje.'}{' '}
         <button type="button" className="button secondary" onClick={() => void reload()}>
           Atualizar resumo
         </button>
