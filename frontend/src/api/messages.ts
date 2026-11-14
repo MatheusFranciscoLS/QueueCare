@@ -13,6 +13,8 @@ const BY_REASON: Record<string, string> = {
   NOT_CANCELLABLE: 'Esse agendamento não pode mais ser cancelado.',
   TOO_LATE: 'Passou do prazo para cancelar.',
   CONCURRENT_UPDATE: 'O agendamento acabou de ser alterado por outra pessoa. Atualize a agenda.',
+  INVALID_STATE: 'Esse agendamento já mudou de situação. Atualize a agenda.',
+  WRONG_DAY: 'A chegada só pode ser registrada no dia do agendamento.',
   APPOINTMENT_NOT_FOUND: 'Agendamento não encontrado.',
   SLOT_TAKEN: 'Esse horário acabou de ser ocupado por outra pessoa. Escolha outro.',
   IN_THE_PAST: 'Esse horário já passou. Escolha outro.',

@@ -9,6 +9,7 @@ import { AvailabilityPage } from './pages/provider/AvailabilityPage'
 import { BusinessPage } from './pages/provider/BusinessPage'
 import { ServicesPage } from './pages/provider/ServicesPage'
 import { AgendaPage } from './pages/agenda/AgendaPage'
+import { QueuePage } from './pages/agenda/QueuePage'
 import { BookPage } from './pages/customer/BookPage'
 import { MyAppointmentsPage } from './pages/customer/MyAppointmentsPage'
 import { TeamPage } from './pages/provider/TeamPage'
@@ -37,6 +38,7 @@ export function App() {
           </Route>
           <Route element={<RequireRole roles={['PROVIDER', 'ATTENDANT']} />}>
             <Route path="/agenda" element={<AgendaPage />} />
+            <Route path="/fila" element={<QueuePage />} />
           </Route>
         </Route>
         <Route path="*" element={<NotFound />} />
