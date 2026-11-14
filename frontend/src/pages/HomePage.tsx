@@ -3,7 +3,7 @@ import { useAuth, type Role } from '../auth/session'
 
 /** O que cada perfil fará nas próximas telas. Honesto: as telas ainda não existem, então nada aqui finge ser um botão. */
 const COMING: Record<Role, string[]> = {
-  CUSTOMER: ['Escolher um prestador e um horário livre', 'Ver e cancelar os seus agendamentos'],
+  CUSTOMER: ['Ver e cancelar os seus agendamentos'],
   PROVIDER: [],
   ATTENDANT: [],
   ADMIN: ['Criar contas de prestadores', 'Ativar, desativar e redefinir senhas de usuários'],
@@ -37,6 +37,16 @@ export function HomePage() {
             </li>
             <li>
               <Link to="/equipe">Equipe</Link>: criar contas de atendentes, vincular e desativar
+            </li>
+          </ul>
+        </>
+      )}
+      {user.role === 'CUSTOMER' && (
+        <>
+          <h2>No dia a dia</h2>
+          <ul>
+            <li>
+              <Link to="/agendar">Agendar</Link>: escolha o prestador, o serviço, o dia e um horário livre
             </li>
           </ul>
         </>
