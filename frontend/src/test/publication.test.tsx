@@ -24,11 +24,29 @@ describe('endereço da API', () => {
     expect(apiUrl('/api/appointments/mine?page=0&size=50')).toBe('https://queuecare-api.onrender.com/api/appointments/mine?page=0&size=50')
   })
 
-  it.each(['queuecare-api.onrender.com', 'ftp://api.exemplo.com', 'https://api.exemplo.com/v1', 'https://api.exemplo.com?x=1', 'https://api.exemplo.com/#a', 'https://usuario:senha@api.exemplo.com', 'https://api.exemplo.com@evil.example', 'javascript:alert(1)'])(
+  it.each(['queuecare-api.onrender.com', 'ftp://api.exemplo.com', 'https://api.exemplo.com/v1', 'https://api.exemplo.com?x=1', 'https://api.exemplo.com/#a', 'https://usuario:senha@api.exemplo.com', 'https://api.exemplo.com@evil.example', 'https://usuario@evil.com', 'https://queuecare-api.onrender.com@evil.com', 'https://usuario:senha@evil.com', 'http://api.exemplo.com', 'http://192.168.0.10:8080', 'javascript:alert(1)'])(
     'valor inválido (%s) falha alto em vez de mandar o token para um lugar errado',
     (value) => {
       vi.stubEnv('VITE_API_URL', value)
       expect(() => apiUrl('/api/me')).toThrow(/VITE_API_URL inválida/)
+    },
+  )
+
+  it('http só vale para a máquina local (desenvolvimento)', () => {
+    for (const local of ['http://localhost:8080', 'http://127.0.0.1:8080', 'http://[::1]:8080']) {
+      vi.stubEnv('VITE_API_URL', local)
+      expect(apiUrl('/api/me')).toBe(`${new URL(local).origin}/api/me`)
+    }
+  })
+
+  it.each(['http://api.exemplo.com', 'https://usuario@evil.com', 'https://queuecare-api.onrender.com@evil.com', 'https://usuario:senha@evil.com'])(
+    'configuração inválida (%s) NÃO chama fetch, nem com token: a validação acontece antes do transporte',
+    async (value) => {
+      vi.stubEnv('VITE_API_URL', value)
+      const fetchMock = vi.fn()
+      vi.stubGlobal('fetch', fetchMock)
+      await expect(apiRequest('/api/me', { token: 't-secreto' })).rejects.toThrow(/VITE_API_URL inválida/)
+      expect(fetchMock).not.toHaveBeenCalled()
     },
   )
 

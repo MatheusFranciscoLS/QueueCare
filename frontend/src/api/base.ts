@@ -15,5 +15,10 @@ export function apiUrl(path: string): string {
   if ((base.protocol !== 'https:' && base.protocol !== 'http:') || base.username || base.password || base.search || base.hash || (base.pathname !== '/' && base.pathname !== '')) {
     throw new Error('VITE_API_URL inválida: use só o endereço (https://api.exemplo.com), sem caminho nem parâmetros')
   }
+  // O token Bearer não pode viajar sem criptografia: http só vale para a máquina local (desenvolvimento).
+  const local = ['localhost', '127.0.0.1', '[::1]'].includes(base.hostname)
+  if (base.protocol === 'http:' && !local) {
+    throw new Error('VITE_API_URL inválida: use https (http só é aceito para localhost)')
+  }
   return `${base.origin}${path}`
 }

@@ -39,10 +39,12 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}):
   if (options.body !== undefined) headers['Content-Type'] = 'application/json'
   if (options.token) headers.Authorization = `Bearer ${options.token}`
 
+  // Antes de qualquer transporte: endereço de API inválido é erro de CONFIGURAÇÃO (nunca vira "sem conexão" e o token nunca sai).
+  const url = apiUrl(path)
   let response: Response
   const done = trackRequest()
   try {
-    response = await fetch(apiUrl(path), {
+    response = await fetch(url, {
       method: options.method ?? 'GET',
       headers,
       body: options.body === undefined ? undefined : JSON.stringify(options.body),

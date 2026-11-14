@@ -11,8 +11,8 @@ Quando o site e a API ficam em endereços diferentes (como na hospedagem gratuit
 ## Como ler o código
 `api/base.ts` (endereço), `api/slow.ts` (contagem de requisições lentas), `pages/WakingBanner.tsx`, e a chamada única em `api/client.ts`.
 
-## Provas por teste (250 no front, 13 novos em `publication.test.tsx`)
-- Sem variável o caminho segue relativo; com variável junta origem e caminho (com ou sem barra final); 6 valores inválidos falham; o cliente HTTP usa o endereço.
+## Provas por teste (262 no front, 25 novos em `publication.test.tsx`)
+- Sem variável o caminho segue relativo; com variável junta origem e caminho (com ou sem barra final); 13 valores inválidos falham (incluindo usuário embutido e http remoto) e NENHUM chama fetch, nem com token; o cliente HTTP usa o endereço.
 - Requisição rápida nunca mostra o aviso; lenta mostra e some ao terminar; várias lentas só somem quando todas terminam; terminar duas vezes não desbalanceia; o cliente libera ao chegar ou ao falhar.
 - Mutações verificadas: sem liberar a contagem, cliente ignorando a base e sem rastreio: cada uma derruba testes.
 
