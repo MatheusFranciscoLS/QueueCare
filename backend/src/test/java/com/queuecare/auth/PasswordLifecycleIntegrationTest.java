@@ -11,6 +11,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.jayway.jsonpath.JsonPath;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -170,14 +171,38 @@ class PasswordLifecycleIntegrationTest extends AuthIntegrationTestBase {
 	void tokenComVersaoAntigaOuInvalidaEh401EAusenteContaComoZero() throws Exception {
 		UUID id = seedUser("c@exemplo.test", "CUSTOMER", true);
 		jdbc.update("UPDATE users SET token_version = 3 WHERE id = ?", id);
-		long now = Instant.now().getEpochSecond();
-		String base = "{\"iss\":\"" + ISSUER + "\",\"aud\":\"" + AUDIENCE + "\",\"sub\":\"" + id + "\",\"iat\":" + now + ",\"exp\":" + (now + 900);
 
-		for (String claim : List.of("", ",\"ver\":2", ",\"ver\":4", ",\"ver\":\"3\"", ",\"ver\":null")) {
-			int status = mvc.perform(get("/api/me").header(HttpHeaders.AUTHORIZATION, "Bearer " + rawSignedToken(TEST_SECRET, base + claim + "}"))).andReturn().getResponse().getStatus();
-			assertEquals(401, status, "claim: " + claim);
+		for (String claim : List.of("", ",\"ver\":2", ",\"ver\":4", ",\"ver\":\"3\"", ",\"ver\":null", ",\"ver\":3.5", ",\"ver\":true")) {
+			assertEquals(401, meStatus(id, claim), "claim: " + claim);
 		}
-		mvc.perform(get("/api/me").header(HttpHeaders.AUTHORIZATION, "Bearer " + rawSignedToken(TEST_SECRET, base + ",\"ver\":3}"))).andExpect(status().isOk());
+		assertEquals(200, meStatus(id, ",\"ver\":3"));
+	}
+
+	/** Contrato da claim com versão ZERO no banco: ausente vale 0; presente só se for o inteiro 0. */
+	@Test
+	void comVersaoZeroAusenteEZeroInteiroValemENulaTextoDecimalEForaDaFaixaNao() throws Exception {
+		UUID id = seedUser("c@exemplo.test", "CUSTOMER", true);
+
+		assertEquals(200, meStatus(id, ""), "ausente = 0");
+		assertEquals(200, meStatus(id, ",\"ver\":0"));
+		for (String claim : List.of(",\"ver\":null", ",\"ver\":\"0\"", ",\"ver\":0.5", ",\"ver\":0.0", ",\"ver\":4294967296", ",\"ver\":-4294967296",
+				",\"ver\":99999999999999999999", ",\"ver\":-1", ",\"ver\":false", ",\"ver\":[0]", ",\"ver\":{}")) {
+			assertEquals(401, meStatus(id, claim), "claim: " + claim);
+		}
+	}
+
+	/** Assina o texto JSON EXATAMENTE como escrito (o JWTClaimsSet do Nimbus descartaria um "ver": null antes de assinar). */
+	private static String literalPayloadToken(String payloadJson) throws Exception {
+		com.nimbusds.jose.JWSObject jws = new com.nimbusds.jose.JWSObject(new com.nimbusds.jose.JWSHeader(com.nimbusds.jose.JWSAlgorithm.HS256),
+				new com.nimbusds.jose.Payload(payloadJson));
+		jws.sign(new com.nimbusds.jose.crypto.MACSigner(Base64.getDecoder().decode(TEST_SECRET)));
+		return jws.serialize();
+	}
+
+	private int meStatus(UUID id, String verClaim) throws Exception {
+		long now = Instant.now().getEpochSecond();
+		String json = "{\"iss\":\"" + ISSUER + "\",\"aud\":\"" + AUDIENCE + "\",\"sub\":\"" + id + "\",\"iat\":" + now + ",\"exp\":" + (now + 900) + verClaim + "}";
+		return mvc.perform(get("/api/me").header(HttpHeaders.AUTHORIZATION, "Bearer " + literalPayloadToken(json))).andReturn().getResponse().getStatus();
 	}
 
 	@Test
