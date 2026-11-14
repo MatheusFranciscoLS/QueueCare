@@ -56,31 +56,43 @@ export function UsersPage() {
   )
 }
 
-/** O que foi confirmado por esta tela e ainda não foi relido do servidor: vale só até a PRÓXIMA leitura bem-sucedida. */
+/**
+ * O que foi confirmado por esta tela. `seq` é o número da confirmação (1, 2, 3...). Cada leitura guarda quantas confirmações já existiam
+ * QUANDO ELA COMEÇOU (`startedSeq`): a confirmação só cede a uma leitura iniciada DEPOIS dela. Uma leitura que já estava em andamento
+ * antes (e pode trazer o estado antigo) nunca a desfaz, mesmo que termine depois.
+ */
 interface Confirmed {
   active?: boolean
   mustChangePassword?: boolean
-  atVersion: number
+  seq: number
+}
+
+interface Loaded {
+  users: AdminUser[]
+  startedSeq: number
 }
 
 function UserList({ query, page, onPage }: { query: { q: string; role: string }; page: number; onPage: (page: number) => void }) {
   const { request, user: me } = useAuth()
   const api = useMemo(() => adminApi(request), [request])
-  const load = useCallback(() => api.users({ ...query, page, size: PAGE_SIZE }), [api, query, page])
-  const { data, error, loading, reload, version } = useLoad<AdminUser[]>(load)
+  const seq = useRef(0)
+  const load = useCallback(async (): Promise<Loaded> => {
+    const startedSeq = seq.current // quantas confirmações já existiam quando ESTA leitura começou
+    return { users: await api.users({ ...query, page, size: PAGE_SIZE }), startedSeq }
+  }, [api, query, page])
+  const { data, error, loading, reload } = useLoad<Loaded>(load)
   const [notice, setNotice] = useState<string | null>(null)
   // O erro mora AQUI, não na linha: a lista pode ser refeita e a linha, mudar.
   const [problem, setProblem] = useState<string | null>(null)
   const [confirmed, setConfirmed] = useState<ReadonlyMap<string, Confirmed>>(new Map())
   const [delivered, setDelivered] = useState<{ name: string; email: string; password: string } | null>(null)
 
-  // Marca a versão da lista em que a confirmação foi feita (a próxima leitura bem-sucedida passa a mandar).
-  const confirmAt = useCallback(
-    (id: string, change: Omit<Confirmed, 'atVersion'>) => {
-      setConfirmed((current) => new Map(current).set(id, { ...current.get(id), ...change, atVersion: version }))
-    },
-    [version],
-  )
+  // Registra a confirmação com o próximo número; só uma leitura iniciada depois dele passa a mandar.
+  const confirmAt = useCallback((id: string, change: Omit<Confirmed, 'seq'>) => {
+    seq.current += 1
+    const mine = seq.current
+    setConfirmed((current) => new Map(current).set(id, { ...current.get(id), ...change, seq: mine }))
+  }, [])
 
   if (loading && !data) return <p role="status">Carregando…</p>
   if (error && !data) return <p role="alert" className="error">{describeError(error)}</p>
@@ -99,11 +111,11 @@ function UserList({ query, page, onPage }: { query: { q: string; role: string };
           <strong>não será mostrada de novo</strong>.
         </PasswordDelivery>
       )}
-      {data && data.length === 0 && <p className="notice">Nenhuma conta encontrada.</p>}
+      {data && data.users.length === 0 && <p className="notice">Nenhuma conta encontrada.</p>}
       <ul className="rows">
-        {data?.map((item) => {
+        {data?.users.map((item) => {
           const c = confirmed.get(item.id)
-          const current = c && c.atVersion === version ? c : undefined
+          const current = c && data.startedSeq < c.seq ? c : undefined
           return (
             <UserRow
               key={item.id}
@@ -123,7 +135,7 @@ function UserList({ query, page, onPage }: { query: { q: string; role: string };
           Página anterior
         </button>
         <span className="hint">Página {page + 1}</span>
-        <button type="button" className="button secondary" disabled={!data || data.length < PAGE_SIZE} onClick={() => onPage(page + 1)}>
+        <button type="button" className="button secondary" disabled={!data || data.users.length < PAGE_SIZE} onClick={() => onPage(page + 1)}>
           Próxima página
         </button>
       </p>

@@ -175,6 +175,54 @@ describe('contas: desativar e ativar', () => {
     await waitFor(() => expect(within(rowOf('Ana Lima')).getByText('Ativa')).toBeInTheDocument())
   })
 
+  it('CORRIDA: leitura iniciada ANTES da confirmação, que termina bem-sucedida e antiga, não desfaz a confirmação (e a leitura posterior falhando também não)', async () => {
+    const X = u('u-2', 'Ana Lima', 'ana@exemplo.test', 'ATTENDANT')
+    const Y = u('u-3', 'Bia Souza', 'bia@exemplo.test', 'ATTENDANT')
+    const state = { x: true, y: true }
+    const snapshot = () => [ME, { ...X, active: state.x }, { ...Y, active: state.y }]
+    const get3 = deferred<Response>()
+    const postY = deferred<Response>()
+    let gets = 0
+    const { user } = await loginAs('ADMIN', {
+      [`GET ${LIST}`]: () => {
+        gets += 1
+        if (gets === 1) return json(200, snapshot())
+        if (gets === 3) return get3.promise // a atualização manual que fica pendente
+        return problem(500, 'x') // 2 (depois de desativar a Ana) e 4 (depois de desativar a Bia)
+      },
+      'POST /api/admin/users/u-2/deactivate': () => {
+        state.x = false
+        return new Response(null, { status: 204 })
+      },
+      'POST /api/admin/users/u-3/deactivate': () => postY.promise,
+    })
+    await user.click(menu('Contas'))
+    await screen.findByText('Bia Souza')
+
+    // 1) desativa a Ana; a leitura seguinte (2) falha e a tela avisa
+    await user.click(within(rowOf('Ana Lima')).getByRole('button', { name: 'Desativar' }))
+    await user.click(within(rowOf('Ana Lima')).getByRole('button', { name: 'Confirmar desativação' }))
+    await screen.findByText('Não foi possível atualizar os dados. O que aparece abaixo pode estar desatualizado.')
+
+    // 2) começa uma atualização manual (3) e ela fica PENDENTE
+    await user.click(screen.getByRole('button', { name: 'Tentar de novo' }))
+
+    // 3) com ela pendente, desativa a Bia (a resposta do POST também fica pendente)
+    await user.click(within(rowOf('Bia Souza')).getByRole('button', { name: 'Desativar' }))
+    await user.click(within(rowOf('Bia Souza')).getByRole('button', { name: 'Confirmar desativação' }))
+
+    // 4) a atualização (3) termina BEM-SUCEDIDA, mas com a Bia ainda ativa (foi lida antes da desativação dela)
+    await act(async () => get3.resolve(json(200, snapshot())))
+    // 5) o POST da Bia termina com sucesso; a leitura seguinte (4) falha
+    state.y = false
+    await act(async () => postY.resolve(new Response(null, { status: 204 })))
+
+    await screen.findByText('A conta de Bia Souza foi desativada.')
+    expect(within(rowOf('Bia Souza')).getByText('Inativa')).toBeInTheDocument()
+    expect(within(rowOf('Ana Lima')).getByText('Inativa')).toBeInTheDocument()
+    expect(gets).toBe(4)
+  })
+
   it('ativar é direto e a conta passa a Ativa', async () => {
     let active = false
     const { calls, user } = await loginAs('ADMIN', {
