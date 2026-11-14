@@ -14,7 +14,7 @@ O prestador já configura sozinho o negócio, os serviços e o expediente pela i
 2. `pages/useLoad.ts` e `pages/useSingleFlight.ts`: os padrões compartilhados.
 3. `pages/provider/*`: as três telas.
 
-## Provas por teste (101 no total; 74 novos)
+## Provas por teste (105 no total; 78 novos)
 - Expediente (lógica pura): conversões de hora, ordenação, vazio, janelas coladas aceitas, sobreposição (inclusive fora de ordem e uma dentro da outra), limite de 70.
 - Negócio: cadastro sem negócio, edição, erro de campo da API no campo certo, validação no navegador, falha do servidor.
 - Serviços: criar, editar e desativar, validação, convite para cadastrar o negócio primeiro.
@@ -25,7 +25,9 @@ O prestador já configura sozinho o negócio, os serviços e o expediente pela i
 - Expediente durante a gravação: controles bloqueados; reflete o que o servidor devolveu (diferente do enviado ou idêntico); 70 horários salvam e o 71º não pode ser adicionado; erros por dia ligados aos campos com foco.
 - Serviços: erros de campo sem duplicar no aviso geral; rascunho preservado durante recarregamento.
 - A janela entre o fim da gravação e o fim do GET seguinte: controles continuam bloqueados até o GET terminar (sucesso ou falha) e depois mostram o que o servidor devolveu; no negócio, os valores do servidor substituem os digitados.
-- Mutações: sem o bloqueio dos controles, sem o aviso de atualização e sem esperar o GET posterior, os testes falham.
+- Serviços: "Editar" bloqueado até o GET terminar e campos a partir do que o servidor devolveu.
+- `useLoad`: promessa de um carregamento substituído termina na hora; exceção síncrona vira erro de carregamento; fechar a tela encerra a promessa.
+- Mutações: sem o bloqueio dos controles, sem o aviso de atualização, sem esperar o GET posterior e sem encerrar o carregamento substituído, os testes falham.
 
 ## Três perguntas de entrevista
 1. **Por que o expediente envia o conjunto completo em vez de uma janela por vez?** A API substitui tudo de forma atômica; janelas isoladas permitiriam estados intermediários inválidos e corridas.

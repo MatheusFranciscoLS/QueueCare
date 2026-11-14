@@ -128,3 +128,69 @@ describe('useLoad: a promessa de reload', () => {
     expect(result.current.error).toBeInstanceOf(Error)
   })
 })
+
+describe('useLoad: substituição e exceção síncrona', () => {
+  it('a promessa de um carregamento SUBSTITUÍDO termina na hora, sem esperar a resposta antiga', async () => {
+    const first = deferred<string>()
+    const second = deferred<string>()
+    const calls = [first, second]
+    const load = () => calls.shift()!.promise
+    const { result } = renderHook(() => useLoad(load))
+    await act(async () => {}) // abertura: o primeiro GET está pendente
+
+    let firstDone = false
+    let secondDone = false
+    act(() => {
+      void result.current.reload().then(() => (secondDone = true)) // esta é a 2ª chamada; a da abertura (1ª) fica substituída
+    })
+    await act(async () => {})
+    expect(secondDone).toBe(false) // a vigente continua esperando a SUA resposta
+
+    // a promessa de um reload feito antes do último é a que termina por substituição
+    const third = deferred<string>()
+    calls.push(third)
+    act(() => {
+      void result.current.reload().then(() => (firstDone = true))
+    })
+    await act(async () => {})
+
+    expect(secondDone).toBe(true) // a anterior terminou assim que a nova começou, sem resposta nenhuma
+    expect(firstDone).toBe(false)
+    await act(async () => third.resolve('último'))
+    await waitFor(() => expect(result.current.data).toBe('último'))
+    expect(firstDone).toBe(true)
+  })
+
+  it('exceção SÍNCRONA em load vira erro de carregamento: o reload não rejeita', async () => {
+    let boom = false
+    const load = (): Promise<string> => {
+      if (boom) throw new Error('lançou direto')
+      return Promise.resolve('ok')
+    }
+    const { result } = renderHook(() => useLoad(load))
+    await waitFor(() => expect(result.current.data).toBe('ok'))
+    boom = true
+
+    await act(async () => {
+      await expect(result.current.reload()).resolves.toBeUndefined()
+    })
+
+    expect(result.current.error).toBeInstanceOf(Error)
+    expect(result.current.data).toBe('ok') // o dado anterior permanece
+  })
+
+  it('fechar a tela encerra a promessa pendente', async () => {
+    const never = deferred<string>()
+    const load = () => never.promise
+    const { result, unmount } = renderHook(() => useLoad(load))
+    let done = false
+    act(() => {
+      void result.current.reload().then(() => (done = true))
+    })
+
+    unmount()
+    await act(async () => {})
+
+    expect(done).toBe(true)
+  })
+})

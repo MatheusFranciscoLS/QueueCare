@@ -333,3 +333,28 @@ describe('janela entre o fim da gravação e o fim do GET posterior', () => {
     expect(screen.getByText('Salvo.')).toBeVisible()
   })
 })
+
+describe('serviços: edição durante o GET posterior à gravação', () => {
+  it('"Editar" fica desabilitado até o GET terminar e, depois, os campos partem do que o servidor devolveu', async () => {
+    const slowGet = deferred<Response>()
+    let gets = 0
+    const { user } = await loginAsProvider({
+      'GET /api/provider/services': () => (++gets === 1 ? json(200, [{ id: 's-1', name: 'Troca de óleo', durationMinutes: 60, active: true }]) : slowGet.promise),
+      'PUT /api/provider/services/s-1': () => json(200, { id: 's-1', name: 'Troca de óleo', durationMinutes: 60, active: false }),
+    })
+    await user.click(menu('/servicos'))
+    await screen.findByText('Troca de óleo')
+
+    await user.click(screen.getByRole('button', { name: 'Desativar' })) // PUT ok, GET pendente
+
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Editar' })).toBeDisabled())
+    expect(screen.getByRole('button', { name: 'Desativar' })).toBeDisabled()
+
+    await act(async () => slowGet.resolve(json(200, [{ id: 's-1', name: 'Troca de óleo (normalizado)', durationMinutes: 45, active: false }])))
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Editar' })).toBeEnabled())
+    await user.click(screen.getByRole('button', { name: 'Editar' }))
+
+    expect(screen.getByLabelText('Nome')).toHaveValue('Troca de óleo (normalizado)')
+    expect(document.getElementById('duration-s-1')).toHaveValue(45)
+  })
+})

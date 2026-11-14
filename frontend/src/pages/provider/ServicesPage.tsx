@@ -153,7 +153,18 @@ function ServiceRow({ service, onChanged }: { service: Service; onChanged: () =>
           <strong>{service.name}</strong> · {service.durationMinutes} min {!service.active && <span className="badge">Desativado</span>}
         </span>
         <span className="actions">
-          <button type="button" className="button secondary" onClick={() => setEditing(true)}>
+          <button
+            type="button"
+            className="button secondary"
+            disabled={busy}
+            onClick={() => {
+              // Ao abrir a edição, os campos partem dos valores ATUAIS do serviço (o que o servidor devolveu por último).
+              setName(service.name)
+              setDuration(String(service.durationMinutes))
+              setErrors({})
+              setEditing(true)
+            }}
+          >
             Editar
           </button>
           <button type="button" className="button secondary" disabled={busy} onClick={() => save(!service.active)}>

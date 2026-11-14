@@ -4,7 +4,10 @@ export interface Loaded<T> {
   data: T | undefined
   error: unknown
   loading: boolean
-  /** Recarrega; a promessa termina quando este carregamento termina (com sucesso, com falha ou descartado por outro mais novo). Nunca rejeita. */
+  /**
+   * Recarrega. A promessa termina quando ESTE carregamento termina (com sucesso ou com falha) OU assim que ele é substituído por
+   * outro mais novo (ou a tela fecha), sem esperar a resposta antiga. Nunca rejeita, nem se `load` lançar de forma síncrona.
+   */
   reload: () => Promise<void>
   /** Sobe a cada carregamento BEM-SUCEDIDO (mesmo com conteúdo igual): serve de chave para refazer editores. */
   version: number
@@ -20,25 +23,35 @@ export function useLoad<T>(load: () => Promise<T>): Loaded<T> {
   const [loading, setLoading] = useState(true)
   const [version, setVersion] = useState(0)
   const run = useRef(0)
+  /** Encerra a promessa do carregamento vigente (usado quando ele é substituído ou a tela fecha). */
+  const settleCurrent = useRef<(() => void) | undefined>(undefined)
 
   const start = useCallback(
     (showLoading: boolean): Promise<void> => {
+      settleCurrent.current?.() // o carregamento anterior, se ainda pendente, deixa de ser esperado
       const mine = ++run.current
       if (showLoading) setLoading(true)
-      return load().then(
-        (value) => {
-          if (run.current !== mine) return
-          setData(value)
-          setError(undefined)
-          setVersion((v) => v + 1)
-          setLoading(false)
-        },
-        (e) => {
-          if (run.current !== mine) return
-          setError(e)
-          setLoading(false)
-        },
-      )
+      return new Promise<void>((resolve) => {
+        settleCurrent.current = resolve
+        // Promise.resolve().then(load): uma exceção síncrona de `load` também vira falha de carregamento, nunca rejeição.
+        Promise.resolve()
+          .then(load)
+          .then(
+            (value) => {
+              if (run.current !== mine) return
+              setData(value)
+              setError(undefined)
+              setVersion((v) => v + 1)
+              setLoading(false)
+            },
+            (e) => {
+              if (run.current !== mine) return
+              setError(e)
+              setLoading(false)
+            },
+          )
+          .then(resolve)
+      })
     },
     [load],
   )
@@ -48,6 +61,7 @@ export function useLoad<T>(load: () => Promise<T>): Loaded<T> {
     void start(false) // na abertura o estado inicial já é "carregando"
     return () => {
       run.current += 1 // invalida o que ainda estiver a caminho
+      settleCurrent.current?.()
     }
   }, [start])
 
