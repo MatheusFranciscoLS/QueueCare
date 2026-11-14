@@ -31,10 +31,11 @@ Pré-requisitos: JDK 21, Node 22 ou superior e, para o banco, Docker (ou Postgre
 cd backend
 ./mvnw verify          # no Windows (PowerShell): .\mvnw.cmd verify
 
-# Frontend: lint e build
+# Frontend: lint, testes e build
 cd frontend
 npm ci
 npm run lint
+npm test
 npm run build
 ```
 

@@ -3,7 +3,7 @@
 Escrito em português do Brasil: conversa, comentários, mensagens de commit e documentação (a documentação em inglês entra só na fase 3).
 
 ## 1. O projeto
-Plataforma Full Stack de agendamento e fila de atendimento para pequenos prestadores de serviço (oficina de assistência técnica, clínica pequena, barbearia...). Perfis: PROVIDER (prestador), ATTENDANT (atendente), CUSTOMER (cliente).
+Plataforma Full Stack de agendamento e fila de atendimento para pequenos prestadores de serviço (oficina de assistência técnica, clínica pequena, barbearia...). Perfis: ADMIN (administrador de contas, sem acesso a agendas nem a dados de clientes), PROVIDER (prestador), ATTENDANT (atendente), CUSTOMER (cliente).
 
 Stack: React + TypeScript · Java 21 + Spring Boot · Spring Security · Spring Data JPA · PostgreSQL · Flyway · JUnit + MockMvc + Testcontainers · Playwright · Docker · GitHub Actions · (fase 2) AWS + Terraform · (fase 3) documentação em inglês.
 Monólito modular Spring Boot (sem microsserviços, sem RabbitMQ no MVP). Não ampliar o escopo: veja `docs/roadmap.md`.
