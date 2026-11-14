@@ -46,6 +46,8 @@ docker compose --env-file .env -f infra/docker-compose.yml up -d
 ```
 A API lê `DB_URL`, `DB_USER`, `DB_PASSWORD` e **`JWT_SECRET`** (obrigatório, Base64 de pelo menos 32 bytes; gere com `openssl rand -base64 32`) do ambiente (veja `.env.example`). O esquema do banco só muda por migrations Flyway em `backend/src/main/resources/db/migration/`.
 
+Contrato da API: [`docs/openapi.json`](docs/openapi.json) (OpenAPI, gerado do código e conferido por teste; ver [ADR 0012](docs/adr/0012-contrato-openapi.md)).
+
 Primeiro administrador (uma vez só, por comando explícito, sem senha em arquivo): veja `docs/adr/0005-provisionamento-de-contas.md`.
 
 Estado atual: regras R1, R2 e R5, banco com a trava contra reserva dupla provada, serviço de agendamento, autenticação por JWT, API de agendamento, configuração do prestador, equipe, criação de contas, troca e redefinição de senha, ativar e desativar usuários, telas do prestador (negócio, serviços, expediente, equipe) agenda do dia, catálogo, tela de agendar e meus agendamentos (com cancelamento) para o cliente, administração de contas para o ADMIN, chegada, conclusão e fila do dia (API e telas para a equipe), todos testados (backend e front). Ainda faltam testes E2E com Playwright, nuvem (AWS) e a documentação em inglês. Veja `docs/estudo/visao-geral.md`.
