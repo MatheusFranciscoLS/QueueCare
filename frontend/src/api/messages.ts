@@ -14,6 +14,14 @@ const BY_REASON: Record<string, string> = {
   TOO_LATE: 'Passou do prazo para cancelar.',
   CONCURRENT_UPDATE: 'O agendamento acabou de ser alterado por outra pessoa. Atualize a agenda.',
   APPOINTMENT_NOT_FOUND: 'Agendamento não encontrado.',
+  SLOT_TAKEN: 'Esse horário acabou de ser ocupado por outra pessoa. Escolha outro.',
+  IN_THE_PAST: 'Esse horário já passou. Escolha outro.',
+  TOO_SOON: 'Esse horário está muito próximo: o prestador exige mais antecedência.',
+  OUTSIDE_AVAILABILITY: 'Esse horário está fora do expediente do prestador.',
+  NONEXISTENT_LOCAL_TIME: 'Esse horário não existe nesse dia (mudança de horário de verão). Escolha outro.',
+  AMBIGUOUS_LOCAL_TIME: 'Esse horário é ambíguo nesse dia (mudança de horário de verão). Escolha outro.',
+  SERVICE_NOT_FOUND_OR_INACTIVE: 'Esse serviço não está mais disponível.',
+  PROVIDER_NOT_FOUND: 'Esse prestador não está mais disponível.',
 }
 
 export function describeError(error: unknown): string {

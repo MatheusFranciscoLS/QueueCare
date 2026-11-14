@@ -287,6 +287,38 @@ input[type='date'] {
   width: auto;
 }
 
+.step {
+  margin: 0 0 1.25rem;
+  padding: 0.6rem 0.8rem;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.step legend {
+  font-weight: 600;
+  padding: 0 0.4rem;
+}
+
+.choice {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0.25rem 0;
+  font-weight: 400;
+  cursor: pointer;
+}
+
+.choice input {
+  width: auto;
+}
+
+.slots {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
 .notice.warning {
   border: 1px solid var(--danger);
 }

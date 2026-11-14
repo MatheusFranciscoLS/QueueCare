@@ -35,6 +35,11 @@ export function Layout() {
           <NavLink to="/agenda">Agenda</NavLink>
         </nav>
       )}
+      {user && !user.mustChangePassword && user.role === 'CUSTOMER' && (
+        <nav className="menu" aria-label="Menu do cliente">
+          <NavLink to="/agendar">Agendar</NavLink>
+        </nav>
+      )}
       {user && !user.mustChangePassword && user.role === 'ATTENDANT' && (
         <nav className="menu" aria-label="Menu do atendente">
           <NavLink to="/agenda">Agenda</NavLink>

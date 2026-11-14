@@ -403,9 +403,10 @@ describe('acesso por perfil às telas novas', () => {
     expect(calls.some((c) => c.path.startsWith('/api/provider'))).toBe(false)
   })
 
-  it.each(['CUSTOMER', 'ADMIN'])('%s não tem menu e é mandado de volta ao tentar /agenda ou /equipe', async (role) => {
+  it.each(['CUSTOMER', 'ADMIN'])('%s é mandado de volta ao início ao tentar /agenda ou /equipe (e não vê menu de prestador)', async (role) => {
     const { calls, view } = await loginAs(role, {})
-    expect(screen.queryByRole('navigation')).not.toBeInTheDocument()
+    expect(screen.queryByRole('navigation', { name: 'Menu do prestador' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('navigation', { name: 'Menu do atendente' })).not.toBeInTheDocument()
 
     for (const path of ['/agenda', '/equipe']) {
       act(() => view.navigate()(path))
