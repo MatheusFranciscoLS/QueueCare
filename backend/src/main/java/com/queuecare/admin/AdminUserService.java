@@ -38,6 +38,22 @@ public class AdminUserService {
 		this.audit = audit;
 	}
 
+	/** Uma conta na listagem do ADMIN: nunca inclui senha nem hash. */
+	public record AdminUserView(UUID id, String name, String email, UserRole role, boolean active, boolean mustChangePassword, java.time.Instant createdAt) {
+	}
+
+	/**
+	 * Lista contas (ADMIN): filtro opcional por perfil e por texto no nome ou e-mail (sem diferenciar maiúsculas; os curingas LIKE digitados
+	 * valem como texto comum), em ordem estável, paginada.
+	 */
+	@Transactional(readOnly = true)
+	public java.util.List<AdminUserView> list(UserRole role, String text, int page, int size) {
+		String escaped = (text == null ? "" : text.trim().toLowerCase(java.util.Locale.ROOT)).replace("!", "!!").replace("%", "!%").replace("_", "!_");
+		java.util.Collection<UserRole> roles = role == null ? java.util.List.of(UserRole.values()) : java.util.List.of(role);
+		return users.search(roles, "%" + escaped + "%", org.springframework.data.domain.PageRequest.of(page, size)).stream()
+				.map(u -> new AdminUserView(u.getId(), u.getName(), u.getEmail(), u.getRole(), u.isActive(), u.isMustChangePassword(), u.getCreatedAt())).toList();
+	}
+
 	@Transactional
 	public void deactivate(UUID adminUserId, UUID targetUserId) {
 		if (adminUserId.equals(targetUserId)) {
