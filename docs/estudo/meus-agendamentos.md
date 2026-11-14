@@ -9,8 +9,8 @@ O cliente vê os próprios agendamentos (data e hora do negócio) e cancela com 
 - Cancelar: botão, confirmação, envio único; sucesso marca como Cancelado na hora e avisa.
 
 ## Como ler o código
-1.  ( e ) e  (motivos).
-2.  (lista e linha com a lógica de cancelar).
+1. `api/booking.ts` (`mine` e `cancel`) e `api/messages.ts` (motivos).
+2. `pages/customer/MyAppointmentsPage.tsx` (lista e linha com a lógica de cancelar).
 
 ## Provas por teste (180 no front)
 - Data/hora no fuso do negócio (02:00Z ainda é o dia anterior em São Paulo); lista vazia; falha ao carregar; perfis sem acesso.
