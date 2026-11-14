@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { agendaApi, type QueueItem, type Workplace } from '../../api/agenda'
 import { ApiError } from '../../api/client'
@@ -52,6 +52,15 @@ function Queue({ workplace }: { workplace: Workplace }) {
   const [notice, setNotice] = useState<string | null>(null)
   // O erro mora AQUI, não na linha: se o servidor já mudou e a fila é refeita, a linha some e levaria o aviso junto.
   const [problem, setProblem] = useState<string | null>(null)
+  // Concluir REMOVE a linha: o foco vai para o aviso do resultado, que continua montado (focar a linha que some perderia o foco).
+  const noticeRef = useRef<HTMLParagraphElement>(null)
+  const focusNotice = useRef(false)
+  useEffect(() => {
+    if (notice && focusNotice.current) {
+      focusNotice.current = false
+      noticeRef.current?.focus()
+    }
+  }, [notice])
   // Concluídos com SUCESSO nesta tela: saem da fila na hora, mesmo que o GET seguinte falhe ou traga uma fila de antes da conclusão.
   const [done, setDone] = useState<ReadonlySet<string>>(new Set())
 
@@ -70,7 +79,7 @@ function Queue({ workplace }: { workplace: Workplace }) {
         </button>
       </p>
       {error !== undefined && data && <RefreshWarning onRetry={reload} />}
-      <p role="status" className="notice" hidden={!notice}>
+      <p role="status" className="notice" ref={noticeRef} tabIndex={-1} hidden={!notice}>
         {notice}
       </p>
       <p role="alert" className="error" hidden={!problem}>
@@ -84,7 +93,10 @@ function Queue({ workplace }: { workplace: Workplace }) {
             item={item}
             position={index + 1}
             timeZone={workplace.timeZone}
-            onDone={() => setDone((current) => new Set(current).add(item.id))}
+            onDone={() => {
+              focusNotice.current = true
+              setDone((current) => new Set(current).add(item.id))
+            }}
             onChanged={reload}
             setNotice={setNotice}
             setProblem={setProblem}

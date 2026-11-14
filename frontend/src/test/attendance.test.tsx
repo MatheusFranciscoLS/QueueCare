@@ -130,6 +130,34 @@ describe('agenda: chegada e conclusão', () => {
     expect(screen.queryByRole('button', { name: 'Chegou' })).not.toBeInTheDocument()
   })
 
+  it('check-in local e conclusão por outra pessoa: a leitura seguinte que traz COMPLETED prevalece e a tela não oferece mais concluir', async () => {
+    let gets = 0
+    const { user } = await loginAs('ATTENDANT', {
+      [`GET /api/agenda?date=${today}`]: () => json(200, [item('a-1', ++gets === 1 ? 'SCHEDULED' : 'COMPLETED')]),
+      'POST /api/appointments/a-1/check-in': () => json(200, { id: 'a-1', status: 'CHECKED_IN' }),
+    })
+    await user.click(menu('Agenda'))
+    await user.click(await screen.findByRole('button', { name: 'Chegou' }))
+
+    await waitFor(() => expect(screen.getByText('Concluído')).toHaveClass('badge'))
+    expect(screen.queryByRole('button', { name: 'Concluir atendimento' })).not.toBeInTheDocument()
+    expect(screen.queryByText('Chegou', { selector: '.badge' })).not.toBeInTheDocument()
+  })
+
+  it('cancelar REMOVE a linha: o foco vai para o aviso do resultado, que continua na tela', async () => {
+    const { user } = await loginAs('ATTENDANT', {
+      [`GET /api/agenda?date=${today}`]: () => json(200, [item('a-1', 'SCHEDULED')]),
+      'POST /api/appointments/a-1/cancel': () => json(200, { id: 'a-1', status: 'CANCELLED' }),
+    })
+    await user.click(menu('Agenda'))
+    await user.click(await screen.findByRole('button', { name: 'Cancelar agendamento' }))
+    await user.click(screen.getByRole('button', { name: 'Confirmar cancelamento' }))
+
+    const notice = await screen.findByText('Agendamento de Maria Souza cancelado.')
+    await waitFor(() => expect(notice).toHaveFocus())
+    expect(screen.queryByRole('listitem')).not.toBeInTheDocument()
+  })
+
   it('o foco vai para a linha depois de registrar a chegada (o botão pressionado some)', async () => {
     const { user } = await loginAs('ATTENDANT', {
       [`GET /api/agenda?date=${today}`]: () => json(200, [item('a-1', 'SCHEDULED')]),
@@ -253,6 +281,19 @@ describe('fila', () => {
     expect(rows).toHaveLength(1)
     expect(rows[0]).toHaveTextContent('1º · Maria Souza')
     expect(posts(calls, '/complete')).toHaveLength(1)
+  })
+
+  it('concluir REMOVE a linha da fila: o foco vai para o aviso do resultado, que continua na tela', async () => {
+    const { user } = await loginAs('ATTENDANT', {
+      'GET /api/agenda/queue': () => json(200, QUEUE),
+      'POST /api/appointments/a-2/complete': () => json(200, { id: 'a-2', status: 'COMPLETED' }),
+    })
+    await user.click(menu('Fila'))
+    const first = (await screen.findAllByRole('listitem'))[0]
+    await user.click(within(first).getByRole('button', { name: 'Concluir atendimento' }))
+
+    const notice = await screen.findByText('Atendimento de Joana Lima concluído.')
+    await waitFor(() => expect(notice).toHaveFocus())
   })
 
   it('duplo clique em "Concluir atendimento" envia uma única conclusão', async () => {

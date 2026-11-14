@@ -12,16 +12,17 @@ A equipe marca "Chegou" e "Concluir atendimento" na agenda e acompanha a fila de
 1. `api/agenda.ts` (`queue`, `checkIn`, `complete`) e `api/messages.ts`.
 2. `pages/agenda/AgendaPage.tsx` (linha com as ações) e `pages/agenda/QueuePage.tsx`.
 
-## Provas por teste (208 no front)
+## Provas por teste (211 no front)
 - Chegada e conclusão: situação nova na hora mesmo se o GET seguinte falhar; lista de antes da chegada não desfaz a chegada; chegada só no dia de hoje; duplo clique envia um pedido; botões bloqueados durante o envio.
 - Recusas: `WRONG_DAY` não refaz a lista; `INVALID_STATE`, `ALREADY_CANCELLED` e `CONCURRENT_UPDATE` refazem e a linha passa a valer o que o servidor diz; **o motivo continua na tela mesmo quando a linha some** (defeito que o próprio teste revelou).
 - Fila: ordem e hora no fuso; vazia; atualizar; concluir tira da fila na hora e refaz as posições; erro ao carregar; sem vínculo; sem negócio; cliente e ADMIN não veem o menu nem chamam a fila.
-- Foco: a confirmação de cancelar abre em "Voltar"; após a ação, o foco vai para a linha.
+- Foco: a confirmação de cancelar abre em "Voltar"; após uma ação que mantém a linha, o foco vai para ela; quando a ação REMOVE a linha (cancelar, concluir na fila), vai para o aviso do resultado.
+- Reconciliação: chegada registrada aqui e conclusão por outra pessoa; a leitura seguinte que traz COMPLETED prevalece (a situação exibida é a mais avançada entre a guardada e a do servidor).
 - Mutações verificadas: sem refetch, sem guardar a situação, chegada em qualquer dia e sem remoção local da fila: cada uma derruba testes.
 
 ## Três perguntas de entrevista
 1. **Por que a mensagem de erro fica na lista e não na linha?** Depois de um erro de estado a lista é refeita e a linha pode desaparecer; o aviso sumiria junto.
-2. **Por que guardar a situação confirmada na tela?** O GET seguinte pode falhar ou trazer um retrato de antes da mudança; a tela não pode voltar atrás sozinha.
+2. **Por que guardar a situação confirmada na tela, e por que mostrar a "mais avançada"?** O GET seguinte pode falhar ou trazer um retrato de antes da mudança, e a tela não pode voltar atrás sozinha; mas como as situações só andam para frente, uma leitura que traga algo mais avançado (outra pessoa concluiu) deve prevalecer.
 3. **Por que não há tempo real?** O escopo do MVP é fila simples; "Atualizar a fila" é explícito e evita websocket, reconexão e sincronização entre aparelhos.
 
 ## Limitações

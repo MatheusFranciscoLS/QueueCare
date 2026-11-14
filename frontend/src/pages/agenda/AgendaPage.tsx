@@ -85,11 +85,21 @@ function DayList({ date, timeZone }: { date: string; timeZone: string }) {
   const [notice, setNotice] = useState<string | null>(null)
   // O erro mora AQUI, não na linha: se o servidor já mudou e a lista é refeita, a linha pode sumir e levaria o aviso junto.
   const [problem, setProblem] = useState<string | null>(null)
+  // Quando a ação REMOVE a linha (cancelar), o foco vai para o aviso do resultado, que continua montado: focar a linha que some perderia o foco.
+  const noticeRef = useRef<HTMLParagraphElement>(null)
+  const focusNotice = useRef(false)
+  useEffect(() => {
+    if (notice && focusNotice.current) {
+      focusNotice.current = false
+      noticeRef.current?.focus()
+    }
+  }, [notice])
   // Cancelados com SUCESSO nesta tela: somem da lista na hora, mesmo que o GET seguinte falhe (a lista antiga ainda os mostraria
   // como "Agendado" com o botão de cancelar, que só receberia 409).
   const [cancelled, setCancelled] = useState<ReadonlySet<string>>(new Set())
   // Situação confirmada pela API nesta tela (chegou, concluído): vale na hora, mesmo que o GET seguinte falhe ou traga uma lista
-  // um pouco antes da mudança. Se a API disser que a situação mudou por outro lado, o item volta a valer o que o servidor diz.
+  // um pouco antes da mudança. A situação exibida é a MAIS AVANÇADA entre esta e a do servidor (laterOf): uma leitura nova que a confirme
+  // ou ultrapasse (outra pessoa concluiu) prevalece, e uma lista de antes da mudança não a desfaz.
   const [statuses, setStatuses] = useState<ReadonlyMap<string, string>>(new Map())
   const setStatus = useCallback((id: string, status: string | null) => {
     setStatuses((current) => {
@@ -108,7 +118,7 @@ function DayList({ date, timeZone }: { date: string; timeZone: string }) {
   return (
     <>
       {error !== undefined && data && <RefreshWarning onRetry={reload} />}
-      <p role="status" className="notice" hidden={!notice}>
+      <p role="status" className="notice" ref={noticeRef} tabIndex={-1} hidden={!notice}>
         {notice}
       </p>
       <p role="alert" className="error" hidden={!problem}>
@@ -120,11 +130,14 @@ function DayList({ date, timeZone }: { date: string; timeZone: string }) {
           <AppointmentRow
             key={item.id}
             item={item}
-            status={statuses.get(item.id) ?? item.status}
+            status={laterOf(item.status, statuses.get(item.id))}
             timeZone={timeZone}
             canCheckIn={isToday}
             onChanged={reload}
-            onCancelled={() => setCancelled((current) => new Set(current).add(item.id))}
+            onCancelled={() => {
+              focusNotice.current = true
+              setCancelled((current) => new Set(current).add(item.id))
+            }}
             onStatus={(status) => setStatus(item.id, status)}
             setNotice={setNotice}
             setProblem={setProblem}
@@ -133,6 +146,15 @@ function DayList({ date, timeZone }: { date: string; timeZone: string }) {
       </ul>
     </>
   )
+}
+
+/** As situações só andam para frente. */
+const RANK: Record<string, number> = { SCHEDULED: 0, CHECKED_IN: 1, COMPLETED: 2 }
+
+/** A situação mais avançada entre a do servidor e a confirmada aqui: uma lista de antes da mudança não a desfaz, e uma leitura nova que a confirme ou ultrapasse (outra pessoa concluiu) prevalece. */
+function laterOf(server: string, local: string | undefined): string {
+  if (local === undefined || RANK[server] === undefined || RANK[local] === undefined) return server
+  return RANK[local] > RANK[server] ? local : server
 }
 
 const STATUS_LABEL: Record<string, string> = { SCHEDULED: 'Agendado', CHECKED_IN: 'Chegou', COMPLETED: 'Concluído' }
@@ -180,7 +202,7 @@ function AppointmentRow({
   }, [confirming])
 
   /** Roda uma ação da equipe: bloqueia os botões durante o envio, avisa e, se o servidor já mudou, refaz a lista. */
-  async function act(run: () => Promise<void>) {
+  async function act(run: () => Promise<void>, removesRow = false) {
     await once(async () => {
       setProblem(null)
       setNotice(null)
@@ -189,7 +211,7 @@ function AppointmentRow({
         await run()
         setConfirming(false)
         wasConfirming.current = false
-        rowRef.current?.focus()
+        if (!removesRow) rowRef.current?.focus()
         await onChanged()
       } catch (e) {
         setProblem(describeError(e))
@@ -209,7 +231,7 @@ function AppointmentRow({
       await api.cancel(item.id)
       onCancelled() // some da lista agora; o GET seguinte só confirma
       setNotice(`Agendamento de ${customer} cancelado.`)
-    })
+    }, true)
   const checkIn = () =>
     act(async () => {
       await api.checkIn(item.id)
