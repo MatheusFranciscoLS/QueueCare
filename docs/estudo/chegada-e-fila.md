@@ -19,7 +19,7 @@ Quando a pessoa chega, a equipe marca "chegou"; ao terminar, marca "concluído".
 ## Como ler o código
 1. `AttendanceService` (as duas transições e as regras), `Appointment.checkIn/complete`.
 2. `AgendaService.queue` e a consulta `findQueue` (ordem pelo instante do evento).
-3. `AttendanceApiIntegrationTest` (10 testes).
+3. `AttendanceApiIntegrationTest` (13 testes).
 
 ## O que os testes provam (HTTP real + PostgreSQL real)
 - Fluxo completo com evento e autor; fila muda a cada passo.
@@ -28,7 +28,8 @@ Quando a pessoa chega, a equipe marca "chegou"; ao terminar, marca "concluído".
 - Máquina de estados completa, cancelado, e "em atendimento não cancela".
 - Check-in de ontem e de amanhã recusado; hoje funciona.
 - Fila: ordem de CHEGADA (não de horário nem de id), só hoje, só chegou, só o prestador de quem pergunta, `providerId` na URL ignorado, sem e-mail do cliente.
-- Duas chegadas simultâneas, 3 rodadas: um 200, um 409, um único evento.
+- Corridas: duas chegadas, chegada x cancelamento e chegada x conclusão (6 rodadas cada): sempre um vencedor coerente, situação final e eventos conferem, a conclusão nunca vence sem a chegada confirmada.
+- O banco recusa um segundo evento do mesmo tipo (migration V6), então a fila nunca repete a pessoa.
 - Mutações verificadas: sem checar o dia, sem filtrar o prestador e com a fila por horário, cada uma derruba o seu teste.
 
 ## Três perguntas de entrevista

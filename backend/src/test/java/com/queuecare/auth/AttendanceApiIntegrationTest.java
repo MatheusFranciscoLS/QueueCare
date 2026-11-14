@@ -315,4 +315,104 @@ class AttendanceApiIntegrationTest extends AuthIntegrationTestBase {
 			assertEquals(1L, events(id, "CHECKED_IN"), "um único evento de chegada");
 		}
 	}
+
+	// ---------- concorrência entre operações DIFERENTES ----------
+
+	private List<Integer> raceOf(List<Callable<Integer>> tasks) throws Exception {
+		ExecutorService pool = Executors.newFixedThreadPool(tasks.size());
+		try {
+			List<Integer> statuses = new ArrayList<>();
+			for (Future<Integer> f : pool.invokeAll(tasks, 60, TimeUnit.SECONDS)) {
+				assertTrue(!f.isCancelled(), "uma tentativa não terminou no prazo");
+				statuses.add(f.get());
+			}
+			return statuses;
+		} finally {
+			pool.shutdownNow();
+		}
+	}
+
+	private void reset(String id) {
+		jdbc.update("DELETE FROM appointment_events WHERE appointment_id = ?::uuid", id);
+		jdbc.update("UPDATE appointments SET status = 'SCHEDULED', version = version + 1 WHERE id = ?::uuid", id);
+	}
+
+	@Test
+	void chegadaEmCorridaComCancelamentoSoUmaDasDuasVenceEOHistoricoConfere() throws Exception {
+		String id = appointment(providerA, serviceA, userC1, 0, 12, "SCHEDULED");
+		int checkInWins = 0;
+		int cancelWins = 0;
+		for (int round = 0; round < 6; round++) {
+			reset(id);
+			CyclicBarrier barrier = new CyclicBarrier(2);
+			List<Integer> codes = raceOf(List.of(
+					() -> {
+						barrier.await(30, TimeUnit.SECONDS);
+						return checkIn(a1, id).andReturn().getResponse().getStatus();
+					},
+					() -> {
+						barrier.await(30, TimeUnit.SECONDS);
+						return send(pa, "/api/appointments/" + id + "/cancel", null).andReturn().getResponse().getStatus();
+					}));
+			assertEquals(1, codes.stream().filter(code -> code == 200).count(), "exatamente uma vence: " + codes);
+			assertEquals(1, codes.stream().filter(code -> code == 409).count(), "a outra recebe conflito: " + codes);
+			if (codes.get(0) == 200) {
+				checkInWins++;
+				assertEquals("CHECKED_IN", statusOf(id));
+				assertEquals(1L, events(id, "CHECKED_IN"));
+				assertEquals(0L, events(id, "CANCELLED"), "quem perdeu não deixa evento");
+			} else {
+				cancelWins++;
+				assertEquals("CANCELLED", statusOf(id));
+				assertEquals(1L, events(id, "CANCELLED"));
+				assertEquals(0L, events(id, "CHECKED_IN"), "quem perdeu não deixa evento");
+			}
+		}
+		assertTrue(checkInWins + cancelWins == 6);
+	}
+
+	@Test
+	void chegadaEmCorridaComConclusaoNuncaConcluiSemTerChegado() throws Exception {
+		String id = appointment(providerA, serviceA, userC1, 0, 12, "SCHEDULED");
+		for (int round = 0; round < 6; round++) {
+			reset(id);
+			CyclicBarrier barrier = new CyclicBarrier(2);
+			List<Integer> codes = raceOf(List.of(
+					() -> {
+						barrier.await(30, TimeUnit.SECONDS);
+						return checkIn(a1, id).andReturn().getResponse().getStatus();
+					},
+					() -> {
+						barrier.await(30, TimeUnit.SECONDS);
+						return complete(pa, id).andReturn().getResponse().getStatus();
+					}));
+			assertEquals(200, codes.get(0), "a chegada sempre vence (é a única válida a partir de agendado): " + codes);
+			String finalStatus = statusOf(id);
+			assertEquals(1L, events(id, "CHECKED_IN"), "um único evento de chegada");
+			if (codes.get(1) == 200) {
+				// a conclusão só vence DEPOIS da chegada já confirmada
+				assertEquals("COMPLETED", finalStatus);
+				assertEquals(1L, events(id, "COMPLETED"));
+				assertTrue(jdbc.queryForObject("SELECT (SELECT created_at FROM appointment_events WHERE appointment_id = ?::uuid AND event_type = 'CHECKED_IN') <= "
+						+ "(SELECT created_at FROM appointment_events WHERE appointment_id = ?::uuid AND event_type = 'COMPLETED')", Boolean.class, id, id));
+			} else {
+				assertEquals(409, codes.get(1), "a conclusão que chegou antes da chegada é recusada: " + codes);
+				assertEquals("CHECKED_IN", finalStatus);
+				assertEquals(0L, events(id, "COMPLETED"));
+			}
+		}
+	}
+
+	// ---------- o banco garante um evento de cada tipo por agendamento ----------
+
+	@Test
+	void bancoRecusaUmSegundoEventoDeChegadaEAFilaNuncaRepeteAPessoa() throws Exception {
+		String id = appointment(providerA, serviceA, userC1, 0, 12, "SCHEDULED");
+		checkIn(pa, id).andExpect(status().isOk());
+
+		org.junit.jupiter.api.Assertions.assertThrows(org.springframework.dao.DataIntegrityViolationException.class,
+				() -> jdbc.update("INSERT INTO appointment_events (appointment_id, actor_id, event_type) VALUES (?::uuid, ?, 'CHECKED_IN')", id, userA1));
+		assertEquals(1L, events(id, "CHECKED_IN"));
+		assertEquals(List.of(id), queueIds(pa), "uma pessoa, uma posição");
+	}
 }
