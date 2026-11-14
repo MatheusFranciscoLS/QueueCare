@@ -244,7 +244,7 @@ describe('sessão', () => {
 
 describe('início por perfil', () => {
   it.each([
-    ['ADMIN', 'Criar contas de prestadores'],
+    ['ADMIN', 'No dia a dia'],
     ['PROVIDER', 'No dia a dia'],
     ['ATTENDANT', 'No dia a dia'],
     ['CUSTOMER', 'No dia a dia'],
