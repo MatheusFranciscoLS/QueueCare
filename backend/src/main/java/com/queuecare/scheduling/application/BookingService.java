@@ -84,7 +84,7 @@ public class BookingService {
 	}
 
 	private Appointment bookInTransaction(BookingRequest request) {
-		Provider provider = providers.findById(request.providerId())
+		Provider provider = providers.findActiveById(request.providerId())
 				.orElseThrow(() -> new BookingRejectedException(Reason.PROVIDER_NOT_FOUND));
 		ServiceOffering service = services.findByIdAndProviderId(request.serviceId(), provider.getId())
 				.filter(ServiceOffering::isActive)

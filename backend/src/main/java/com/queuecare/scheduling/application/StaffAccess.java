@@ -44,7 +44,8 @@ public class StaffAccess {
 		}
 		return switch (user.getRole()) {
 			case PROVIDER -> providers.findByUserId(user.getId()).map(Provider::getId);
-			case ATTENDANT -> staff.findByUserId(user.getId()).map(ProviderStaff::getProviderId);
+			// Atendente só opera se o dono do prestador (a quem está vinculado) também estiver ativo.
+			case ATTENDANT -> staff.findByUserId(user.getId()).map(ProviderStaff::getProviderId).flatMap(id -> providers.findActiveById(id).map(Provider::getId));
 			case ADMIN, CUSTOMER -> Optional.empty();
 		};
 	}

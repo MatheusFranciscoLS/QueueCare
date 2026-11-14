@@ -73,6 +73,12 @@ class StaffController {
 		return staffService.list(userId(jwt)).stream().map(StaffResponse::from).toList();
 	}
 
+	@PostMapping("/{userId}/deactivate")
+	@ResponseStatus(HttpStatus.NO_CONTENT)
+	void deactivate(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID userId) {
+		staffService.deactivateAttendant(userId(jwt), userId);
+	}
+
 	@DeleteMapping("/{userId}")
 	@ResponseStatus(HttpStatus.NO_CONTENT)
 	void unlink(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID userId) {

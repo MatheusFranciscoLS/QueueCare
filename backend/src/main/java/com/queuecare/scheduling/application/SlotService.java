@@ -65,7 +65,7 @@ public class SlotService {
 
 	@Transactional(readOnly = true)
 	public List<Slot> freeSlots(UUID providerId, UUID serviceId, LocalDate date) {
-		Provider provider = providers.findById(providerId).orElseThrow(() -> new BookingRejectedException(Reason.PROVIDER_NOT_FOUND));
+		Provider provider = providers.findActiveById(providerId).orElseThrow(() -> new BookingRejectedException(Reason.PROVIDER_NOT_FOUND));
 		ServiceOffering service = services.findByIdAndProviderId(serviceId, providerId)
 				.filter(ServiceOffering::isActive)
 				.orElseThrow(() -> new BookingRejectedException(Reason.SERVICE_NOT_FOUND_OR_INACTIVE));

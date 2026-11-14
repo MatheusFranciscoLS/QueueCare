@@ -20,4 +20,8 @@ public interface ProviderRepository extends JpaRepository<Provider, UUID> {
 	@Lock(LockModeType.PESSIMISTIC_WRITE)
 	@Query("select p from Provider p where p.userId = :userId")
 	Optional<Provider> findByUserIdForUpdate(@Param("userId") UUID userId);
+
+	/** Prestador cujo dono (usuário PROVIDER) está ATIVO; com o dono desativado o negócio some para clientes e equipe. */
+	@Query("select p from Provider p where p.id = :id and exists (select 1 from UserAccount u where u.id = p.userId and u.active = true)")
+	Optional<Provider> findActiveById(@Param("id") UUID id);
 }

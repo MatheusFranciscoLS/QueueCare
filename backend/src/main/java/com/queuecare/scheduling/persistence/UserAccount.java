@@ -97,6 +97,17 @@ public class UserAccount {
 		this.tokenVersion++;
 	}
 
+	/**
+	 * Ativa ou desativa a conta e SOBE a versão das credenciais: ao reativar, nenhum token emitido antes da desativação volta a
+	 * valer (o conversor só olha a versão e o estado atuais).
+	 */
+	public void setActive(boolean active) {
+		if (this.active != active) {
+			this.active = active;
+			this.tokenVersion++;
+		}
+	}
+
 	public int getTokenVersion() {
 		return tokenVersion;
 	}

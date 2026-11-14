@@ -74,6 +74,22 @@ class ProvisioningConstraintsTest extends DatabaseTestBase {
 	}
 
 	@Test
+	void linhaDeControleDeAdministracaoEUnicaEAuditoriaAceitaAtivacaoEDesativacao() throws SQLException {
+		try (Connection c = dataSource.getConnection(); Statement st = c.createStatement()) {
+			try (ResultSet rs = st.executeQuery("SELECT count(*) FROM admin_control")) {
+				rs.next();
+				assertEquals(1, rs.getInt(1));
+			}
+			assertSqlState(UNIQUE_VIOLATION, () -> st.executeUpdate("INSERT INTO admin_control (id) VALUES (1)"));
+			assertSqlState(CHECK_VIOLATION, () -> st.executeUpdate("INSERT INTO admin_control (id) VALUES (2)"));
+			UUID actor = PostgresTestSupport.insertUser(c, "admin@exemplo.test", "ADMIN");
+			UUID target = PostgresTestSupport.insertUser(c, "alvo@exemplo.test", "CUSTOMER");
+			insertAudit(c, actor, "USER_DEACTIVATED", target, "CUSTOMER");
+			insertAudit(c, actor, "USER_ACTIVATED", target, "CUSTOMER");
+		}
+	}
+
+	@Test
 	void auditoriaAceitaInsercaoEmasRecusaAlteracaoEExclusao() throws SQLException {
 		try (Connection c = dataSource.getConnection(); Statement st = c.createStatement()) {
 			UUID actor = PostgresTestSupport.insertUser(c, "admin@exemplo.test", "ADMIN");
