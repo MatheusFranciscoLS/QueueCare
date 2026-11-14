@@ -15,6 +15,10 @@ import org.springframework.stereotype.Component;
  * ({@code set_config(..., true)}); estourou, o PostgreSQL aborta e a API responde 409 RESOURCE_BUSY, nunca 500 nem espera infinita.
  * Ordem de bloqueios das operações (sempre esta, nunca invertida): 1) linha de controle de administração (só quando a operação
  * muda o estado de contas de ADMIN ou depende dele), 2) linha do usuário alvo. Sem ordens divergentes não há deadlock por ordem.
+ * O bloqueio do usuário é {@code FOR NO KEY UPDATE} (é o que o Hibernate gera para PESSIMISTIC_WRITE no PostgreSQL): NÃO conflita
+ * com o {@code FOR KEY SHARE} que a gravação da auditoria (chaves estrangeiras para o ator e o alvo) toma nas linhas de usuário,
+ * então "A desativa B" e "B redefine a senha de A" não se travam em ciclo. Isso é fixado por teste (a auditoria é artificialmente
+ * lenta para alargar a janela da corrida), para que uma troca de versão do Hibernate ou do dialeto não o quebre em silêncio.
  * Chamar SEMPRE dentro de uma transação.
  */
 @Component

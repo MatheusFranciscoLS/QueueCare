@@ -88,6 +88,12 @@ public class PasswordService {
 		if (adminUserId.equals(targetUserId)) {
 			throw new SelfResetException();
 		}
+		// Mesma ordem de bloqueios das demais operações de administração (controle, depois usuário) e o ator é reconferido SOB a
+		// trava: um ADMIN desativado depois de autenticar não consegue mais redefinir senhas.
+		rowLocks.lockAdminControl();
+		if (users.findById(adminUserId).filter(UserAccount::isActive).filter(u -> u.getRole() == com.queuecare.scheduling.persistence.UserRole.ADMIN).isEmpty()) {
+			throw new org.springframework.security.access.AccessDeniedException("administrador inativo");
+		}
 		UserAccount target;
 		try {
 			target = lockUser(targetUserId);

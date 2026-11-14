@@ -343,4 +343,81 @@ class UserActivationIntegrationTest extends AuthIntegrationTestBase {
 		mvc.perform(get("/api/me").header(HttpHeaders.AUTHORIZATION, "Bearer " + sem)).andExpect(status().isUnauthorized());
 		mvc.perform(get("/api/me").header(HttpHeaders.AUTHORIZATION, login("c@exemplo.test"))).andExpect(status().isOk()).andExpect(jsonPath("$.email").value("c@exemplo.test"));
 	}
+
+	private MockHttpServletResponse reset(String bearer, UUID target) throws Exception {
+		return mvc.perform(post("/api/admin/users/" + target + "/reset-password").header(HttpHeaders.AUTHORIZATION, bearer).contentType(MediaType.APPLICATION_JSON)
+				.content(json("newInitialPassword", "senha-inicial-nova-1"))).andReturn().getResponse();
+	}
+
+	/**
+	 * Deadlock da 1ª revisão: a gravação da auditoria trava implicitamente (FK) as linhas do ator e do alvo; com FOR UPDATE nas
+	 * linhas de usuário, "A desativa B" e "B redefine a senha de A" se travavam em ciclo. O bloqueio das linhas agora é FOR NO KEY
+	 * UPDATE (não conflita com a checagem de FK) e a redefinição passa pela mesma linha de controle. Nenhum resultado pode ser
+	 * RESOURCE_BUSY (deadlock ou espera estourada), nem 500.
+	 */
+	@Test
+	void adminDesativandoOutroEOutroRedefinindoASenhaDoPrimeiroNaoTravamEmCiclo() throws Exception {
+		UUID a = seedUser("a@exemplo.test", "ADMIN", true);
+		UUID b = seedUser("b@exemplo.test", "ADMIN", true);
+		String tokenA = "Bearer " + validToken(a);
+		// Alarga a janela da corrida: a gravação da auditoria demora 300 ms (gatilho ANTES do INSERT), enquanto as duas transações
+		// já seguram as linhas de usuário. Sem isso o ciclo é raro demais para um teste confiável.
+		jdbc.execute("CREATE FUNCTION test_slow_audit() RETURNS trigger AS $$ BEGIN PERFORM pg_sleep(0.3); RETURN NEW; END; $$ LANGUAGE plpgsql");
+		jdbc.execute("CREATE TRIGGER test_slow_audit_trg BEFORE INSERT ON audit_log FOR EACH ROW EXECUTE FUNCTION test_slow_audit()");
+		try {
+			deadlockRounds(a, b, tokenA);
+		} finally {
+			jdbc.execute("DROP TRIGGER test_slow_audit_trg ON audit_log");
+			jdbc.execute("DROP FUNCTION test_slow_audit()");
+		}
+	}
+
+	private void deadlockRounds(UUID a, UUID b, String tokenA) throws Exception {
+		for (int round = 0; round < 6; round++) {
+			jdbc.update("UPDATE users SET active = true, token_version = 0 WHERE id IN (?, ?)", a, b);
+			ExecutorService pool = Executors.newFixedThreadPool(2);
+			try {
+				CyclicBarrier startTogether = new CyclicBarrier(2);
+				Future<MockHttpServletResponse> aKillsB = pool.submit(() -> {
+					startTogether.await(10, TimeUnit.SECONDS);
+					return act(tokenA, b, "deactivate");
+				});
+				Future<MockHttpServletResponse> bResetsA = pool.submit(() -> {
+					startTogether.await(10, TimeUnit.SECONDS);
+					return reset("Bearer " + validTokenWithVersion(b, 0), a);
+				});
+				MockHttpServletResponse r1 = aKillsB.get(60, TimeUnit.SECONDS);
+				MockHttpServletResponse r2 = bResetsA.get(60, TimeUnit.SECONDS);
+
+				for (MockHttpServletResponse r : List.of(r1, r2)) {
+					assertTrue(r.getStatus() < 500, "sem 500: " + r.getStatus());
+					assertTrue(!r.getContentAsString().contains("RESOURCE_BUSY"), "deadlock ou espera estourada: " + r.getContentAsString());
+				}
+				assertTrue(count("SELECT count(*) FROM users WHERE role = 'ADMIN' AND active") >= 1, "sempre sobra um ADMIN ativo");
+			} finally {
+				pool.shutdownNow();
+			}
+		}
+	}
+
+	/** Ator desativado depois de autenticar (simulado chamando o serviço direto): a redefinição é recusada sob a trava, sem efeito. */
+	@Test
+	void adminDesativadoNaoRedefineSenhaMesmoJaAutenticado() {
+		UUID b = seedUser("b@exemplo.test", "ADMIN", false);
+		UUID target = seedUser("c@exemplo.test", "CUSTOMER", true);
+		String hash = jdbc.queryForObject("SELECT password_hash FROM users WHERE id = ?", String.class, target);
+
+		assertThrows(org.springframework.security.access.AccessDeniedException.class, () -> passwordService.resetPassword(b, target, "senha-inicial-nova-1"));
+
+		assertEquals(hash, jdbc.queryForObject("SELECT password_hash FROM users WHERE id = ?", String.class, target));
+		assertEquals(0L, count("SELECT count(*) FROM audit_log"));
+	}
+
+	@org.springframework.beans.factory.annotation.Autowired
+	PasswordService passwordService;
+
+	private static String validTokenWithVersion(UUID userId, int version) throws Exception {
+		long now = Instant.now().getEpochSecond();
+		return rawSignedToken(TEST_SECRET, "{\"iss\":\"" + ISSUER + "\",\"aud\":\"" + AUDIENCE + "\",\"sub\":\"" + userId + "\",\"iat\":" + now + ",\"exp\":" + (now + 900) + ",\"ver\":" + version + "}");
+	}
 }
