@@ -8,4 +8,6 @@ public interface UserAccountRepository extends JpaRepository<UserAccount, UUID> 
 
 	/** Busca pelo e-mail JÁ normalizado (sem espaços externos, em minúsculas). */
 	Optional<UserAccount> findByEmail(String normalizedEmail);
+
+	boolean existsByRole(UserRole role);
 }

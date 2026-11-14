@@ -33,7 +33,11 @@ class ActiveUserJwtConverter implements Converter<Jwt, AbstractOAuth2TokenAuthen
 		UserAccount user = users.findById(userId)
 				.filter(UserAccount::isActive)
 				.orElseThrow(() -> new InvalidBearerTokenException("usuário inválido ou inativo"));
-		List<GrantedAuthority> authorities = List.of(new SimpleGrantedAuthority("ROLE_" + user.getRole().name()));
+		// Conta com senha inicial: SÓ a autoridade de troca de senha, nenhum perfil. Assim nenhuma rota por perfil abre, e o
+		// PasswordChangeRequiredFilter fecha também as rotas que exigem apenas estar autenticado.
+		List<GrantedAuthority> authorities = user.isMustChangePassword()
+				? List.of(new SimpleGrantedAuthority(PasswordChangeRequiredFilter.AUTHORITY))
+				: List.of(new SimpleGrantedAuthority("ROLE_" + user.getRole().name()));
 		return new JwtAuthenticationToken(jwt, authorities, user.getId().toString());
 	}
 }

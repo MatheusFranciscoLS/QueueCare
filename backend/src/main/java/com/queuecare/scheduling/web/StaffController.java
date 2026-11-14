@@ -38,6 +38,18 @@ class StaffController {
 	record LinkRequest(@NotBlank @Size(max = 254) String email) {
 	}
 
+	/** O perfil NÃO é um campo: a conta criada é sempre ATTENDANT (campos desconhecidos, como role, são ignorados). */
+	record CreateAccountRequest(
+			@NotBlank @Size(max = 120) String name,
+			@NotBlank @jakarta.validation.constraints.Email @Size(max = 254) String email,
+			@NotBlank @Size(max = 256) String initialPassword) {
+		/** Remove espaços externos ANTES da validação, como no cadastro público. */
+		CreateAccountRequest {
+			name = name == null ? null : name.trim();
+			email = email == null ? null : email.trim();
+		}
+	}
+
 	record StaffResponse(UUID userId, String name, String email) {
 		static StaffResponse from(StaffMember m) {
 			return new StaffResponse(m.userId(), m.name(), m.email());
@@ -48,6 +60,12 @@ class StaffController {
 	@ResponseStatus(HttpStatus.CREATED)
 	StaffResponse link(@AuthenticationPrincipal Jwt jwt, @Valid @RequestBody LinkRequest request) {
 		return StaffResponse.from(staffService.link(userId(jwt), request.email()));
+	}
+
+	@PostMapping("/accounts")
+	@ResponseStatus(HttpStatus.CREATED)
+	StaffResponse createAccount(@AuthenticationPrincipal Jwt jwt, @Valid @RequestBody CreateAccountRequest request) {
+		return StaffResponse.from(staffService.createAttendantAccount(userId(jwt), request.name(), request.email(), request.initialPassword()));
 	}
 
 	@GetMapping

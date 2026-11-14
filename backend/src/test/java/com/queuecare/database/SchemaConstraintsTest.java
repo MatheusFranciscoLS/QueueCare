@@ -40,7 +40,7 @@ class SchemaConstraintsTest extends DatabaseTestBase {
 	@Test
 	void perfilInvalidoEhRecusado() throws SQLException {
 		try (Connection c = dataSource.getConnection()) {
-			assertSqlState(CHECK_VIOLATION, () -> PostgresTestSupport.insertUser(c, "outro@exemplo.test", "ADMIN"));
+			assertSqlState(CHECK_VIOLATION, () -> PostgresTestSupport.insertUser(c, "outro@exemplo.test", "ROOT"));
 		}
 	}
 

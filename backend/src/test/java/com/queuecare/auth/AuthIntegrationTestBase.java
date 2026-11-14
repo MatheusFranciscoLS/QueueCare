@@ -92,6 +92,13 @@ abstract class AuthIntegrationTestBase {
 				UUID.class, email, passwordEncoder.encode(PASSWORD), role, active);
 	}
 
+	/** Como {@link #seedUser(String, String, boolean)}, escolhendo se a conta ainda precisa trocar a senha inicial. */
+	UUID seedUser(String email, String role, boolean active, boolean mustChangePassword) {
+		return jdbc.queryForObject(
+				"INSERT INTO users (name, email, password_hash, role, active, must_change_password) VALUES ('Fulano de Teste', ?, ?, ?, ?, ?) RETURNING id",
+				UUID.class, email, passwordEncoder.encode(PASSWORD), role, active, mustChangePassword);
+	}
+
 	long count(String sql, Object... args) {
 		return jdbc.queryForObject(sql, Long.class, args);
 	}

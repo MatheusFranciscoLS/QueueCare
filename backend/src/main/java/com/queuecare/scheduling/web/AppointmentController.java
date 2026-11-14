@@ -79,6 +79,7 @@ class AppointmentController {
 	}
 
 	@PostMapping("/{id}/cancel")
+	@PreAuthorize("hasAnyRole('CUSTOMER','PROVIDER','ATTENDANT')")
 	AppointmentResponse cancel(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID id) {
 		return AppointmentResponse.from(cancellationService.cancel(id, userId(jwt)));
 	}
