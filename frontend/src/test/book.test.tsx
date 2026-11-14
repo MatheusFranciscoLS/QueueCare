@@ -282,7 +282,13 @@ describe('agendar: nada muda durante o envio da reserva', () => {
     expect(screen.getByRole('button', { name: 'Atualizar horários' })).toBeDisabled()
     await user.click(screen.getByRole('radio', { name: 'Barbearia do Zé' })) // clique em controle desabilitado não faz nada
     await user.click(screen.getByRole('button', { name: '10:00' }))
+    await user.click(screen.getByRole('radio', { name: /Alinhamento/ }))
+    await user.click(screen.getByRole('button', { name: 'Próximo dia' }))
     expect(screen.getByRole('radio', { name: 'Oficina Central' })).toBeChecked()
+    expect(screen.getByRole('radio', { name: /Troca de óleo/ })).toBeChecked()
+    expect(screen.getAllByText(new RegExp(longDate(today))).length).toBeGreaterThan(0)
+    expect(screen.queryByText(new RegExp(longDate(addDays(today, 1))))).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '09:00' })).toHaveAttribute('aria-pressed', 'true')
 
     await act(async () => slow.resolve(json(201, { id: 'a-1', providerId: 'p-1', serviceId: 's-1', startsAt: '', endsAt: '', status: 'SCHEDULED', businessName: 'Oficina Central', timeZone: ZONE, serviceName: 'Troca de óleo' })))
 
