@@ -9,8 +9,10 @@ import org.springframework.validation.annotation.Validated;
 /**
  * Limites de requisições (ADR 0003). Os padrões são conservadores para uso humano normal; os testes usam valores bem diferentes.
  *
- * @param enabled liga ou desliga SÓ o filtro de requisições por minuto (login, cadastro e horários livres); o bloqueio por
+ * @param enabled liga ou desliga SÓ os limites por minuto (login, cadastro e horários livres); o bloqueio por
  *        falhas de login tem chave própria ({@code loginLockoutEnabled}). Padrão: ligado
+ * @param accountCreationsEnabled liga ou desliga SÓ o limite por hora de criação de contas (proteção contra enumeração de e-mails);
+ *        independente de {@code enabled}. Padrão: ligado
  * @param loginLockoutEnabled liga ou desliga o bloqueio temporário por falhas de login (padrão: ligado; desligue só em teste)
  * @param loginPerMinute tentativas de login por minuto e por endereço
  * @param registerPerMinute cadastros por minuto e por endereço
@@ -30,6 +32,7 @@ import org.springframework.validation.annotation.Validated;
 @ConfigurationProperties(prefix = "queuecare.rate-limit")
 public record RateLimitProperties(
 		@DefaultValue("true") boolean enabled,
+		@DefaultValue("true") boolean accountCreationsEnabled,
 		@DefaultValue("true") boolean loginLockoutEnabled,
 		@DefaultValue("20") @Min(1) @Max(MAX_PER_MINUTE) int loginPerMinute,
 		@DefaultValue("10") @Min(1) @Max(MAX_PER_MINUTE) int registerPerMinute,

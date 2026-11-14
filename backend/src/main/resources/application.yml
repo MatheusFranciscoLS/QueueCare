@@ -35,6 +35,7 @@ queuecare:
   # Limites de requisições (ADR 0003). Valores PADRÃO abaixo; ajuste por ambiente se precisar.
   # rate-limit:
   #   enabled: true                # liga/desliga SÓ o filtro por minuto (login, cadastro, horários livres)
+  #   account-creations-enabled: true  # limite por hora de criação de contas (chave própria, independe de enabled)
   #   login-lockout-enabled: true  # bloqueio por tentativas de login (chave própria)
   #   login-per-minute: 20
   #   register-per-minute: 10

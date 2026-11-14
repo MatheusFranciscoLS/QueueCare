@@ -59,10 +59,9 @@ class SecurityConfig {
 		http.addFilterBefore(new RequestSizeLimitFilter(maxBodyBytes), BearerTokenAuthenticationFilter.class);
 		// Conta com troca de senha pendente só acessa /api/me e a troca de senha (depois de ler o token, antes do limite).
 		http.addFilterAfter(new PasswordChangeRequiredFilter(), BearerTokenAuthenticationFilter.class);
-		if (rateLimitProperties.enabled()) {
+		// O filtro é sempre registrado; cada grupo de regras liga/desliga pela própria propriedade (enabled, account-creations-enabled).
 			// Depois da leitura do token (conhece o usuário) e antes da autorização das rotas.
-			http.addFilterAfter(new RateLimitFilter(rateLimiter, rateLimitProperties), BearerTokenAuthenticationFilter.class);
-		}
+		http.addFilterAfter(new RateLimitFilter(rateLimiter, rateLimitProperties), BearerTokenAuthenticationFilter.class);
 		return http.build();
 	}
 

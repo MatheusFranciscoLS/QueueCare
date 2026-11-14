@@ -53,17 +53,18 @@ final class RateLimitFilter extends OncePerRequestFilter {
 		String key = null;
 		int limit = 0;
 		Duration window = WINDOW;
-		if (LOGIN.matches(request)) {
+		// Cada grupo de regras tem a SUA chave de ativação: o filtro existe sempre e cada regra confere a própria chave.
+		if (properties.enabled() && LOGIN.matches(request)) {
 			key = "login|" + request.getRemoteAddr();
 			limit = properties.loginPerMinute();
-		} else if (REGISTER.matches(request)) {
+		} else if (properties.enabled() && REGISTER.matches(request)) {
 			key = "register|" + request.getRemoteAddr();
 			limit = properties.registerPerMinute();
-		} else if (CREATE_PROVIDER.matches(request) || CREATE_ATTENDANT.matches(request)) {
+		} else if (properties.accountCreationsEnabled() && (CREATE_PROVIDER.matches(request) || CREATE_ATTENDANT.matches(request))) {
 			key = "accounts|" + principalOrAddress(request);
 			limit = properties.accountCreationsPerHour();
 			window = HOUR;
-		} else if (SLOTS.matches(request)) {
+		} else if (properties.enabled() && SLOTS.matches(request)) {
 			key = "slots|" + principalOrAddress(request);
 			limit = properties.slotsPerMinute();
 		}
