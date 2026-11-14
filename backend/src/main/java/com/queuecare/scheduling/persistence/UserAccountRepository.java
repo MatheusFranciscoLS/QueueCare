@@ -15,6 +15,8 @@ public interface UserAccountRepository extends JpaRepository<UserAccount, UUID> 
 
 	boolean existsByRole(UserRole role);
 
+	long countByRoleAndActiveTrue(UserRole role);
+
 	/** Carrega o usuário BLOQUEANDO a linha: trocas e redefinições de senha do mesmo usuário acontecem uma de cada vez. */
 	@Lock(LockModeType.PESSIMISTIC_WRITE)
 	@Query("select u from UserAccount u where u.id = :id")

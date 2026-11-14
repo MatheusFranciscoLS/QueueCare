@@ -4,6 +4,7 @@ import com.queuecare.audit.AuditAction;
 import com.queuecare.audit.AuditService;
 import com.queuecare.auth.AccountProvisioner;
 import com.queuecare.auth.AuthService;
+import com.queuecare.auth.RowLocks;
 import com.queuecare.scheduling.application.ProviderExceptions.ProviderNotConfiguredException;
 import com.queuecare.scheduling.application.ProviderExceptions.StaffAlreadyAssignedException;
 import com.queuecare.scheduling.application.ProviderExceptions.StaffNotFoundException;
@@ -48,9 +49,11 @@ public class StaffService {
 	private final Clock clock;
 	private final AccountProvisioner provisioner;
 	private final AuditService audit;
+	private final RowLocks locks;
 
 	public StaffService(ProviderRepository providers, UserAccountRepository users, ProviderStaffRepository staff, Clock clock,
-			AccountProvisioner provisioner, AuditService audit) {
+			AccountProvisioner provisioner, AuditService audit, RowLocks locks) {
+		this.locks = locks;
 		this.provisioner = provisioner;
 		this.audit = audit;
 		this.providers = providers;
@@ -106,6 +109,25 @@ public class StaffService {
 		Map<UUID, UserAccount> byId = users.findAllById(ids).stream().collect(Collectors.toMap(UserAccount::getId, Function.identity()));
 		return ids.stream().map(byId::get).filter(java.util.Objects::nonNull).map(StaffMember::from)
 				.sorted(Comparator.comparing(StaffMember::name).thenComparing(StaffMember::userId)).toList();
+	}
+
+	/**
+	 * O PROVIDER desativa um atendente SEU: desativa a conta E desfaz o vínculo na mesma transação (com auditoria). Atendente de
+	 * outro prestador, usuário que não é atendente e id inexistente têm a MESMA resposta (404). Desativar sobe a versão das
+	 * credenciais: os tokens do atendente morrem na hora. A reativação é do ADMIN.
+	 */
+	@Transactional
+	public void deactivateAttendant(UUID ownerUserId, UUID attendantUserId) {
+		Provider provider = providers.findByUserId(ownerUserId).orElseThrow(ProviderNotConfiguredException::new);
+		UserAccount attendant = locks.lockUser(attendantUserId).orElseThrow(StaffNotFoundException::new);
+		boolean ownLink = staff.findByUserId(attendantUserId).filter(l -> l.getProviderId().equals(provider.getId())).isPresent();
+		if (!ownLink || attendant.getRole() != UserRole.ATTENDANT) {
+			throw new StaffNotFoundException();
+		}
+		attendant.setActive(false);
+		users.saveAndFlush(attendant);
+		staff.deleteByProviderIdAndUserId(provider.getId(), attendantUserId);
+		audit.record(ownerUserId, AuditAction.USER_DEACTIVATED, attendant.getId(), attendant.getRole());
 	}
 
 	@Transactional

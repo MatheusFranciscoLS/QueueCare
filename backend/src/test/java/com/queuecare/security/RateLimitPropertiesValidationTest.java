@@ -59,4 +59,14 @@ class RateLimitPropertiesValidationTest {
 			assertNotNull(new ProviderAdminService(null, null, null, null, valid), valid.toString());
 		}
 	}
+
+	@Test
+	void esperaDoBloqueioDeLinhaDeUsuarioPrecisaEstarEntre1msE60s() {
+		for (Duration invalid : new Duration[] {Duration.ZERO, Duration.ofNanos(999_999), Duration.ofSeconds(-1), Duration.ofSeconds(61)}) {
+			assertThrows(IllegalArgumentException.class, () -> new com.queuecare.auth.RowLocks(null, null, invalid), invalid.toString());
+		}
+		for (Duration valid : new Duration[] {Duration.ofMillis(1), Duration.ofSeconds(3), Duration.ofSeconds(60)}) {
+			assertNotNull(new com.queuecare.auth.RowLocks(null, null, valid), valid.toString());
+		}
+	}
 }

@@ -12,12 +12,10 @@ import com.queuecare.scheduling.persistence.UserAccount;
 import com.queuecare.scheduling.persistence.UserAccountRepository;
 import com.queuecare.security.RateLimitProperties;
 import com.queuecare.security.RateLimiter;
-import jakarta.persistence.EntityManager;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.UUID;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -40,29 +38,22 @@ public class PasswordService {
 	private final AuditService audit;
 	private final RateLimiter limiter;
 	private final RateLimitProperties limits;
-	private final EntityManager entityManager;
-	private final long lockTimeoutMillis;
+	private final RowLocks rowLocks;
 
 	public PasswordService(UserAccountRepository users, PasswordEncoder passwordEncoder, AuthService authService, AuditService audit,
-			@Qualifier(RateLimiter.LOGIN_LOCKOUT_LIMITER) RateLimiter limiter, RateLimitProperties limits, EntityManager entityManager,
-			@Value("${queuecare.security.user-lock-timeout:3s}") Duration lockTimeout) {
+			@Qualifier(RateLimiter.LOGIN_LOCKOUT_LIMITER) RateLimiter limiter, RateLimitProperties limits, RowLocks rowLocks) {
 		this.users = users;
 		this.passwordEncoder = passwordEncoder;
 		this.authService = authService;
 		this.audit = audit;
 		this.limiter = limiter;
 		this.limits = limits;
-		this.entityManager = entityManager;
-		if (lockTimeout.compareTo(Duration.ofMillis(1)) < 0 || lockTimeout.compareTo(Duration.ofSeconds(60)) > 0) {
-			throw new IllegalArgumentException("queuecare.security.user-lock-timeout deve estar entre 1 ms e 60 s");
-		}
-		this.lockTimeoutMillis = lockTimeout.toMillis();
+		this.rowLocks = rowLocks;
 	}
 
-	/** Carrega o usuário bloqueando a linha, com espera LIMITADA (lock_timeout só desta transação; estourou = 409 RESOURCE_BUSY). */
-	UserAccount lockUser(UUID userId) {
-		entityManager.createNativeQuery("select set_config('lock_timeout', ?1, true)").setParameter(1, lockTimeoutMillis + "ms").getSingleResult();
-		return users.findByIdForUpdate(userId).orElseThrow(InvalidCredentialsException::new);
+	/** Carrega o usuário bloqueando a linha (espera limitada, ver {@link RowLocks}). */
+	private UserAccount lockUser(UUID userId) {
+		return rowLocks.lockUser(userId).orElseThrow(InvalidCredentialsException::new);
 	}
 
 	@Transactional

@@ -23,9 +23,11 @@ import org.springframework.web.bind.annotation.RestController;
 class AdminUserController {
 
 	private final PasswordService passwordService;
+	private final AdminUserService userService;
 
-	AdminUserController(PasswordService passwordService) {
+	AdminUserController(PasswordService passwordService, AdminUserService userService) {
 		this.passwordService = passwordService;
+		this.userService = userService;
 	}
 
 	record ResetPasswordRequest(@NotBlank @Size(max = 256) String newInitialPassword) {
@@ -35,5 +37,17 @@ class AdminUserController {
 	@ResponseStatus(HttpStatus.NO_CONTENT)
 	void resetPassword(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID userId, @Valid @RequestBody ResetPasswordRequest request) {
 		passwordService.resetPassword(UUID.fromString(jwt.getSubject()), userId, request.newInitialPassword());
+	}
+
+	@PostMapping("/{userId}/deactivate")
+	@ResponseStatus(HttpStatus.NO_CONTENT)
+	void deactivate(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID userId) {
+		userService.deactivate(UUID.fromString(jwt.getSubject()), userId);
+	}
+
+	@PostMapping("/{userId}/activate")
+	@ResponseStatus(HttpStatus.NO_CONTENT)
+	void activate(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID userId) {
+		userService.activate(UUID.fromString(jwt.getSubject()), userId);
 	}
 }
