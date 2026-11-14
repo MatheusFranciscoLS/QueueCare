@@ -11,4 +11,7 @@ public interface ServiceOfferingRepository extends JpaRepository<ServiceOffering
 	Optional<ServiceOffering> findByIdAndProviderId(UUID id, UUID providerId);
 
 	List<ServiceOffering> findByProviderIdOrderByName(UUID providerId);
+
+	/** Catálogo para clientes: só serviços ATIVOS, em ordem estável. */
+	List<ServiceOffering> findByProviderIdAndActiveTrueOrderByNameAscIdAsc(UUID providerId);
 }

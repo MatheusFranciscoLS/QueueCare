@@ -41,21 +41,43 @@ class AppointmentController {
 	private final BookingService bookingService;
 	private final CancellationService cancellationService;
 	private final AppointmentRepository appointments;
+	private final com.queuecare.scheduling.persistence.ProviderRepository providers;
+	private final com.queuecare.scheduling.persistence.ServiceOfferingRepository services;
 
-	AppointmentController(BookingService bookingService, CancellationService cancellationService, AppointmentRepository appointments) {
+	AppointmentController(BookingService bookingService, CancellationService cancellationService, AppointmentRepository appointments,
+			com.queuecare.scheduling.persistence.ProviderRepository providers, com.queuecare.scheduling.persistence.ServiceOfferingRepository services) {
 		this.bookingService = bookingService;
 		this.cancellationService = cancellationService;
 		this.appointments = appointments;
+		this.providers = providers;
+		this.services = services;
 	}
 
 	/** {@code localStart} é o horário LOCAL do prestador, ex.: 2026-11-17T10:00:00. */
 	record CreateAppointmentRequest(@NotNull UUID providerId, @NotNull UUID serviceId, @NotNull LocalDateTime localStart) {
 	}
 
-	record AppointmentResponse(UUID id, UUID providerId, UUID serviceId, Instant startsAt, Instant endsAt, String status) {
-		static AppointmentResponse from(Appointment a) {
-			return new AppointmentResponse(a.getId(), a.getProviderId(), a.getServiceId(), a.getStartsAt(), a.getEndsAt(), a.getStatus().name());
-		}
+	/**
+	 * Agendamento do próprio cliente, com o nome do negócio, o fuso (para mostrar o horário local) e o nome do serviço. Os nomes
+	 * vêm do histórico: continuam aparecendo mesmo se o prestador ou o serviço forem desativados depois.
+	 */
+	record AppointmentResponse(UUID id, UUID providerId, UUID serviceId, Instant startsAt, Instant endsAt, String status, String businessName,
+			String timeZone, String serviceName) {
+	}
+
+	private List<AppointmentResponse> respond(List<Appointment> list) {
+		java.util.Map<UUID, com.queuecare.scheduling.persistence.Provider> byProvider = providers
+				.findAllById(list.stream().map(Appointment::getProviderId).distinct().toList()).stream()
+				.collect(java.util.stream.Collectors.toMap(com.queuecare.scheduling.persistence.Provider::getId, p -> p));
+		java.util.Map<UUID, com.queuecare.scheduling.persistence.ServiceOffering> byService = services
+				.findAllById(list.stream().map(Appointment::getServiceId).distinct().toList()).stream()
+				.collect(java.util.stream.Collectors.toMap(com.queuecare.scheduling.persistence.ServiceOffering::getId, x -> x));
+		return list.stream().map(a -> {
+			var provider = byProvider.get(a.getProviderId());
+			var service = byService.get(a.getServiceId());
+			return new AppointmentResponse(a.getId(), a.getProviderId(), a.getServiceId(), a.getStartsAt(), a.getEndsAt(), a.getStatus().name(),
+					provider == null ? null : provider.getBusinessName(), provider == null ? null : provider.getTimeZone(), service == null ? null : service.getName());
+		}).toList();
 	}
 
 	@PostMapping
@@ -64,7 +86,7 @@ class AppointmentController {
 	AppointmentResponse book(@AuthenticationPrincipal Jwt jwt, @Valid @RequestBody CreateAppointmentRequest request) {
 		Appointment appointment = bookingService
 				.book(new BookingRequest(request.providerId(), request.serviceId(), userId(jwt), request.localStart()));
-		return AppointmentResponse.from(appointment);
+		return respond(List.of(appointment)).get(0);
 	}
 
 	@GetMapping("/mine")
@@ -75,13 +97,13 @@ class AppointmentController {
 			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "paginação inválida");
 		}
 		PageRequest pageable = PageRequest.of(page, size, Sort.by(Sort.Order.desc("startsAt"), Sort.Order.desc("id")));
-		return appointments.findByCustomerId(userId(jwt), pageable).stream().map(AppointmentResponse::from).toList();
+		return respond(appointments.findByCustomerId(userId(jwt), pageable).stream().toList());
 	}
 
 	@PostMapping("/{id}/cancel")
 	@PreAuthorize("hasAnyRole('CUSTOMER','PROVIDER','ATTENDANT')")
 	AppointmentResponse cancel(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID id) {
-		return AppointmentResponse.from(cancellationService.cancel(id, userId(jwt)));
+		return respond(List.of(cancellationService.cancel(id, userId(jwt)))).get(0);
 	}
 
 	private static UUID userId(Jwt jwt) {

@@ -37,6 +37,7 @@ final class RateLimitFilter extends OncePerRequestFilter {
 	private static final Duration HOUR = Duration.ofHours(1);
 	private static final RequestMatcher CREATE_PROVIDER = PathPatternRequestMatcher.withDefaults().matcher(HttpMethod.POST, "/api/admin/providers");
 	private static final RequestMatcher CREATE_ATTENDANT = PathPatternRequestMatcher.withDefaults().matcher(HttpMethod.POST, "/api/provider/staff/accounts");
+	private static final RequestMatcher CATALOG = PathPatternRequestMatcher.withDefaults().matcher(HttpMethod.GET, "/api/catalog/**");
 	private static final RequestMatcher SLOTS = PathPatternRequestMatcher.withDefaults().matcher(HttpMethod.GET, "/api/providers/*/slots");
 
 	private final RateLimiter limiter;
@@ -64,6 +65,9 @@ final class RateLimitFilter extends OncePerRequestFilter {
 			key = "accounts|" + principalOrAddress(request);
 			limit = properties.accountCreationsPerHour();
 			window = HOUR;
+		} else if (properties.enabled() && CATALOG.matches(request)) {
+			key = "catalog|" + principalOrAddress(request);
+			limit = properties.slotsPerMinute();
 		} else if (properties.enabled() && SLOTS.matches(request)) {
 			key = "slots|" + principalOrAddress(request);
 			limit = properties.slotsPerMinute();
