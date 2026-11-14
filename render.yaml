@@ -1,0 +1,23 @@
+# Plano do Render (ADR 0013). SÓ plano gratuito: nenhum meio de pagamento. Os valores secretos são informados no painel, nunca aqui.
+services:
+  - type: web
+    name: queuecare-api
+    runtime: docker
+    plan: free
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    healthCheckPath: /actuator/health
+    autoDeployTrigger: "off"
+    envVars:
+      - key: DB_URL          # URL do Neon COM pooler, ex.: jdbc:postgresql://HOST-pooler/DB?sslmode=require&prepareThreshold=0
+        sync: false
+      - key: DB_DIRECT_URL   # URL do Neon DIRETA (sem pooler), só para as migrations
+        sync: false
+      - key: DB_USER
+        sync: false
+      - key: DB_PASSWORD
+        sync: false
+      - key: JWT_SECRET      # Base64 de pelo menos 32 bytes; fixo (trocar invalida os tokens)
+        sync: false
+      - key: CORS_ALLOWED_ORIGINS   # só o endereço do site publicado, ex.: https://queuecare.pages.dev
+        sync: false

@@ -1,0 +1,29 @@
+# Perfil de PRODUÇÃO (ADR 0013): hospedagem gratuita, banco Neon com pooler. Só ajusta o que muda; o resto vem do application.yml.
+server:
+  # A plataforma (Render) informa a porta em PORT.
+  port: ${PORT:8080}
+  shutdown: graceful
+
+spring:
+  datasource:
+    hikari:
+      # Pool pequeno: o plano gratuito do banco e a memória do JVM (512 MB) são limitados.
+      maximum-pool-size: ${DB_POOL_MAX:3}
+      minimum-idle: 0
+      connection-timeout: 20000
+      max-lifetime: 600000
+  flyway:
+    # As migrations usam a conexão DIRETA do banco (sem pooler); a aplicação usa a URL com pooler (DB_URL). Sem DB_DIRECT_URL a aplicação NÃO sobe.
+    url: ${DB_DIRECT_URL}
+    user: ${DB_DIRECT_USER:${DB_USER}}
+    password: ${DB_DIRECT_PASSWORD:${DB_PASSWORD}}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+
+logging:
+  level:
+    root: INFO

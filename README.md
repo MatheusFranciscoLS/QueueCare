@@ -46,6 +46,8 @@ docker compose --env-file .env -f infra/docker-compose.yml up -d
 ```
 A API lê `DB_URL`, `DB_USER`, `DB_PASSWORD` e **`JWT_SECRET`** (obrigatório, Base64 de pelo menos 32 bytes; gere com `openssl rand -base64 32`) do ambiente (veja `.env.example`). O esquema do banco só muda por migrations Flyway em `backend/src/main/resources/db/migration/`.
 
+Publicação gratuita (sem cartão): roteiro em [`docs/publicacao.md`](docs/publicacao.md).
+
 Contrato da API: [`docs/openapi.json`](docs/openapi.json) (OpenAPI, gerado do código e conferido por teste; ver [ADR 0012](docs/adr/0012-contrato-openapi.md)).
 
 Primeiro administrador (uma vez só, por comando explícito, sem senha em arquivo): veja `docs/adr/0005-provisionamento-de-contas.md`.
