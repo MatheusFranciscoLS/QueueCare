@@ -125,7 +125,7 @@ function DayList({ date, timeZone }: { date: string; timeZone: string }) {
         {problem}
       </p>
       {visible && visible.length === 0 && <p className="notice">Nenhum agendamento neste dia.</p>}
-      <ul className="rows">
+      <ul className="rows timeline">
         {visible?.map((item) => (
           <AppointmentRow
             key={item.id}
@@ -246,12 +246,14 @@ function AppointmentRow({
     })
 
   return (
-    <li className="row" ref={rowRef} tabIndex={-1}>
-      <span>
-        <strong>
+    <li className="row appt" data-status={status} ref={rowRef} tabIndex={-1}>
+      <span className="appt-info">
+        <strong className="appt-time">
           {timeIn(item.startsAt, timeZone)}–{timeIn(item.endsAt, timeZone)}
-        </strong>{' '}
-        · {item.serviceName ?? 'Serviço'} · {customer} <span className="badge" data-status={status}>{STATUS_LABEL[status] ?? status}</span>
+        </strong>
+        <span className="appt-who">{customer}</span>
+        <span className="appt-service">{item.serviceName ?? 'Serviço'}</span>
+        <span className="badge" data-status={status}>{STATUS_LABEL[status] ?? status}</span>
       </span>
       {status === 'SCHEDULED' && (
         <span className="actions">

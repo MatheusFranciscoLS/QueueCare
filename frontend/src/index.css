@@ -491,3 +491,82 @@ input[type='date'] {
     scroll-behavior: auto !important;
   }
 }
+
+/* Linha de Atendimento: traço vertical com um ponto por atendimento, na cor do estado */
+.timeline .row {
+  position: relative;
+  padding-left: 1.6rem;
+}
+
+.timeline .row::before {
+  content: '';
+  position: absolute;
+  left: 0.4rem;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: var(--line);
+}
+
+.timeline .row:first-child::before {
+  top: 50%;
+}
+
+.timeline .row:last-child::before {
+  bottom: 50%;
+}
+
+.timeline .row:only-child::before {
+  display: none;
+}
+
+.timeline .row::after {
+  content: '';
+  position: absolute;
+  left: 0.12rem;
+  top: 50%;
+  width: 0.62rem;
+  height: 0.62rem;
+  margin-top: -0.31rem;
+  border-radius: 50%;
+  background: var(--muted);
+  box-shadow: 0 0 0 3px var(--surface);
+}
+
+.timeline .row[data-status='SCHEDULED']::after {
+  background: var(--st-scheduled);
+}
+
+.timeline .row[data-status='CHECKED_IN']::after {
+  background: var(--st-waiting);
+}
+
+.timeline .row[data-status='COMPLETED']::after {
+  background: var(--st-done);
+}
+
+.appt-info {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 var(--space-3);
+  min-width: 0;
+}
+
+.appt-time {
+  font-family: var(--font-heading);
+  font-variant-numeric: tabular-nums;
+  min-width: 5.5rem;
+}
+
+.appt-who {
+  font-weight: 600;
+}
+
+.appt-service {
+  color: var(--muted);
+}
+
+.sep {
+  display: none;
+}
