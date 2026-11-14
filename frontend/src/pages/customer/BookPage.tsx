@@ -6,6 +6,7 @@ import { useAuth } from '../../auth/session'
 import { RefreshWarning } from '../RefreshWarning'
 import { useLoad } from '../useLoad'
 import { useSingleFlight } from '../useSingleFlight'
+import { Loading } from '../Loading'
 
 /** Quantos dias à frente a API oferece horários (SlotService.MAX_DAYS_AHEAD). */
 const MAX_DAYS_AHEAD = 90
@@ -146,7 +147,7 @@ function ProviderStep({ selected, disabled, onSelect }: { selected: CatalogProvi
   const load = useCallback(() => api.providers(0, PAGE_SIZE), [api])
   const { data, error, loading, reload } = useLoad<CatalogProvider[]>(load)
 
-  if (loading && !data) return <p role="status">Carregando prestadores…</p>
+  if (loading && !data) return <Loading>Carregando prestadores…</Loading>
   if (error && !data) return <p role="alert" className="error">{describeError(error)}</p>
   return (
     <fieldset className="step">
@@ -170,7 +171,7 @@ function ServiceStep({ provider, selected, disabled, onSelect }: { provider: Cat
   const load = useCallback(() => api.services(provider.id), [api, provider.id])
   const { data, error, loading, reload } = useLoad<CatalogService[]>(load)
 
-  if (loading && !data) return <p role="status">Carregando serviços…</p>
+  if (loading && !data) return <Loading>Carregando serviços…</Loading>
   if (error && !data) return <p role="alert" className="error">{describeError(error)}</p>
   return (
     <fieldset className="step">
@@ -241,7 +242,7 @@ function SlotStep({
   const load = useCallback(() => api.slots(provider.id, service.id, date), [api, provider.id, service.id, date])
   const { data, error, loading, reload } = useLoad<FreeSlot[]>(load)
 
-  if (loading && !data) return <p role="status">Carregando horários…</p>
+  if (loading && !data) return <Loading>Carregando horários…</Loading>
   if (error && !data) return <p role="alert" className="error">{describeError(error)}</p>
   return (
     <fieldset className="step">

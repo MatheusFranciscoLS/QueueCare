@@ -10,6 +10,7 @@ import { useFocusFirstInvalid } from '../useFocusFirstInvalid'
 import { RefreshWarning } from '../RefreshWarning'
 import { useLoad } from '../useLoad'
 import { useSingleFlight } from '../useSingleFlight'
+import { Loading } from '../Loading'
 
 const MAX_MINUTES = 7 * 24 * 60
 
@@ -21,7 +22,7 @@ export function BusinessPage() {
   // O aviso "salvo" fica aqui porque o formulário é refeito a cada carregamento bem-sucedido.
   const [saved, setSaved] = useState(false)
 
-  if (loading && !data) return <p role="status">Carregando…</p>
+  if (loading && !data) return <Loading />
   if (error && !data && !isNotConfigured(error)) return <p role="alert" className="error">{describeError(error)}</p>
   return (
     <>

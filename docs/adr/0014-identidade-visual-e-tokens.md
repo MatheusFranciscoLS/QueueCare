@@ -26,3 +26,7 @@ O CSS era um arquivo único com cores soltas, fonte do sistema e alvos de toque 
 ## Atualização (PR 2/10): a Linha de Atendimento
 A agenda e a fila passam a usar a lista `.timeline`: um traço vertical com um ponto por atendimento, na cor do estado (agendado, chegou, concluído). O estado continua escrito no selo (a cor nunca é a única pista). A marcação ganhou `appt-info/appt-time/appt-who/appt-service`; separadores " · " ficam no DOM, ocultos na tela e para leitores de tela (`aria-hidden`), para a leitura em texto das linhas não mudar.
 - (revisão do PR 38) O ponto da Linha de Atendimento é ancorado à primeira linha de `.appt-info`, não ao centro da `<li>`: assim ele não se desloca quando as ações quebram de linha ou a confirmação de cancelamento abre. O traço do primeiro e do último item termina em `--dot-y`. Conferido em navegador real no celular, com a confirmação aberta.
+
+
+## Atualização (PR 3/10): entrada e carregamento
+Um componente único `Loading` (`pages/Loading.tsx`) substitui os "Carregando…" soltos: mantém `role="status"` e o texto (leitores de tela e testes) e acrescenta três pontos animados, decorativos (`aria-hidden`), que respeitam `prefers-reduced-motion`. Login e cadastro ganham faixa de destaque no cartão e uma frase de apresentação. Nenhuma regra de negócio mudou.

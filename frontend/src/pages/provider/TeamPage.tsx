@@ -11,6 +11,7 @@ import { RefreshWarning } from '../RefreshWarning'
 import { useFocusFirstInvalid } from '../useFocusFirstInvalid'
 import { useLoad } from '../useLoad'
 import { useSingleFlight } from '../useSingleFlight'
+import { Loading } from '../Loading'
 
 export function TeamPage() {
   const { request } = useAuth()
@@ -23,7 +24,7 @@ export function TeamPage() {
   // ofereceria ações que só receberiam 404).
   const [removed, setRemoved] = useState<ReadonlySet<string>>(new Set())
 
-  if (loading && !data) return <p role="status">Carregando…</p>
+  if (loading && !data) return <Loading />
   if (isNotConfigured(error)) {
     return (
       <section className="card">
