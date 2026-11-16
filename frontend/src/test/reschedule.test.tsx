@@ -1,4 +1,4 @@
-import { act, screen, waitFor, within } from '@testing-library/react'
+import { act, fireEvent, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { json, mockApi, PASSWORD, problem, renderWithHarness, token, USER, type Call } from './helpers'
@@ -171,7 +171,12 @@ describe('remarcar: confirmar', () => {
     })
     const box = await openBox(user)
     await user.click(await within(box).findByRole('button', { name: '10:30' }))
-    await user.click(within(box).getByRole('button', { name: 'Confirmar remarcação' }))
+    const confirm = within(box).getByRole('button', { name: 'Confirmar remarcação' })
+    // dois cliques no MESMO instante, antes de a tela re-renderizar com o botão bloqueado: o segundo é ignorado
+    act(() => {
+      fireEvent.click(confirm)
+      fireEvent.click(confirm)
+    })
 
     const busy = await within(box).findByRole('button', { name: 'Remarcando…' })
     expect(busy).toBeDisabled()
