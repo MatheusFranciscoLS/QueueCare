@@ -19,3 +19,9 @@ Todo o sistema exigia login. Um estúdio precisa de um link para compartilhar (r
 - O link público mostra o estúdio, mas quem quer agendar entra ou se cadastra como cliente (decisão consciente: reserva sem conta é outro ADR, com mais riscos de abuso).
 - Mudar o endereço invalida o link antigo (sem redirecionamento). Aceito no MVP.
 - A grafia da marca em textos públicos é "Pelo & Ponto"; o `&` não entra no endereço (`pelo-e-ponto` é reservado).
+
+## Atualização (revisão do PR 44)
+- **Limite por endereço de rede, sempre:** na rota pública a chave ignora o token (`public|ip:<endereço>`); trocar de token não dá limite novo. Teste com mutação.
+- **Proxy do Render:** `server.forward-headers-strategy: native` no perfil de produção (travado por teste de arquivos de publicação). Sem isso o endereço visto pela API seria o do proxy e todos os visitantes dividiriam um limite (valia também para login e cadastro). O Tomcat só confia em proxies internos (faixas privadas) e usa o endereço do cliente anexado pelo proxy. **Pendente de conferência após o deploy:** dois acessos de redes diferentes não podem dividir o limite; se o Render não anexar o cabeçalho como esperado, reavaliar (ADR 0003).
+- **Conflito de endereço só para o índice certo:** `SLUG_TAKEN` é devolvido somente quando a violação é do índice `providers_slug_key`; outra violação de integridade continua sendo erro de verdade.
+- Respostas de erro da rota pública e da configuração declaram o schema `Problem` no contrato.

@@ -81,6 +81,7 @@ class DeploymentFilesTest {
 		assertEquals(0, prod.getProperty("spring.datasource.hikari.minimum-idle"));
 		assertEquals("${DB_DIRECT_URL}", prod.getProperty("spring.flyway.url"), "sem a URL direta a aplicação não sobe (migrations nunca pelo pooler)");
 		assertEquals("health", prod.getProperty("management.endpoints.web.exposure.include"), "só o health é exposto");
+		assertEquals("native", prod.getProperty("server.forward-headers-strategy"), "atrás do proxy do Render o limite de requisições precisa ver o endereço do visitante, não o do proxy");
 		for (String key : List.of("spring.flyway.user", "spring.flyway.password")) {
 			assertTrue(String.valueOf(prod.getProperty(key)).startsWith("${DB_DIRECT_"), key);
 		}

@@ -1753,9 +1753,9 @@
           },
           "400" : {
             "content" : {
-              "*/*" : {
+              "application/problem+json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/PublicPageResponse"
+                  "$ref" : "#/components/schemas/Problem"
                 }
               }
             },
@@ -1776,9 +1776,9 @@
           },
           "404" : {
             "content" : {
-              "*/*" : {
+              "application/problem+json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/PublicPageResponse"
+                  "$ref" : "#/components/schemas/Problem"
                 }
               }
             },
@@ -1786,9 +1786,9 @@
           },
           "409" : {
             "content" : {
-              "*/*" : {
+              "application/problem+json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/PublicPageResponse"
+                  "$ref" : "#/components/schemas/Problem"
                 }
               }
             },
@@ -2232,9 +2232,9 @@
           },
           "404" : {
             "content" : {
-              "*/*" : {
+              "application/problem+json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/StudioResponse"
+                  "$ref" : "#/components/schemas/Problem"
                 }
               }
             },

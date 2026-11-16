@@ -121,9 +121,25 @@ public class ProviderAdminService {
 			provider.setPublicPage(normalized, published);
 			return providers.saveAndFlush(provider);
 		} catch (DataIntegrityViolationException e) {
-			// A restrição UNIQUE do banco decide quando dois estúdios disputam o mesmo endereço ao mesmo tempo.
-			throw new SlugTakenException();
+			// A restrição UNIQUE do banco decide quando dois estúdios disputam o mesmo endereço ao mesmo tempo. Só ESTE índice vira conflito de
+			// endereço; qualquer outra violação de integridade continua sendo um erro de verdade (não é mascarada).
+			if (isSlugUniqueViolation(e)) {
+				throw new SlugTakenException();
+			}
+			throw e;
 		}
+	}
+
+	private static boolean isSlugUniqueViolation(Throwable e) {
+		for (Throwable cause = e; cause != null; cause = cause.getCause()) {
+			if (cause instanceof org.hibernate.exception.ConstraintViolationException violation && "providers_slug_key".equals(violation.getConstraintName())) {
+				return true;
+			}
+			if (cause instanceof java.sql.SQLException sql && "23505".equals(sql.getSQLState()) && String.valueOf(sql.getMessage()).contains("providers_slug_key")) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	// --- serviços ---

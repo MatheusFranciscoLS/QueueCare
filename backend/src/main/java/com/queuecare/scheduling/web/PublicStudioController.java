@@ -36,7 +36,7 @@ class PublicStudioController {
 	}
 
 	@ApiResponse(responseCode = "200", description = "Estúdio publicado.", content = @Content(schema = @Schema(implementation = StudioResponse.class)))
-	@ApiResponse(responseCode = "404", description = "Endereço inexistente, inválido, não publicado ou de dono inativo: sempre a mesma resposta (reason STUDIO_NOT_FOUND).")
+	@ApiResponse(responseCode = "404", description = "Endereço inexistente, inválido, não publicado ou de dono inativo: sempre a mesma resposta (reason STUDIO_NOT_FOUND).", content = @Content(mediaType = "application/problem+json", schema = @Schema(ref = "#/components/schemas/Problem")))
 	@GetMapping("/studios/{slug}")
 	StudioResponse studio(@PathVariable String slug) {
 		return StudioResponse.from(studios.find(slug));

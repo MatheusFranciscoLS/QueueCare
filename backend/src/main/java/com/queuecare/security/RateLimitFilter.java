@@ -75,8 +75,8 @@ final class RateLimitFilter extends OncePerRequestFilter {
 			key = "catalog|" + principalOrAddress(request);
 			limit = properties.slotsPerMinute();
 		} else if (properties.enabled() && PUBLIC.matches(request)) {
-			// Sem login: a chave é SEMPRE o endereço de rede (principalOrAddress cai no endereço quando não há token).
-			key = "public|" + principalOrAddress(request);
+			// Sem login: a chave é SEMPRE o endereço de rede, mesmo que a pessoa envie tokens (senão trocar de token daria um limite novo).
+			key = "public|ip:" + request.getRemoteAddr();
 			limit = properties.slotsPerMinute();
 		} else if (properties.enabled() && SLOTS.matches(request)) {
 			key = "slots|" + principalOrAddress(request);

@@ -3,6 +3,10 @@ server:
   # A plataforma (Render) informa a porta em PORT.
   port: ${PORT:8080}
   shutdown: graceful
+  # O Render é um proxy na frente da aplicação: sem isto o endereço de rede visto pela API é o do proxy e TODOS os visitantes dividiriam o mesmo
+  # limite de requisições (ADR 0003 e 0015). Com "native" o Tomcat lê X-Forwarded-For só de proxies internos (faixas privadas) e usa o
+  # endereço do cliente que o proxy anexou. CONFERIR após o deploy (docs/publicacao.md): dois acessos de redes diferentes não podem dividir o limite.
+  forward-headers-strategy: native
 
 spring:
   datasource:

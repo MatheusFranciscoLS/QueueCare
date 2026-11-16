@@ -70,6 +70,21 @@ class RateLimitEndpointsIntegrationTest extends AuthIntegrationTestBase {
 	}
 
 	@Test
+	void paginaPublicaNaoDaLimiteNovoPorTrocarDeToken() throws Exception {
+		UUID u1 = seedUser("pp1@exemplo.test", "CUSTOMER", true);
+		UUID u2 = seedUser("pp2@exemplo.test", "CUSTOMER", true);
+		UUID u3 = seedUser("pp3@exemplo.test", "CUSTOMER", true);
+		for (UUID user : new UUID[] { u1, u2, u3 }) {
+			mvc.perform(get("/api/public/studios/nao-existe").with(from("10.0.0.7")).header(HttpHeaders.AUTHORIZATION, "Bearer " + validToken(user)))
+					.andExpect(status().isNotFound());
+		}
+		// A 4ª chamada, com um token diferente e sem token, vem do MESMO endereço: o limite é por endereço de rede.
+		mvc.perform(get("/api/public/studios/nao-existe").with(from("10.0.0.7")).header(HttpHeaders.AUTHORIZATION, "Bearer " + validToken(seedUser("pp4@exemplo.test", "CUSTOMER", true))))
+				.andExpect(status().isTooManyRequests());
+		mvc.perform(get("/api/public/studios/nao-existe").with(from("10.0.0.7"))).andExpect(status().isTooManyRequests());
+	}
+
+	@Test
 	void cadastroEhLimitadoPorEndereco() throws Exception {
 		register("a@exemplo.test", "10.0.0.1").andExpect(status().isCreated());
 		register("b@exemplo.test", "10.0.0.1").andExpect(status().isCreated());

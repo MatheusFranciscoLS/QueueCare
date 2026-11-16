@@ -109,9 +109,9 @@ class ProviderController {
 	}
 
 	@ApiResponse(responseCode = "200", description = "Endereço e publicação gravados.", content = @Content(schema = @Schema(implementation = PublicPageResponse.class)))
-	@ApiResponse(responseCode = "400", description = "Endereço inválido, reservado, ou publicar sem endereço (errors.slug).")
-	@ApiResponse(responseCode = "404", description = "Prestador sem negócio cadastrado.")
-	@ApiResponse(responseCode = "409", description = "Endereço já em uso por outro estúdio (reason SLUG_TAKEN).")
+	@ApiResponse(responseCode = "400", description = "Endereço inválido, reservado, ou publicar sem endereço (errors.slug).", content = @Content(mediaType = "application/problem+json", schema = @Schema(ref = "#/components/schemas/Problem")))
+	@ApiResponse(responseCode = "404", description = "Prestador sem negócio cadastrado.", content = @Content(mediaType = "application/problem+json", schema = @Schema(ref = "#/components/schemas/Problem")))
+	@ApiResponse(responseCode = "409", description = "Endereço já em uso por outro estúdio (reason SLUG_TAKEN).", content = @Content(mediaType = "application/problem+json", schema = @Schema(ref = "#/components/schemas/Problem")))
 	@PutMapping("/public-page")
 	PublicPageResponse updatePublicPage(@AuthenticationPrincipal Jwt jwt, @Valid @RequestBody PublicPageRequest r) {
 		return PublicPageResponse.from(admin.updatePublicPage(userId(jwt), r.slug(), r.published()));
