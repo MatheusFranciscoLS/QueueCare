@@ -35,6 +35,18 @@ class PetWriteProtocolTest {
 		return count;
 	}
 
+	/** Arquivos com uma criação da classe, com o nome curto OU completo: {@code new Pet(} e {@code new com.x.Pet(}. */
+	private static List<String> filesCreating(String className) throws IOException {
+		java.util.regex.Pattern creation = java.util.regex.Pattern.compile("new\\s+(?:[\\w.]+\\.)?" + className + "\\s*\\(");
+		return sources().stream().filter(p -> {
+			try {
+				return creation.matcher(Files.readString(p)).find();
+			} catch (IOException e) {
+				throw new IllegalStateException(e);
+			}
+		}).map(p -> p.getFileName().toString()).sorted().collect(Collectors.toList());
+	}
+
 	private static List<String> filesContaining(String needle) throws IOException {
 		return sources().stream().filter(p -> {
 			try {
@@ -47,13 +59,23 @@ class PetWriteProtocolTest {
 
 	@Test
 	void soOServicoCriaPetEReativaPetEUmaVezCadaUm() throws IOException {
-		assertEquals(List.of("PetService.java"), filesContaining("new Pet("), "só o serviço cria Pet");
+		assertEquals(List.of("PetService.java"), filesCreating("Pet"), "só o serviço cria Pet");
 		// reactivate( aparece na entidade (definição), no serviço (o protocolo) e no controlador (que só delega ao serviço)
 		assertEquals(List.of("Pet.java", "PetController.java", "PetService.java"), filesContaining("reactivate("), "nenhum outro arquivo reativa Pet");
 		assertEquals(0, occurrences(Files.readString(MAIN.resolve("com/queuecare/pets/PetController.java")), "pet.reactivate("), "o controlador não reativa direto");
 		String service = Files.readString(MAIN.resolve("com/queuecare/pets/PetService.java"));
 		assertEquals(1, occurrences(service, "new Pet("), "um único ponto de criação (dentro do protocolo)");
 		assertEquals(1, occurrences(service, "pet.reactivate("), "um único ponto de reativação (dentro do protocolo)");
+	}
+
+	/**
+	 * PR 49: a exigência de pet vive no serviço de agendamento, então só ele pode criar {@code Appointment}. Quem precisar de um caminho
+	 * novo (remarcar, reserva sem conta) passa por ele e herda PET_REQUIRED, o bloqueio do pet e a cópia dos dados; o banco ainda recusa
+	 * agendamento novo sem pet (V10), mesmo que alguém esqueça.
+	 */
+	@Test
+	void soOServicoDeAgendamentoCriaAppointmentParaQueAExigenciaDePetValhaParaTodoCaminho() throws IOException {
+		assertEquals(List.of("BookingService.java"), filesCreating("Appointment"), "só o BookingService cria Appointment");
 	}
 
 	@Test

@@ -35,7 +35,12 @@ abstract class BookingIntegrationTestBase {
 	@Autowired
 	JdbcTemplate jdbc;
 
+	@Autowired
+	com.queuecare.pets.PetRepository petRepository;
+
 	UUID customer;
+	/** Pet do cliente de teste: todo agendamento novo tem pet (ADR 0016, PR 49). */
+	UUID pet;
 	/** Prestador de São Paulo (UTC-3, sem horário de verão), antecedência de 60 min, janelas todos os dias 08-12 e 14-18. */
 	UUID providerSp;
 	UUID serviceSp;
@@ -43,10 +48,17 @@ abstract class BookingIntegrationTestBase {
 	UUID providerNy;
 	UUID serviceNy;
 
+	/** Pedido de agendamento com o pet do cliente (o primeiro que ele tiver); cliente sem pet recebe um pet inexistente. */
+	com.queuecare.scheduling.application.BookingRequest bookingRequest(UUID provider, UUID service, UUID customerId, java.time.LocalDateTime start) {
+		java.util.List<UUID> pets = jdbc.queryForList("SELECT id FROM pets WHERE customer_id = ? LIMIT 1", UUID.class, customerId);
+		return new com.queuecare.scheduling.application.BookingRequest(provider, service, customerId, start, pets.isEmpty() ? UUID.randomUUID() : pets.get(0));
+	}
+
 	@BeforeEach
 	void seed() {
-		jdbc.execute("TRUNCATE appointment_events, appointments, availability_windows, services, providers, users CASCADE");
+		jdbc.execute("TRUNCATE appointment_events, appointments, pets, availability_windows, services, providers, users CASCADE");
 		customer = user("cliente@exemplo.test", "CUSTOMER", true);
+		pet = jdbc.queryForObject("INSERT INTO pets (customer_id, name, species) VALUES (?, 'Rex', 'DOG') RETURNING id", UUID.class, customer);
 		providerSp = provider(user("prestador-sp@exemplo.test", "PROVIDER", true), "America/Sao_Paulo", 60);
 		serviceSp = service(providerSp, 60, true);
 		for (int day = 1; day <= 7; day++) {

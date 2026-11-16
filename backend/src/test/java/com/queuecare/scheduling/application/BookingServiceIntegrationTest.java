@@ -34,7 +34,7 @@ class BookingServiceIntegrationTest extends BookingIntegrationTestBase {
 	CancellationService cancellationService;
 
 	private BookingRequest sp(int day, int hour, int minute) {
-		return new BookingRequest(providerSp, serviceSp, customer, LocalDateTime.of(2026, 11, day, hour, minute));
+		return bookingRequest(providerSp, serviceSp, customer, LocalDateTime.of(2026, 11, day, hour, minute));
 	}
 
 	private Reason rejectedReason(BookingRequest request) {
@@ -108,7 +108,7 @@ class BookingServiceIntegrationTest extends BookingIntegrationTestBase {
 		window(otherProvider, 2, "08:00", "12:00");
 		bookingService.book(sp(17, 10, 0));
 
-		bookingService.book(new BookingRequest(otherProvider, otherService, customer, LocalDateTime.of(2026, 11, 17, 10, 0)));
+		bookingService.book(bookingRequest(otherProvider, otherService, customer, LocalDateTime.of(2026, 11, 17, 10, 0)));
 
 		assertEquals(2, count("SELECT count(*) FROM appointments"));
 	}
@@ -163,7 +163,7 @@ class BookingServiceIntegrationTest extends BookingIntegrationTestBase {
 	@Test
 	void horarioLocalInexistenteNoHorarioDeVeraoEhRejeitado() {
 		// 14/03/2027 02:30 não existe em Nova York (o relógio pula de 02:00 para 03:00).
-		BookingRequest request = new BookingRequest(providerNy, serviceNy, customer, LocalDateTime.of(2027, 3, 14, 2, 30));
+		BookingRequest request = bookingRequest(providerNy, serviceNy, customer, LocalDateTime.of(2027, 3, 14, 2, 30));
 
 		assertEquals(Reason.NONEXISTENT_LOCAL_TIME, rejectedReason(request));
 	}
@@ -171,7 +171,7 @@ class BookingServiceIntegrationTest extends BookingIntegrationTestBase {
 	@Test
 	void horarioLocalAmbiguoNoHorarioDeVeraoEhRejeitado() {
 		// 07/11/2027 01:30 acontece duas vezes em Nova York.
-		BookingRequest request = new BookingRequest(providerNy, serviceNy, customer, LocalDateTime.of(2027, 11, 7, 1, 30));
+		BookingRequest request = bookingRequest(providerNy, serviceNy, customer, LocalDateTime.of(2027, 11, 7, 1, 30));
 
 		assertEquals(Reason.AMBIGUOUS_LOCAL_TIME, rejectedReason(request));
 	}
@@ -180,7 +180,7 @@ class BookingServiceIntegrationTest extends BookingIntegrationTestBase {
 	void horarioValidoDeNovaYorkVirouUtcCorretamente() {
 		// 14/03/2027 03:00 EDT (UTC-4) = 07:00 UTC.
 		Appointment appointment = bookingService
-				.book(new BookingRequest(providerNy, serviceNy, customer, LocalDateTime.of(2027, 3, 14, 3, 0)));
+				.book(bookingRequest(providerNy, serviceNy, customer, LocalDateTime.of(2027, 3, 14, 3, 0)));
 
 		assertEquals(Instant.parse("2027-03-14T07:00:00Z"), appointment.getStartsAt());
 	}
@@ -189,19 +189,29 @@ class BookingServiceIntegrationTest extends BookingIntegrationTestBase {
 
 	@Test
 	void prestadorInexistenteEhRejeitado() {
-		BookingRequest request = new BookingRequest(UUID.randomUUID(), serviceSp, customer, LocalDateTime.of(2026, 11, 17, 10, 0));
+		BookingRequest request = bookingRequest(UUID.randomUUID(), serviceSp, customer, LocalDateTime.of(2026, 11, 17, 10, 0));
 
 		assertEquals(Reason.PROVIDER_NOT_FOUND, rejectedReason(request));
 	}
 
 	@Test
 	void servicoDeOutroPrestadorOuInativoEhRejeitado() {
-		BookingRequest withOtherProvidersService = new BookingRequest(providerSp, serviceNy, customer, LocalDateTime.of(2026, 11, 17, 10, 0));
+		BookingRequest withOtherProvidersService = bookingRequest(providerSp, serviceNy, customer, LocalDateTime.of(2026, 11, 17, 10, 0));
 		UUID inactive = service(providerSp, 60, false);
-		BookingRequest withInactiveService = new BookingRequest(providerSp, inactive, customer, LocalDateTime.of(2026, 11, 17, 10, 0));
+		BookingRequest withInactiveService = bookingRequest(providerSp, inactive, customer, LocalDateTime.of(2026, 11, 17, 10, 0));
 
 		assertEquals(Reason.SERVICE_NOT_FOUND_OR_INACTIVE, rejectedReason(withOtherProvidersService));
 		assertEquals(Reason.SERVICE_NOT_FOUND_OR_INACTIVE, rejectedReason(withInactiveService));
+	}
+
+	@Test
+	void semPetAReservaEhRecusadaAntesDeQualquerConsultaENadaEGravado() {
+		// petId nulo: PET_REQUIRED vem ANTES de conferir prestador, serviço e cliente (mesmo com dados inexistentes)
+		BookingRequest withoutPet = new BookingRequest(providerSp, serviceSp, customer, LocalDateTime.of(2026, 11, 17, 10, 0), null);
+		assertEquals(Reason.PET_REQUIRED, rejectedReason(withoutPet));
+		assertEquals(Reason.PET_REQUIRED, rejectedReason(new BookingRequest(UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(), LocalDateTime.of(2026, 11, 17, 10, 0), null)));
+		assertEquals(0L, jdbc.queryForObject("SELECT count(*) FROM appointments", Long.class));
+		assertEquals(0L, jdbc.queryForObject("SELECT count(*) FROM appointment_events", Long.class));
 	}
 
 	@Test
@@ -209,9 +219,9 @@ class BookingServiceIntegrationTest extends BookingIntegrationTestBase {
 		UUID inactiveCustomer = user("inativo@exemplo.test", "CUSTOMER", false);
 
 		assertEquals(Reason.CUSTOMER_NOT_FOUND_OR_INACTIVE,
-				rejectedReason(new BookingRequest(providerSp, serviceSp, UUID.randomUUID(), LocalDateTime.of(2026, 11, 17, 10, 0))));
+				rejectedReason(bookingRequest(providerSp, serviceSp, UUID.randomUUID(), LocalDateTime.of(2026, 11, 17, 10, 0))));
 		assertEquals(Reason.CUSTOMER_NOT_FOUND_OR_INACTIVE,
-				rejectedReason(new BookingRequest(providerSp, serviceSp, inactiveCustomer, LocalDateTime.of(2026, 11, 17, 10, 0))));
+				rejectedReason(bookingRequest(providerSp, serviceSp, inactiveCustomer, LocalDateTime.of(2026, 11, 17, 10, 0))));
 	}
 
 	@Test

@@ -11,6 +11,8 @@ public class BookingRejectedException extends RuntimeException {
 		PROVIDER_NOT_FOUND,
 		SERVICE_NOT_FOUND_OR_INACTIVE,
 		CUSTOMER_NOT_FOUND_OR_INACTIVE,
+		/** O pedido não trouxe o pet (400): todo agendamento novo tem pet. */
+		PET_REQUIRED,
 		/** Pet inexistente OU de outro cliente: a mesma resposta (404), para não revelar quais pets existem. */
 		PET_NOT_FOUND,
 		/** O pet é do cliente, mas está arquivado (422). */

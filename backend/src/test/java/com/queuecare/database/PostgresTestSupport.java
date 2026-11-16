@@ -55,6 +55,22 @@ public final class PostgresTestSupport {
 		return dataSource;
 	}
 
+	/** Cria um banco novo e aplica as migrations SÓ até a versão dada (para testar uma migration sobre dados antigos). */
+	static DataSource newDatabaseMigratedTo(String targetVersion) throws SQLException {
+		String name = "queuecare_test_" + COUNTER.incrementAndGet();
+		try (Connection connection = SERVER.getPostgresDatabase().getConnection(); Statement statement = connection.createStatement()) {
+			statement.execute("CREATE DATABASE " + name);
+		}
+		DataSource dataSource = SERVER.getDatabase("postgres", name);
+		Flyway.configure().dataSource(dataSource).locations("classpath:db/migration").target(targetVersion).load().migrate();
+		return dataSource;
+	}
+
+	/** Aplica as migrations que faltam (até a última). */
+	static void migrateToLatest(DataSource dataSource) {
+		Flyway.configure().dataSource(dataSource).locations("classpath:db/migration").load().migrate();
+	}
+
 	/** Cria um banco novo (vazio, sem migrations) e devolve a URL JDBC; usado pelos testes que sobem o Spring, que migra sozinho. */
 	public static String newEmptyDatabaseJdbcUrl() throws SQLException {
 		String name = "queuecare_spring_" + COUNTER.incrementAndGet();
@@ -92,16 +108,25 @@ public final class PostgresTestSupport {
 		}
 	}
 
+	/** Pet de teste do cliente. */
+	static UUID insertPet(Connection c, UUID customerId) throws SQLException {
+		try (PreparedStatement ps = c.prepareStatement("INSERT INTO pets (customer_id, name, species) VALUES (?, 'Pet de Teste', 'DOG') RETURNING id")) {
+			ps.setObject(1, customerId);
+			return queryId(ps);
+		}
+	}
+
 	static UUID insertAppointment(Connection c, UUID providerId, UUID serviceId, UUID customerId, Instant start, Instant end, String status)
 			throws SQLException {
 		try (PreparedStatement ps = c.prepareStatement(
-				"INSERT INTO appointments (provider_id, service_id, customer_id, starts_at, ends_at, status) VALUES (?, ?, ?, ?, ?, ?) RETURNING id")) {
+				"INSERT INTO appointments (provider_id, service_id, customer_id, starts_at, ends_at, status, pet_id, pet_name, pet_species) VALUES (?, ?, ?, ?, ?, ?, ?, 'Pet de Teste', 'DOG') RETURNING id")) {
 			ps.setObject(1, providerId);
 			ps.setObject(2, serviceId);
 			ps.setObject(3, customerId);
 			ps.setObject(4, OffsetDateTime.ofInstant(start, ZoneOffset.UTC));
 			ps.setObject(5, OffsetDateTime.ofInstant(end, ZoneOffset.UTC));
 			ps.setString(6, status);
+			ps.setObject(7, insertPet(c, customerId)); // todo agendamento novo tem pet (ADR 0016, PR 49)
 			return queryId(ps);
 		}
 	}

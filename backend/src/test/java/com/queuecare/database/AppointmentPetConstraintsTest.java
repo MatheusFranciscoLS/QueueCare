@@ -80,14 +80,6 @@ class AppointmentPetConstraintsTest extends DatabaseTestBase {
 	}
 
 	@Test
-	void agendamentoSemPetContinuaValidoELinhasAntigasFicamNulas() throws SQLException {
-		try (Connection c = dataSource.getConnection()) {
-			insertAppointment(c, null, null, null, null, null, null);
-			assertEquals(1, count(c, "SELECT count(*) FROM appointments WHERE pet_id IS NULL AND pet_name IS NULL AND pet_species IS NULL"));
-		}
-	}
-
-	@Test
 	void agendamentoComPetDoProprioClienteEAceitoComACopia() throws SQLException {
 		try (Connection c = dataSource.getConnection()) {
 			insertAppointment(c, myPet, "Rex", "DOG", "Poodle", "SMALL", "Tem medo de secador.\nNão gosta de cheiro forte.");

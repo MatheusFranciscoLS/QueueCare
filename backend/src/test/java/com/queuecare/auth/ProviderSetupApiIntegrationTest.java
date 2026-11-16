@@ -216,7 +216,7 @@ class ProviderSetupApiIntegrationTest extends AuthIntegrationTestBase {
 	void horarioReservadoSaiDaListaEVoltaQuandoCancelado() throws Exception {
 		UUID[] ids = setUpProvider1(0, 0, 60);
 		String date = day(7);
-		String booking = "{\"providerId\":\"" + ids[0] + "\",\"serviceId\":\"" + ids[1] + "\",\"localStart\":\"" + date + "T10:00:00\"}";
+		String booking = "{\"providerId\":\"" + ids[0] + "\",\"serviceId\":\"" + ids[1] + "\",\"localStart\":\"" + date + "T10:00:00\",\"petId\":\"" + petOfToken(customer) + "\"}";
 		String created = send(post("/api/appointments"), customer, booking).andExpect(status().isCreated()).andReturn().getResponse().getContentAsString();
 
 		List<String> after = slotStarts(ids[0], ids[1], date);
@@ -275,7 +275,7 @@ class ProviderSetupApiIntegrationTest extends AuthIntegrationTestBase {
 		assertFalse(starts.isEmpty());
 		for (String start : List.of(starts.get(0), starts.get(starts.size() - 1))) {
 			send(post("/api/appointments"), customer,
-					"{\"providerId\":\"" + ids[0] + "\",\"serviceId\":\"" + ids[1] + "\",\"localStart\":\"" + start + "\"}").andExpect(status().isCreated());
+					"{\"providerId\":\"" + ids[0] + "\",\"serviceId\":\"" + ids[1] + "\",\"localStart\":\"" + start + "\",\"petId\":\"" + petOfToken(customer) + "\"}").andExpect(status().isCreated());
 		}
 	}
 
@@ -290,7 +290,7 @@ class ProviderSetupApiIntegrationTest extends AuthIntegrationTestBase {
 		assertTrue(starts.contains(monday + "T11:00:00"), "11:00 a 12:30 cabe no bloco contínuo 08:00-18:00");
 		assertTrue(starts.contains(monday + "T16:30:00"), "16:30 a 18:00 é o último");
 		assertFalse(starts.contains(monday + "T16:45:00"));
-		send(post("/api/appointments"), customer, "{\"providerId\":\"" + ids[0] + "\",\"serviceId\":\"" + ids[1] + "\",\"localStart\":\"" + monday + "T11:00:00\"}")
+		send(post("/api/appointments"), customer, "{\"providerId\":\"" + ids[0] + "\",\"serviceId\":\"" + ids[1] + "\",\"localStart\":\"" + monday + "T11:00:00\",\"petId\":\"" + petOfToken(customer) + "\"}")
 				.andExpect(status().isCreated());
 	}
 

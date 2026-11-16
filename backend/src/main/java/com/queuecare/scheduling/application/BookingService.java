@@ -76,6 +76,11 @@ public class BookingService {
 	 * @throws BookingConflictException o horário está ocupado, inclusive quando outra requisição o ocupou ao mesmo tempo
 	 */
 	public Appointment book(BookingRequest request) {
+		// Primeira conferência, antes de qualquer consulta: sem pet não há agendamento (ADR 0016, PR 49). Fica AQUI, e não no controlador,
+		// para que qualquer caminho que passe a criar agendamento (remarcar, reserva sem conta) herde a regra.
+		if (request.petId() == null) {
+			throw new BookingRejectedException(Reason.PET_REQUIRED);
+		}
 		try {
 			// A transação termina (commit ou rollback) antes de qualquer tradução de erro abaixo.
 			return transaction.execute(status -> bookInTransaction(request));
@@ -121,25 +126,20 @@ public class BookingService {
 		}
 
 		Appointment draft = new Appointment(provider.getId(), service.getId(), customer.getId(), range.startsAt(), range.endsAt(), now);
-		if (pet != null) {
-			draft.attachPet(pet); // cópia dos dados do pet no momento da reserva (ADR 0016)
-		}
+		draft.attachPet(pet); // cópia dos dados do pet no momento da reserva (ADR 0016)
 		Appointment appointment = appointments.saveAndFlush(draft);
 		events.save(new AppointmentEvent(appointment.getId(), customer.getId(), AppointmentEventType.SCHEDULED, now, null));
 		return appointment;
 	}
 
 	/**
-	 * O pet da reserva (ADR 0016), ou nulo se a reserva não escolheu um. Bloqueia a LINHA do pet (só se for do cliente) e SÓ DEPOIS confere
+	 * O pet da reserva (ADR 0016; obrigatório desde o PR 49). Bloqueia a LINHA do pet (só se for do cliente) e SÓ DEPOIS confere
 	 * {@code active}: arquivar bloqueia a mesma linha, então ou a reserva vence (e o arquivamento seguinte continua permitido) ou o
 	 * arquivamento vence e a reserva falha com PET_INACTIVE. Ler {@code active} sem bloquear não bastaria: entre a leitura e a gravação o
 	 * tutor poderia arquivar. Pet inexistente e pet de outro cliente têm a MESMA resposta (PET_NOT_FOUND), e a conferência do dono vem antes
 	 * da de ativo. Ordem global de bloqueios: cliente, pet, agendamento (aqui, o cliente só é lido).
 	 */
 	private Pet lockPetOf(BookingRequest request, UserAccount customer) {
-		if (request.petId() == null) {
-			return null;
-		}
 		Pet pet = locks.lockPet(request.petId(), customer.getId()).orElseThrow(() -> new BookingRejectedException(Reason.PET_NOT_FOUND));
 		if (!pet.isActive()) {
 			throw new BookingRejectedException(Reason.PET_INACTIVE);

@@ -27,7 +27,9 @@ class SchedulingConflictDetectorIntegrationTest extends BookingIntegrationTestBa
 	PlatformTransactionManager transactionManager;
 
 	private Appointment appointment(UUID customerId, String start, String end) {
-		return new Appointment(providerSp, serviceSp, customerId, Instant.parse(start), Instant.parse(end), FixedClockConfig.NOW);
+		Appointment appointment = new Appointment(providerSp, serviceSp, customerId, Instant.parse(start), Instant.parse(end), FixedClockConfig.NOW);
+		appointment.attachPet(petRepository.findById(pet).orElseThrow()); // todo agendamento novo tem pet (ADR 0016, PR 49)
+		return appointment;
 	}
 
 	@Test

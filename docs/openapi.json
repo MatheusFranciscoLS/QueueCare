@@ -209,7 +209,7 @@
             "type" : "string"
           }
         },
-        "required" : [ "localStart", "providerId", "serviceId" ],
+        "required" : [ "localStart", "petId", "providerId", "serviceId" ],
         "type" : "object"
       },
       "CreateProviderRequest" : {

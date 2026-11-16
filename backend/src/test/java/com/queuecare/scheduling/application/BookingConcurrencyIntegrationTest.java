@@ -70,7 +70,7 @@ class BookingConcurrencyIntegrationTest extends BookingIntegrationTestBase {
 	}
 
 	private BookingRequest slot(int dayOffset) {
-		return new BookingRequest(providerSp, serviceSp, customer,
+		return bookingRequest(providerSp, serviceSp, customer,
 				LocalDateTime.of(LocalDate.of(2026, 11, 17).plusDays(dayOffset), LocalTime.of(10, 0)));
 	}
 

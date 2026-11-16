@@ -141,8 +141,8 @@ class CatalogApiIntegrationTest extends AuthIntegrationTestBase {
 	void meusAgendamentosTrazemNegocioFusoENomeDoServicoMesmoDepoisDeDesativar() throws Exception {
 		UUID serviceId = jdbc.queryForObject("SELECT id FROM services WHERE provider_id = ? AND name = 'Troca de óleo'", UUID.class, providerA);
 		UUID customerId = jdbc.queryForObject("SELECT id FROM users WHERE email = 'cliente@exemplo.test'", UUID.class);
-		jdbc.update("INSERT INTO appointments (provider_id, service_id, customer_id, starts_at, ends_at, status) VALUES (?, ?, ?, now() + interval '2 days', now() + interval '2 days 1 hour', 'SCHEDULED')",
-				providerA, serviceId, customerId);
+		jdbc.update("INSERT INTO appointments (provider_id, service_id, customer_id, starts_at, ends_at, status, pet_id, pet_name, pet_species) VALUES (?, ?, ?, now() + interval '2 days', now() + interval '2 days 1 hour', 'SCHEDULED', ?, 'Pet de Teste', 'DOG')",
+				providerA, serviceId, customerId, petOf(customerId));
 		jdbc.update("UPDATE services SET active = false WHERE id = ?", serviceId);
 		jdbc.update("UPDATE users SET active = false WHERE id = (SELECT user_id FROM providers WHERE id = ?)", providerA);
 
@@ -157,8 +157,8 @@ class CatalogApiIntegrationTest extends AuthIntegrationTestBase {
 	void meusAgendamentosNuncaMostramOsDeOutroCliente() throws Exception {
 		UUID serviceId = jdbc.queryForObject("SELECT id FROM services WHERE provider_id = ? LIMIT 1", UUID.class, providerA);
 		UUID other = seedUser("outro@exemplo.test", "CUSTOMER", true);
-		jdbc.update("INSERT INTO appointments (provider_id, service_id, customer_id, starts_at, ends_at, status) VALUES (?, ?, ?, now() + interval '2 days', now() + interval '2 days 1 hour', 'SCHEDULED')",
-				providerA, serviceId, other);
+		jdbc.update("INSERT INTO appointments (provider_id, service_id, customer_id, starts_at, ends_at, status, pet_id, pet_name, pet_species) VALUES (?, ?, ?, now() + interval '2 days', now() + interval '2 days 1 hour', 'SCHEDULED', ?, 'Pet de Teste', 'DOG')",
+				providerA, serviceId, other, petOf(other));
 
 		assertEquals("[]", call("/api/appointments/mine", customer).getContentAsString());
 	}

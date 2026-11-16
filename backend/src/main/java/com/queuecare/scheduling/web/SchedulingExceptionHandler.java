@@ -33,6 +33,7 @@ class SchedulingExceptionHandler {
 	ProblemDetail bookingRejected(BookingRejectedException e) {
 		HttpStatus status = switch (e.reason()) {
 			case PROVIDER_NOT_FOUND, SERVICE_NOT_FOUND_OR_INACTIVE, CUSTOMER_NOT_FOUND_OR_INACTIVE, PET_NOT_FOUND -> HttpStatus.NOT_FOUND;
+			case PET_REQUIRED -> HttpStatus.BAD_REQUEST;
 			case NONEXISTENT_LOCAL_TIME, AMBIGUOUS_LOCAL_TIME, IN_THE_PAST, TOO_SOON, OUTSIDE_AVAILABILITY, PET_INACTIVE -> HttpStatus.UNPROCESSABLE_ENTITY;
 		};
 		return problem(status, e.reason().name(), "agendamento recusado");

@@ -88,8 +88,8 @@ class AttendanceApiIntegrationTest extends AuthIntegrationTestBase {
 	/** Agendamento em SCHEDULED às {@code hour}:00 (fuso de São Paulo) do dia {@code dayOffset} em relação a hoje. */
 	private String appointment(UUID provider, UUID service, UUID customer, int dayOffset, int hour, String status) {
 		OffsetDateTime start = LocalDate.now(SP).plusDays(dayOffset).atTime(hour, 0).atZone(SP).toOffsetDateTime();
-		return jdbc.queryForObject("INSERT INTO appointments (provider_id, service_id, customer_id, starts_at, ends_at, status) VALUES (?, ?, ?, ?, ?, ?) RETURNING id::text",
-				String.class, provider, service, customer, start, start.plusMinutes(30), status);
+		return jdbc.queryForObject("INSERT INTO appointments (provider_id, service_id, customer_id, starts_at, ends_at, status, pet_id, pet_name, pet_species) VALUES (?, ?, ?, ?, ?, ?, ?, 'Pet de Teste', 'DOG') RETURNING id::text",
+				String.class, provider, service, customer, start, start.plusMinutes(30), status, petOf(customer));
 	}
 
 	private ResultActions checkIn(String bearer, String id) throws Exception {
