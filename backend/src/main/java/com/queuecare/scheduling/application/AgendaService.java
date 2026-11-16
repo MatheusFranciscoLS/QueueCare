@@ -99,7 +99,14 @@ public class AgendaService {
 
 	static final int WEEK_DAYS = 7;
 
+	/** Datas aceitas na agenda: fora disto o cálculo do intervalo poderia estourar (resposta 400 em vez de 500). */
+	static final LocalDate MIN_DATE = LocalDate.of(1970, 1, 1);
+	static final LocalDate MAX_DATE = LocalDate.of(2100, 12, 31);
+
 	private List<AgendaItem> range(UUID userId, LocalDate firstDay, int days) {
+		if (firstDay.isBefore(MIN_DATE) || firstDay.isAfter(MAX_DATE)) {
+			throw new ProviderExceptions.InvalidConfigurationException("date", "entre " + MIN_DATE + " e " + MAX_DATE);
+		}
 		Provider provider = resolveProvider(userId);
 		UUID providerId = provider.getId();
 

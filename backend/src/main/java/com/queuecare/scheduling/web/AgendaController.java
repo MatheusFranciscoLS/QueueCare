@@ -3,6 +3,10 @@ package com.queuecare.scheduling.web;
 import com.queuecare.scheduling.application.AgendaService;
 import com.queuecare.scheduling.application.AgendaService.AgendaItem;
 import com.queuecare.scheduling.application.AgendaService.QueueItem;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
@@ -53,6 +57,9 @@ class AgendaController {
 		return new WorkplaceResponse(w.businessName(), w.timeZone());
 	}
 
+	@ApiResponse(responseCode = "200", description = "Agendamentos não cancelados, por horário.", content = @Content(array = @ArraySchema(schema = @Schema(implementation = AgendaResponse.class))))
+	@ApiResponse(responseCode = "400", description = "Data ausente, inválida ou fora de 1970-01-01 a 2100-12-31 (application/problem+json).")
+	@ApiResponse(responseCode = "404", description = "Prestador sem negócio cadastrado (reason PROVIDER_NOT_CONFIGURED).")
 	@GetMapping("/api/agenda")
 	@PreAuthorize("hasAnyRole('PROVIDER','ATTENDANT')")
 	List<AgendaResponse> day(@AuthenticationPrincipal Jwt jwt, @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
@@ -60,6 +67,9 @@ class AgendaController {
 	}
 
 	/** Os 7 dias a partir de {@code start} (data local do prestador), para o calendário semanal. Mesmas regras e a mesma resposta da agenda do dia. */
+	@ApiResponse(responseCode = "200", description = "Agendamentos não cancelados, por horário.", content = @Content(array = @ArraySchema(schema = @Schema(implementation = AgendaResponse.class))))
+	@ApiResponse(responseCode = "400", description = "Data ausente, inválida ou fora de 1970-01-01 a 2100-12-31 (application/problem+json).")
+	@ApiResponse(responseCode = "404", description = "Prestador sem negócio cadastrado (reason PROVIDER_NOT_CONFIGURED).")
 	@GetMapping("/api/agenda/week")
 	@PreAuthorize("hasAnyRole('PROVIDER','ATTENDANT')")
 	List<AgendaResponse> week(@AuthenticationPrincipal Jwt jwt, @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate start) {

@@ -835,7 +835,20 @@
                 }
               }
             },
-            "description" : "OK"
+            "description" : "Agendamentos não cancelados, por horário."
+          },
+          "400" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/AgendaResponse"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "Data ausente, inválida ou fora de 1970-01-01 a 2100-12-31 (application/problem+json)."
           },
           "401" : {
             "description" : "Sem token ou token inválido. Corpo vazio; o cabeçalho WWW-Authenticate: Bearer indica o esquema."
@@ -849,6 +862,19 @@
               }
             },
             "description" : "O perfil não tem permissão (corpo vazio) ou a troca de senha é obrigatória (application/problem+json com reason PASSWORD_CHANGE_REQUIRED)."
+          },
+          "404" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/AgendaResponse"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "Prestador sem negócio cadastrado (reason PROVIDER_NOT_CONFIGURED)."
           }
         },
         "tags" : [ "agenda-controller" ]
@@ -914,7 +940,20 @@
                 }
               }
             },
-            "description" : "OK"
+            "description" : "Agendamentos não cancelados, por horário."
+          },
+          "400" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/AgendaResponse"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "Data ausente, inválida ou fora de 1970-01-01 a 2100-12-31 (application/problem+json)."
           },
           "401" : {
             "description" : "Sem token ou token inválido. Corpo vazio; o cabeçalho WWW-Authenticate: Bearer indica o esquema."
@@ -928,6 +967,19 @@
               }
             },
             "description" : "O perfil não tem permissão (corpo vazio) ou a troca de senha é obrigatória (application/problem+json com reason PASSWORD_CHANGE_REQUIRED)."
+          },
+          "404" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/AgendaResponse"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "Prestador sem negócio cadastrado (reason PROVIDER_NOT_CONFIGURED)."
           }
         },
         "tags" : [ "agenda-controller" ]

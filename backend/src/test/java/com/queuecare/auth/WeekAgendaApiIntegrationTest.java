@@ -153,6 +153,16 @@ class WeekAgendaApiIntegrationTest extends AuthIntegrationTestBase {
 	}
 
 	@Test
+	void datasForaDoIntervaloAceitoSao400NuncaErro500() throws Exception {
+		for (String date : List.of("1969-12-31", "2101-01-01", "9999-12-31")) {
+			week(tokenA, date).andExpect(status().isBadRequest()).andExpect(jsonPath("$.reason").value("INVALID_CONFIGURATION"));
+			mvc.perform(get("/api/agenda").param("date", date).header(HttpHeaders.AUTHORIZATION, tokenA)).andExpect(status().isBadRequest());
+		}
+		week(tokenA, "1970-01-01").andExpect(status().isOk());
+		week(tokenA, "2100-12-31").andExpect(status().isOk());
+	}
+
+	@Test
 	void naoVazaDadosPessoaisDoCliente() throws Exception {
 		appointment(providerA, serviceA, "America/Sao_Paulo", "2027-03-02T10:00:00", "SCHEDULED");
 		week(tokenA, "2027-03-01").andExpect(status().isOk())

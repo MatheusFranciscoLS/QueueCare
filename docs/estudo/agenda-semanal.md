@@ -15,3 +15,7 @@ Limites exatos (primeiro e último instante, 8º dia fora, semana anterior termi
 1. Por que não somar 7×24 horas ao início da semana, e o que acontece no dia em que o relógio muda?
 2. Por que a API devolve instantes UTC e deixa a tela agrupar por dia?
 3. Como o isolamento entre prestadores é garantido sem receber o prestador como parâmetro?
+
+## Revisão do PR 43
+- A data aceita vai de 1970-01-01 a 2100-12-31 (agenda do dia e da semana); fora disso a resposta é 400 `INVALID_CONFIGURATION`, nunca 500 por estouro de data.
+- O contrato OpenAPI documenta 200, 400, 401, 403 e 404 nas duas rotas. Ao usar `@ApiResponse` o 200 precisa ser declarado também (senão o springdoc o omite).
