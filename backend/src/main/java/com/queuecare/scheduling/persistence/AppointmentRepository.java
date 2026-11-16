@@ -48,6 +48,11 @@ public interface AppointmentRepository extends JpaRepository<Appointment, UUID> 
 			+ "com.queuecare.scheduling.persistence.AppointmentStatus.CANCELLED and a.startsAt < :end and a.endsAt > :start")
 	java.util.List<Appointment> findActiveOverlapping(@Param("providerId") UUID providerId, @Param("start") Instant start, @Param("end") Instant end);
 
+	/** Como {@link #existsActiveOverlapping}, ignorando um agendamento (o próprio, ao remarcar: ele não conflita consigo mesmo). */
+	@Query("select count(a) > 0 from Appointment a where a.providerId = :providerId and a.id <> :ignoring and a.status <> "
+			+ "com.queuecare.scheduling.persistence.AppointmentStatus.CANCELLED and a.startsAt < :end and a.endsAt > :start")
+	boolean existsActiveOverlappingExcept(@Param("providerId") UUID providerId, @Param("start") Instant start, @Param("end") Instant end, @Param("ignoring") UUID ignoring);
+
 	/**
 	 * Há agendamento ativo (não cancelado) do prestador que se sobreponha a {@code [start, end)}?
 	 * Mesma condição de TimeRange.overlaps: {@code a < d} e {@code c < b}. Esta checagem só serve para dar uma

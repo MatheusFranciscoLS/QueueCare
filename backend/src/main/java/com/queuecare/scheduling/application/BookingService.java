@@ -3,19 +3,12 @@ package com.queuecare.scheduling.application;
 import com.queuecare.auth.RowLocks;
 import com.queuecare.pets.Pet;
 import com.queuecare.scheduling.application.BookingRejectedException.Reason;
-import com.queuecare.scheduling.domain.AvailabilityPolicy;
-import com.queuecare.scheduling.domain.AvailabilityWindow;
-import com.queuecare.scheduling.domain.BookingTimeCheck;
-import com.queuecare.scheduling.domain.BookingTimeRules;
-import com.queuecare.scheduling.domain.LocalTimeResolver;
-import com.queuecare.scheduling.domain.ResolvedLocalTime;
 import com.queuecare.scheduling.domain.TimeRange;
 import com.queuecare.scheduling.persistence.Appointment;
 import com.queuecare.scheduling.persistence.AppointmentEvent;
 import com.queuecare.scheduling.persistence.AppointmentEventRepository;
 import com.queuecare.scheduling.persistence.AppointmentEventType;
 import com.queuecare.scheduling.persistence.AppointmentRepository;
-import com.queuecare.scheduling.persistence.AvailabilityWindowRepository;
 import com.queuecare.scheduling.persistence.Provider;
 import com.queuecare.scheduling.persistence.ProviderRepository;
 import com.queuecare.scheduling.persistence.ServiceOffering;
@@ -25,8 +18,6 @@ import com.queuecare.scheduling.persistence.UserAccountRepository;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
-import java.time.ZoneId;
-import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -48,7 +39,7 @@ public class BookingService {
 	private final ProviderRepository providers;
 	private final ServiceOfferingRepository services;
 	private final UserAccountRepository users;
-	private final AvailabilityWindowRepository windows;
+	private final SlotRules slotRules;
 	private final AppointmentRepository appointments;
 	private final AppointmentEventRepository events;
 	private final RowLocks locks;
@@ -56,12 +47,12 @@ public class BookingService {
 	private final Clock clock;
 
 	public BookingService(ProviderRepository providers, ServiceOfferingRepository services, UserAccountRepository users,
-			AvailabilityWindowRepository windows, AppointmentRepository appointments, AppointmentEventRepository events,
+			SlotRules slotRules, AppointmentRepository appointments, AppointmentEventRepository events,
 			RowLocks locks, PlatformTransactionManager transactionManager, Clock clock) {
 		this.providers = providers;
 		this.services = services;
 		this.users = users;
-		this.windows = windows;
+		this.slotRules = slotRules;
 		this.appointments = appointments;
 		this.events = events;
 		this.locks = locks;
@@ -104,26 +95,9 @@ public class BookingService {
 
 		Pet pet = lockPetOf(request, customer);
 
-		ZoneId zone = ZoneId.of(provider.getTimeZone());
-		Instant start = resolveStart(zone, request);
-		TimeRange range = new TimeRange(start, start.plus(Duration.ofMinutes(service.getDurationMinutes())));
-
 		Instant now = clock.instant();
-		BookingTimeCheck timeCheck = new BookingTimeRules(Duration.ofMinutes(provider.getMinimumNoticeMinutes())).check(range, now);
-		if (timeCheck == BookingTimeCheck.IN_THE_PAST) {
-			throw new BookingRejectedException(Reason.IN_THE_PAST);
-		}
-		if (timeCheck == BookingTimeCheck.TOO_SOON) {
-			throw new BookingRejectedException(Reason.TOO_SOON);
-		}
-
-		if (!availabilityOf(provider, zone).allows(range)) {
-			throw new BookingRejectedException(Reason.OUTSIDE_AVAILABILITY);
-		}
-
-		if (appointments.existsActiveOverlapping(provider.getId(), range.startsAt(), range.endsAt())) {
-			throw new BookingConflictException();
-		}
+		// As regras do horário (R5, R1, R2) são as MESMAS da remarcação: ficam em SlotRules (ADR 0017).
+		TimeRange range = slotRules.validate(provider, request.localStart(), Duration.ofMinutes(service.getDurationMinutes()), now, null);
 
 		Appointment draft = new Appointment(provider.getId(), service.getId(), customer.getId(), range.startsAt(), range.endsAt(), now);
 		draft.attachPet(pet); // cópia dos dados do pet no momento da reserva (ADR 0016)
@@ -145,21 +119,5 @@ public class BookingService {
 			throw new BookingRejectedException(Reason.PET_INACTIVE);
 		}
 		return pet;
-	}
-
-	private Instant resolveStart(ZoneId zone, BookingRequest request) {
-		ResolvedLocalTime resolved = new LocalTimeResolver(zone).resolve(request.localStart());
-		return switch (resolved) {
-			case ResolvedLocalTime.Resolved r -> r.instant();
-			case ResolvedLocalTime.Nonexistent n -> throw new BookingRejectedException(Reason.NONEXISTENT_LOCAL_TIME);
-			case ResolvedLocalTime.Ambiguous a -> throw new BookingRejectedException(Reason.AMBIGUOUS_LOCAL_TIME);
-		};
-	}
-
-	private AvailabilityPolicy availabilityOf(Provider provider, ZoneId zone) {
-		List<AvailabilityWindow> list = windows.findByProviderId(provider.getId()).stream()
-				.map(w -> new AvailabilityWindow(w.dayOfWeek(), w.getStartTime(), w.getEndTime()))
-				.toList();
-		return new AvailabilityPolicy(zone, list);
 	}
 }
