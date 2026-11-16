@@ -288,7 +288,7 @@ function ConfirmStep({
   onCancel: () => void
 }) {
   return (
-    <section className="step" aria-label="Confirmar agendamento">
+    <section className="step confirm" aria-label="Confirmar agendamento">
       <h2>5. Confirme</h2>
       <p>
         <strong>{service.name}</strong> ({service.durationMinutes} min) em <strong>{provider.businessName}</strong>, {longDate(slot.localStart.slice(0, 10))}, às{' '}
