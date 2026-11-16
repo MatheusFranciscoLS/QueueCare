@@ -39,6 +39,7 @@ final class RateLimitFilter extends OncePerRequestFilter {
 	private static final RequestMatcher CREATE_PROVIDER = matcher(RateLimitedRoutes.CREATE_PROVIDER);
 	private static final RequestMatcher CREATE_ATTENDANT = matcher(RateLimitedRoutes.CREATE_ATTENDANT);
 	private static final RequestMatcher CATALOG = matcher(RateLimitedRoutes.CATALOG);
+	private static final RequestMatcher PUBLIC = matcher(RateLimitedRoutes.PUBLIC);
 	private static final RequestMatcher SLOTS = matcher(RateLimitedRoutes.SLOTS);
 
 	private static RequestMatcher matcher(RateLimitedRoutes.Route route) {
@@ -72,6 +73,10 @@ final class RateLimitFilter extends OncePerRequestFilter {
 			window = HOUR;
 		} else if (properties.enabled() && CATALOG.matches(request)) {
 			key = "catalog|" + principalOrAddress(request);
+			limit = properties.slotsPerMinute();
+		} else if (properties.enabled() && PUBLIC.matches(request)) {
+			// Sem login: a chave é SEMPRE o endereço de rede, mesmo que a pessoa envie tokens (senão trocar de token daria um limite novo).
+			key = "public|ip:" + request.getRemoteAddr();
 			limit = properties.slotsPerMinute();
 		} else if (properties.enabled() && SLOTS.matches(request)) {
 			key = "slots|" + principalOrAddress(request);

@@ -30,6 +30,14 @@ public class Provider {
 	@Column(name = "cancellation_deadline_minutes", nullable = false)
 	private int cancellationDeadlineMinutes;
 
+	/** Endereço público (único, minúsculas); nulo enquanto o prestador não escolheu. */
+	@Column(name = "slug")
+	private String slug;
+
+	/** A página pública só aparece quando publicada (e com slug). */
+	@Column(name = "published", nullable = false)
+	private boolean published;
+
 	protected Provider() {
 	}
 
@@ -45,6 +53,20 @@ public class Provider {
 		this.timeZone = Objects.requireNonNull(timeZone);
 		this.minimumNoticeMinutes = minimumNoticeMinutes;
 		this.cancellationDeadlineMinutes = cancellationDeadlineMinutes;
+	}
+
+	/** Define o endereço público e se a página está publicada (a validação é do serviço; o banco confere o formato e a unicidade). */
+	public void setPublicPage(String slug, boolean published) {
+		this.slug = slug;
+		this.published = published;
+	}
+
+	public String getSlug() {
+		return slug;
+	}
+
+	public boolean isPublished() {
+		return published;
 	}
 
 	public UUID getId() {

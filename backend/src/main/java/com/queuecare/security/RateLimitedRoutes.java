@@ -21,15 +21,16 @@ public final class RateLimitedRoutes {
 	public static final Route CREATE_PROVIDER = new Route(HttpMethod.POST, "/api/admin/providers");
 	public static final Route CREATE_ATTENDANT = new Route(HttpMethod.POST, "/api/provider/staff/accounts");
 	public static final Route CATALOG = new Route(HttpMethod.GET, "/api/catalog/**");
+	public static final Route PUBLIC = new Route(HttpMethod.GET, "/api/public/**");
 	public static final Route SLOTS = new Route(HttpMethod.GET, "/api/providers/*/slots");
 
 	/** Limitadas por minuto ou por hora pelo {@link RateLimitFilter}. */
-	static final List<Route> FILTERED = List.of(LOGIN, REGISTER, CREATE_PROVIDER, CREATE_ATTENDANT, CATALOG, SLOTS);
+	static final List<Route> FILTERED = List.of(LOGIN, REGISTER, CREATE_PROVIDER, CREATE_ATTENDANT, CATALOG, PUBLIC, SLOTS);
 
 	/** Responde 429 por OUTRO mecanismo: o limite de tentativas de troca de senha (PasswordService); o login também tem o bloqueio por tentativas. */
 	static final Route CHANGE_PASSWORD = new Route(HttpMethod.POST, "/api/auth/change-password");
 
-	private static final List<Route> ALL = List.of(LOGIN, REGISTER, CREATE_PROVIDER, CREATE_ATTENDANT, CATALOG, SLOTS, CHANGE_PASSWORD);
+	private static final List<Route> ALL = List.of(LOGIN, REGISTER, CREATE_PROVIDER, CREATE_ATTENDANT, CATALOG, PUBLIC, SLOTS, CHANGE_PASSWORD);
 
 	private RateLimitedRoutes() {
 	}

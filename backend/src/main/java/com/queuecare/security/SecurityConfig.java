@@ -51,6 +51,7 @@ class SecurityConfig {
 						.requestMatchers(HttpMethod.POST, "/api/appointments/*/check-in", "/api/appointments/*/complete").hasAnyRole("PROVIDER", "ATTENDANT")
 						.requestMatchers(HttpMethod.GET, "/api/providers/*/slots").hasAnyRole("CUSTOMER", "PROVIDER", "ATTENDANT")
 						.requestMatchers(HttpMethod.POST, "/api/auth/change-password").authenticated()
+						.requestMatchers(HttpMethod.GET, "/api/public/**").permitAll()
 						.requestMatchers("/api/auth/**").permitAll()
 						.requestMatchers("/actuator/health", "/actuator/health/**").permitAll()
 						.anyRequest().authenticated())
