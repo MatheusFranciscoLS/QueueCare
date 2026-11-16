@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Button, Choice, Field, Notice, SlotButton, StateBadge, StateDot } from './components'
+import { Button, Choice, Field, Fio, FioItem, Notice, SlotButton, StateBadge, StateDot, Summary } from './components'
 import type { AppointmentState } from './states'
 import { ThemeToggle } from './ThemeToggle'
 
@@ -126,25 +126,23 @@ export default function DemoPage() {
         </section>
 
         <section aria-labelledby="fio">
-          <h2 id="fio" style={{ font: '700 1.375rem/1.15 var(--pp-display)', margin: '0 0 16px' }}>O fio do dia</h2>
-          <ol className="pp-fio">
+          <h2 id="fio" style={{ font: '700 1.375rem/1.15 var(--pp-display)', margin: '0 0 12px' }}>O fio do dia</h2>
+          <Summary>
+            <strong>2 concluídos</strong>, <strong>1 esperando</strong> e <strong>2 por vir</strong>. O próximo a chegar é a Nina, às 11:30.
+          </Summary>
+          <div style={{ height: 24 }} />
+          <Fio label="Atendimentos de terça">
             {FIO.map((a) => (
-              <li key={a.time} className="pp-fio__item" data-state={a.state}>
-                <div className="pp-fio__time">{a.time}</div>
-                <div className="pp-fio__node">
-                  <StateDot state={a.state} />
+              <FioItem key={a.time} time={a.time} state={a.state}>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px 14px', alignItems: 'baseline' }}>
+                  <strong style={{ font: '700 1.375rem/1.15 var(--pp-display)' }}>{a.pet}</strong>
+                  <span style={{ color: 'var(--pp-muted)' }}>{a.tutor}</span>
+                  <StateBadge state={a.state} />
                 </div>
-                <div style={{ display: 'grid', gap: 6 }}>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px 14px', alignItems: 'baseline' }}>
-                    <strong style={{ font: '700 1.375rem/1.15 var(--pp-display)' }}>{a.pet}</strong>
-                    <span style={{ color: 'var(--pp-muted)' }}>{a.tutor}</span>
-                    <StateBadge state={a.state} />
-                  </div>
-                  <p style={{ margin: 0, color: 'var(--pp-muted)' }}>{a.meta}</p>
-                </div>
-              </li>
+                <p style={{ margin: 0, color: 'var(--pp-muted)' }}>{a.meta}</p>
+              </FioItem>
             ))}
-          </ol>
+          </Fio>
         </section>
       </main>
     </div>

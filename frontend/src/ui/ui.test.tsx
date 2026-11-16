@@ -2,7 +2,7 @@ import { fireEvent, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { useState } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { Button, Choice, Field, Notice, SlotButton, StateBadge, StateDot } from './components'
+import { Button, Choice, Field, Fio, FioItem, Notice, SlotButton, StateBadge, StateDot, Summary } from './components'
 import { STATE_LABEL, type AppointmentState } from './states'
 import { applyTheme, readThemePreference, saveThemePreference, THEME_KEY } from './theme'
 import { ThemeToggle } from './ThemeToggle'
@@ -181,6 +181,40 @@ describe('Estado e aviso', () => {
     )
     expect(screen.getAllByRole('status').map((n) => n.textContent)).toEqual(['Info', 'Sucesso'])
     expect(screen.getAllByRole('alert').map((n) => n.textContent)).toEqual(['Aviso', 'Erro'])
+  })
+})
+
+describe('Fio e Resumo', () => {
+  it('cada item do Fio traz a hora, o estado em texto (lido junto da hora) e o conteúdo; o ponto é decorativo', () => {
+    const { container } = render(
+      <Fio label="Atendimentos de terça">
+        <FioItem time="08:30" state="done">
+          <p>Thor</p>
+        </FioItem>
+        <FioItem time="11:30" state="scheduled">
+          <p>Nina</p>
+        </FioItem>
+      </Fio>,
+    )
+    const itens = screen.getAllByRole('listitem')
+    expect(screen.getByRole('list', { name: 'Atendimentos de terça' })).toBeInTheDocument()
+    expect(itens).toHaveLength(2)
+    expect(itens[0]).toHaveTextContent('08:30 (concluído)')
+    expect(itens[0]).toHaveTextContent('Thor')
+    expect(itens[1]).toHaveTextContent('11:30 (agendado)')
+    expect(itens[0]).toHaveAttribute('data-state', 'done')
+    expect(container.querySelectorAll('.pp-dot[aria-hidden="true"]')).toHaveLength(2)
+  })
+
+  it('o Resumo é uma frase com os números em destaque', () => {
+    render(
+      <Summary>
+        <strong>2 concluídos</strong> e <strong>1 esperando</strong>.
+      </Summary>,
+    )
+    const p = screen.getByText(/e/, { selector: 'p' })
+    expect(p).toHaveTextContent('2 concluídos e 1 esperando.')
+    expect(p.querySelectorAll('strong')).toHaveLength(2)
   })
 })
 

@@ -32,7 +32,7 @@ async function medir(browser: Browser, bloquearFontes: boolean, semAjuste = fals
     caixas[nome] = await page.locator(seletor).first().evaluate((el) => {
       // Largura do TEXTO (o elemento pode ser um bloco de largura fixa): retângulo do conteúdo; altura do próprio elemento.
       const range = document.createRange()
-      range.selectNodeContents(el)
+      range.selectNodeContents(el.firstChild?.nodeType === Node.TEXT_NODE ? el.firstChild : el) // ignora o texto só para leitor de tela que acompanha a hora
       return { w: range.getBoundingClientRect().width, h: el.getBoundingClientRect().height }
     })
   }

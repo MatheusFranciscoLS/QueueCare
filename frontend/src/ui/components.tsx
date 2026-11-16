@@ -143,3 +143,42 @@ export function Notice({ kind = 'info', children }: { kind?: NoticeKind; childre
     </div>
   )
 }
+
+// ---------- Fio (linha do tempo do dia) ----------
+/** A lista do dia: cada item mostra a hora, o ponto do estado e o conteúdo; o fio liga os itens (pontilhado enquanto falta, cheio quando termina). */
+export function Fio({ children, label }: { children: ReactNode; label?: string }) {
+  return (
+    <ol className="pp-fio" aria-label={label}>
+      {children}
+    </ol>
+  )
+}
+
+interface FioItemProps {
+  /** Hora de início, como "10:30". */
+  time: string
+  state: AppointmentState
+  children: ReactNode
+}
+
+/** O estado vem do status real do atendimento (nunca da hora). O rótulo do estado é lido junto da hora por leitores de tela. */
+export function FioItem({ time, state, children }: FioItemProps) {
+  return (
+    <li className="pp-fio__item" data-state={state}>
+      <div className="pp-fio__time">
+        {time}
+        <span className="pp-sr"> ({STATE_LABEL[state].toLowerCase()})</span>
+      </div>
+      <div className="pp-fio__node">
+        <StateDot state={state} />
+      </div>
+      <div className="pp-fio__body">{children}</div>
+    </li>
+  )
+}
+
+// ---------- Resumo do dia, em frase ----------
+/** Uma frase com os números em destaque (em vez de blocos de números). Use <strong> nos trechos que importam. */
+export function Summary({ children }: { children: ReactNode }) {
+  return <p className="pp-summary">{children}</p>
+}
