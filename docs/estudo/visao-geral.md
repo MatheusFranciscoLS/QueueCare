@@ -33,7 +33,8 @@ Pequenos prestadores de serviço (oficina, clínica, barbearia) recebem agendame
 | Configuração do prestador (negócio, serviços, janelas) e consulta de horários livres | Pronta, com 14 testes (ver `docs/estudo/configuracao-e-horarios-livres.md`). |
 | Vínculo atendente-prestador, cancelamento pela equipe e agenda do dia (ADR 0004) | Pronto, com testes adversários (ver `docs/estudo/vinculo-atendente-e-agenda.md`). |
 | Criação controlada de usuários PROVIDER/ATTENDANT, check-in e fila, telas (React) | A fazer. |
-| Pets: cadastro do tutor (ADR 0016, PR 46: V8, API `/api/customer/pets`, limites, bloqueios) | Pronto no backend, com testes de banco, API, corrida e espera de bloqueio (ver `docs/estudo/pets.md`). Faltam reserva com pet e snapshot (PR 47), telas (PR 48) e `petId` obrigatório (PR 49). |
+| Pets: cadastro do tutor (ADR 0016, PR 46: V8, API `/api/customer/pets`, limites, bloqueios) | Pronto no backend, com testes de banco, API, corrida e espera de bloqueio (ver `docs/estudo/pets.md`). |
+| Pets: reserva com pet, cópia no agendamento e leitura pela agenda, fila e "Meus agendamentos" (PR 47: V9) | Pronto no backend (ver `docs/estudo/pets-reserva-e-leitura.md`). Faltam telas (PR 48) e `petId` obrigatório (PR 49). |
 
 ## Limites honestos por enquanto
 - Ainda não há API de agendamento, banco com tabelas nem tela de agendamento.
