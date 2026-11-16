@@ -211,13 +211,9 @@ dialog.drawer::backdrop{background:var(--scrim)}
     <button class="btn menubtn" id="abrir" type="button" aria-haspopup="dialog">Menu</button>
     <nav aria-label="Principal" id="nav">
       <ul>
-        <li><a data-go="inicio">Início</a></li>
         <li><a data-go="dia" aria-current="page">Agenda</a></li>
         <li><a data-go="fila">Fila</a></li>
         <li><a data-go="form">Novo agendamento</a></li>
-        <li><a data-go="servicos">Serviços</a></li>
-        <li><a data-go="expediente">Expediente</a></li>
-        <li><a data-go="equipe">Equipe</a></li>
       </ul>
     </nav>
     <div class="who">
@@ -400,7 +396,7 @@ dialog.drawer::backdrop{background:var(--scrim)}
       </form>
     </section>
 
-    <p class="foot">Prévia da direção visual com dados fictícios. O fio liga os atendimentos: pontilhado enquanto falta, cheio quando termina. Os três pontos da marca são os três estados: agendado, chegou, concluído. Use o menu para ver Dia, Semana, Fila e o formulário.</p>
+    <p class="foot">Prévia da direção visual com dados fictícios. <b>As fontes desta prévia vêm do Google Fonts, só para visualização:</b> não servem de evidência de carregamento, desempenho nem de ausência de terceiros. No produto elas são hospedadas junto do site (ADR 0018). Só aparecem aqui as telas desenhadas (Agenda, Semana, Fila, formulário). O fio liga os atendimentos: pontilhado enquanto falta, cheio quando termina. Os três pontos da marca são os três estados: agendado, chegou, concluído. Use o menu para ver Dia, Semana, Fila e o formulário.</p>
   </main>
 </div>
 
@@ -425,8 +421,9 @@ dialog.drawer::backdrop{background:var(--scrim)}
     document.querySelectorAll('[data-view]').forEach(function(s){s.hidden=s!==alvo});
     var menu=(v==='semana')?'dia':v;
     document.querySelectorAll('nav a').forEach(function(a){if(a.dataset.go===menu)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current')});
+    if(g.open)g.close(); // o close() devolve o foco ao botão Menu; por isso o título recebe o foco DEPOIS
     var h=alvo.querySelector('h1');if(h){h.setAttribute('tabindex','-1');h.focus({preventScroll:true})}
-    if(g.open)g.close();window.scrollTo(0,0);
+    window.scrollTo(0,0);
   }
   document.addEventListener('click',function(e){var a=e.target.closest('[data-go]');if(a){e.preventDefault();ir(a.dataset.go)}});
   document.addEventListener('keydown',function(e){if((e.key==='Enter'||e.key===' ')&&e.target.matches('nav a[data-go]')){e.preventDefault();ir(e.target.dataset.go)}});
