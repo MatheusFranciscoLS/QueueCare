@@ -839,12 +839,9 @@
           },
           "400" : {
             "content" : {
-              "*/*" : {
+              "application/problem+json" : {
                 "schema" : {
-                  "items" : {
-                    "$ref" : "#/components/schemas/AgendaResponse"
-                  },
-                  "type" : "array"
+                  "$ref" : "#/components/schemas/Problem"
                 }
               }
             },
@@ -865,12 +862,9 @@
           },
           "404" : {
             "content" : {
-              "*/*" : {
+              "application/problem+json" : {
                 "schema" : {
-                  "items" : {
-                    "$ref" : "#/components/schemas/AgendaResponse"
-                  },
-                  "type" : "array"
+                  "$ref" : "#/components/schemas/Problem"
                 }
               }
             },
@@ -944,12 +938,9 @@
           },
           "400" : {
             "content" : {
-              "*/*" : {
+              "application/problem+json" : {
                 "schema" : {
-                  "items" : {
-                    "$ref" : "#/components/schemas/AgendaResponse"
-                  },
-                  "type" : "array"
+                  "$ref" : "#/components/schemas/Problem"
                 }
               }
             },
@@ -970,12 +961,9 @@
           },
           "404" : {
             "content" : {
-              "*/*" : {
+              "application/problem+json" : {
                 "schema" : {
-                  "items" : {
-                    "$ref" : "#/components/schemas/AgendaResponse"
-                  },
-                  "type" : "array"
+                  "$ref" : "#/components/schemas/Problem"
                 }
               }
             },

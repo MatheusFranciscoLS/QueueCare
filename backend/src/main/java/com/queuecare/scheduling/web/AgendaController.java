@@ -58,8 +58,8 @@ class AgendaController {
 	}
 
 	@ApiResponse(responseCode = "200", description = "Agendamentos não cancelados, por horário.", content = @Content(array = @ArraySchema(schema = @Schema(implementation = AgendaResponse.class))))
-	@ApiResponse(responseCode = "400", description = "Data ausente, inválida ou fora de 1970-01-01 a 2100-12-31 (application/problem+json).")
-	@ApiResponse(responseCode = "404", description = "Prestador sem negócio cadastrado (reason PROVIDER_NOT_CONFIGURED).")
+	@ApiResponse(responseCode = "400", description = "Data ausente, inválida ou fora de 1970-01-01 a 2100-12-31 (application/problem+json).", content = @Content(mediaType = "application/problem+json", schema = @Schema(ref = "#/components/schemas/Problem")))
+	@ApiResponse(responseCode = "404", description = "Prestador sem negócio cadastrado (reason PROVIDER_NOT_CONFIGURED).", content = @Content(mediaType = "application/problem+json", schema = @Schema(ref = "#/components/schemas/Problem")))
 	@GetMapping("/api/agenda")
 	@PreAuthorize("hasAnyRole('PROVIDER','ATTENDANT')")
 	List<AgendaResponse> day(@AuthenticationPrincipal Jwt jwt, @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
@@ -68,8 +68,8 @@ class AgendaController {
 
 	/** Os 7 dias a partir de {@code start} (data local do prestador), para o calendário semanal. Mesmas regras e a mesma resposta da agenda do dia. */
 	@ApiResponse(responseCode = "200", description = "Agendamentos não cancelados, por horário.", content = @Content(array = @ArraySchema(schema = @Schema(implementation = AgendaResponse.class))))
-	@ApiResponse(responseCode = "400", description = "Data ausente, inválida ou fora de 1970-01-01 a 2100-12-31 (application/problem+json).")
-	@ApiResponse(responseCode = "404", description = "Prestador sem negócio cadastrado (reason PROVIDER_NOT_CONFIGURED).")
+	@ApiResponse(responseCode = "400", description = "Data ausente, inválida ou fora de 1970-01-01 a 2100-12-31 (application/problem+json).", content = @Content(mediaType = "application/problem+json", schema = @Schema(ref = "#/components/schemas/Problem")))
+	@ApiResponse(responseCode = "404", description = "Prestador sem negócio cadastrado (reason PROVIDER_NOT_CONFIGURED).", content = @Content(mediaType = "application/problem+json", schema = @Schema(ref = "#/components/schemas/Problem")))
 	@GetMapping("/api/agenda/week")
 	@PreAuthorize("hasAnyRole('PROVIDER','ATTENDANT')")
 	List<AgendaResponse> week(@AuthenticationPrincipal Jwt jwt, @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate start) {
