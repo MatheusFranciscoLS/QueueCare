@@ -4,6 +4,7 @@ import { ApiError } from '../../api/client'
 import { longDate, timeIn, todayIn } from '../../api/dates'
 import { describeError } from '../../api/messages'
 import { bookingApi, type BookedAppointment } from '../../api/booking'
+import { SPECIES_LABEL } from '../../api/pets'
 import { useAuth } from '../../auth/session'
 import { RefreshWarning } from '../RefreshWarning'
 import { useLoad } from '../useLoad'
@@ -121,7 +122,13 @@ function Row({
   return (
     <li className="row" ref={rowRef} tabIndex={-1}>
       <span>
-        <strong>{longDate(todayIn(zone, new Date(item.startsAt)))}</strong>, {timeIn(item.startsAt, zone)}–{timeIn(item.endsAt, zone)} · {what}{' '}
+        <strong>{longDate(todayIn(zone, new Date(item.startsAt)))}</strong>, {timeIn(item.startsAt, zone)}–{timeIn(item.endsAt, zone)} · {what}
+        {item.pet && (
+          <>
+            {' '}
+            · {item.pet.name} ({SPECIES_LABEL[item.pet.species] ?? item.pet.species})
+          </>
+        )}{' '}
         <span className="badge" data-status={status}>{STATUS_LABEL[status] ?? status}</span>
       </span>
       {status === 'SCHEDULED' && (

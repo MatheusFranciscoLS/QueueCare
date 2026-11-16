@@ -5,6 +5,7 @@ import { ApiError } from '../../api/client'
 import { timeIn } from '../../api/dates'
 import { isNotConfigured } from '../../api/errors'
 import { describeError } from '../../api/messages'
+import { petDescription } from '../../api/pets'
 import { useAuth } from '../../auth/session'
 import { RefreshWarning } from '../RefreshWarning'
 import { useLoad } from '../useLoad'
@@ -158,6 +159,8 @@ function QueueRow({
         <span className="appt-who">{customer}</span>
         <span className="sep" aria-hidden="true"> · </span>
         <span className="appt-service">{item.serviceName ?? 'Serviço'}</span>
+        {item.pet && <span className="appt-pet">{item.pet.name} · {petDescription(item.pet)}</span>}
+        {item.pet?.notes && <span className="appt-notes">Observações do tutor: {item.pet.notes}</span>}
         <span className="sep" aria-hidden="true"> · </span>
         <span className="badge" data-status="CHECKED_IN">chegou às {timeIn(item.checkedInAt, timeZone)}</span>
       </span>

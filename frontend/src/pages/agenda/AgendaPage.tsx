@@ -5,6 +5,7 @@ import { addDays, isDate, longDate, timeIn, todayIn } from '../../api/dates'
 import { ApiError } from '../../api/client'
 import { isNotConfigured } from '../../api/errors'
 import { describeError } from '../../api/messages'
+import { petDescription } from '../../api/pets'
 import { useAuth } from '../../auth/session'
 import { RefreshWarning } from '../RefreshWarning'
 import { useLoad } from '../useLoad'
@@ -254,6 +255,8 @@ function AppointmentRow({
         </strong>
         <span className="appt-who">{customer}</span>
         <span className="appt-service">{item.serviceName ?? 'Serviço'}</span>
+        {item.pet && <span className="appt-pet">{item.pet.name} · {petDescription(item.pet)}</span>}
+        {item.pet?.notes && <span className="appt-notes">Observações do tutor: {item.pet.notes}</span>}
         <span className="badge" data-status={status}>{STATUS_LABEL[status] ?? status}</span>
       </span>
       {status === 'SCHEDULED' && (

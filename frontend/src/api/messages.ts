@@ -27,6 +27,10 @@ const BY_REASON: Record<string, string> = {
   AMBIGUOUS_LOCAL_TIME: 'Esse horário é ambíguo nesse dia (mudança de horário de verão). Escolha outro.',
   SERVICE_NOT_FOUND_OR_INACTIVE: 'Esse serviço não está mais disponível.',
   PROVIDER_NOT_FOUND: 'Esse prestador não está mais disponível.',
+  PET_NOT_FOUND: 'Não encontramos esse pet. Atualize a lista e escolha de novo.',
+  PET_INACTIVE: 'Esse pet está arquivado. Reative-o em Meus pets ou escolha outro.',
+  PET_LIMIT_REACHED: 'Você chegou ao limite de pets. Arquive um pet que não usa mais para cadastrar ou reativar outro.',
+  INVALID_PET: 'Confira os dados do pet.',
 }
 
 export function describeError(error: unknown): string {
