@@ -1,4 +1,4 @@
-import { act, screen, waitFor, within } from '@testing-library/react'
+import { act, fireEvent, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { addDays, todayIn } from '../api/dates'
@@ -187,7 +187,9 @@ describe('meus pets: cadastrar', () => {
     const button = screen.getByRole('button', { name: 'Cadastrar pet' })
 
     await user.click(button)
-    await user.click(screen.getByRole('button', { name: 'Cadastrando…' }))
+    expect(await screen.findByRole('button', { name: 'Cadastrando…' })).toBeDisabled()
+    // um segundo envio do formulário (Enter repetido) antes de o primeiro terminar é ignorado, mesmo com o botão já bloqueado
+    fireEvent.submit(screen.getByRole('form', { name: 'Cadastrar pet' }))
 
     expect(calls(all, 'POST', '/api/customer/pets')).toHaveLength(1)
     await act(async () => pending.resolve(json(201, REX)))
@@ -248,6 +250,26 @@ describe('meus pets: editar, arquivar e reativar', () => {
     expect(await screen.findByText('Rex arquivado.')).toBeInTheDocument()
     await waitFor(() => expect(screen.queryByText('Rex')).not.toBeInTheDocument())
     expect(screen.getByRole('heading', { name: 'Meus pets' })).toHaveFocus() // a linha sumiu: o foco não se perde
+  })
+
+  it('com os arquivados à vista, arquivar mantém a linha e leva o foco para ela', async () => {
+    let archived = false
+    const { user } = await openPets({
+      'GET /api/customer/pets': () => json(200, [REX]),
+      'GET /api/customer/pets?includeArchived=true': () => json(200, [{ ...REX, active: !archived }]),
+      'POST /api/customer/pets/pet-1/archive': () => {
+        archived = true
+        return json(200, { ...REX, active: false })
+      },
+    })
+    await user.click(await screen.findByRole('checkbox', { name: /Mostrar arquivados/ }))
+    await user.click(await screen.findByRole('button', { name: 'Arquivar' }))
+    await user.click(screen.getByRole('button', { name: 'Confirmar arquivamento' }))
+
+    expect(await screen.findByText('Rex arquivado.')).toBeInTheDocument()
+    // só depois de a lista refeita mostrar o pet arquivado: o foco precisa ter ficado na linha (e não ter sido roubado pelo botão antigo)
+    const row = (await screen.findByText('Arquivado')).closest('li')!
+    expect(row).toHaveFocus()
   })
 
   it('"Voltar" fecha a confirmação sem arquivar e devolve o foco para "Arquivar"', async () => {
