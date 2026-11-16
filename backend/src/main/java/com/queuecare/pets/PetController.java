@@ -1,5 +1,6 @@
 package com.queuecare.pets;
 
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -50,12 +51,14 @@ class PetController {
 		}
 	}
 
+	@Operation(operationId = "listPets")
 	@ApiResponse(responseCode = "200", description = "Pets do cliente, por nome. Só os ativos, a menos que includeArchived=true.")
 	@GetMapping
 	List<PetResponse> list(@AuthenticationPrincipal Jwt jwt, @RequestParam(defaultValue = "false") boolean includeArchived) {
 		return service.list(userId(jwt), includeArchived).stream().map(PetResponse::from).toList();
 	}
 
+	@Operation(operationId = "createPet")
 	@ApiResponse(responseCode = "400", description = "Dados inválidos (errors.name, errors.species, errors.breed, errors.size, errors.notes).", content = @Content(mediaType = "application/problem+json", schema = @Schema(ref = PROBLEM)))
 	@ApiResponse(responseCode = "409", description = "Limite de pets ativos (20) ou cadastrados (100) atingido (reason PET_LIMIT_REACHED).", content = @Content(mediaType = "application/problem+json", schema = @Schema(ref = PROBLEM)))
 	@PostMapping
@@ -64,12 +67,14 @@ class PetController {
 		return PetResponse.from(service.create(userId(jwt), request.toInput()));
 	}
 
+	@Operation(operationId = "getPet")
 	@ApiResponse(responseCode = "404", description = "Pet inexistente ou de outro cliente (reason PET_NOT_FOUND).", content = @Content(mediaType = "application/problem+json", schema = @Schema(ref = PROBLEM)))
 	@GetMapping("/{id}")
 	PetResponse get(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID id) {
 		return PetResponse.from(service.get(userId(jwt), id));
 	}
 
+	@Operation(operationId = "updatePet")
 	@ApiResponse(responseCode = "400", description = "Dados inválidos (errors.name, errors.species, errors.breed, errors.size, errors.notes).", content = @Content(mediaType = "application/problem+json", schema = @Schema(ref = PROBLEM)))
 	@ApiResponse(responseCode = "404", description = "Pet inexistente ou de outro cliente (reason PET_NOT_FOUND).", content = @Content(mediaType = "application/problem+json", schema = @Schema(ref = PROBLEM)))
 	@PutMapping("/{id}")
@@ -77,12 +82,14 @@ class PetController {
 		return PetResponse.from(service.update(userId(jwt), id, request.toInput()));
 	}
 
+	@Operation(operationId = "archivePet")
 	@ApiResponse(responseCode = "404", description = "Pet inexistente ou de outro cliente (reason PET_NOT_FOUND).", content = @Content(mediaType = "application/problem+json", schema = @Schema(ref = PROBLEM)))
 	@PostMapping("/{id}/archive")
 	PetResponse archive(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID id) {
 		return PetResponse.from(service.archive(userId(jwt), id));
 	}
 
+	@Operation(operationId = "reactivatePet")
 	@ApiResponse(responseCode = "404", description = "Pet inexistente ou de outro cliente (reason PET_NOT_FOUND).", content = @Content(mediaType = "application/problem+json", schema = @Schema(ref = PROBLEM)))
 	@ApiResponse(responseCode = "409", description = "Já existem 20 pets ativos (reason PET_LIMIT_REACHED).", content = @Content(mediaType = "application/problem+json", schema = @Schema(ref = PROBLEM)))
 	@PostMapping("/{id}/reactivate")

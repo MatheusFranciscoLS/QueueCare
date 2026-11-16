@@ -263,6 +263,53 @@
         "required" : [ "email", "password" ],
         "type" : "object"
       },
+      "PetRequest" : {
+        "properties" : {
+          "breed" : {
+            "type" : "string"
+          },
+          "name" : {
+            "type" : "string"
+          },
+          "notes" : {
+            "type" : "string"
+          },
+          "size" : {
+            "type" : "string"
+          },
+          "species" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "PetResponse" : {
+        "properties" : {
+          "active" : {
+            "type" : "boolean"
+          },
+          "breed" : {
+            "type" : "string"
+          },
+          "id" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "name" : {
+            "type" : "string"
+          },
+          "notes" : {
+            "type" : "string"
+          },
+          "size" : {
+            "type" : "string"
+          },
+          "species" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
       "Problem" : {
         "description" : "Erro no formato application/problem+json. O campo reason é um código estável.",
         "properties" : {
@@ -1553,6 +1600,302 @@
           }
         },
         "tags" : [ "catalog-controller" ]
+      }
+    },
+    "/api/customer/pets" : {
+      "get" : {
+        "description" : "Perfis: CUSTOMER.",
+        "operationId" : "listPets",
+        "parameters" : [ {
+          "in" : "query",
+          "name" : "includeArchived",
+          "required" : false,
+          "schema" : {
+            "default" : false,
+            "type" : "boolean"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/PetResponse"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "Pets do cliente, por nome. Só os ativos, a menos que includeArchived=true."
+          },
+          "401" : {
+            "description" : "Sem token ou token inválido. Corpo vazio; o cabeçalho WWW-Authenticate: Bearer indica o esquema."
+          },
+          "403" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "O perfil não tem permissão (corpo vazio) ou a troca de senha é obrigatória (application/problem+json com reason PASSWORD_CHANGE_REQUIRED)."
+          }
+        },
+        "tags" : [ "pet-controller" ]
+      },
+      "post" : {
+        "description" : "Perfis: CUSTOMER.",
+        "operationId" : "createPet",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/PetRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "201" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PetResponse"
+                }
+              }
+            },
+            "description" : "Created"
+          },
+          "400" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Dados inválidos (errors.name, errors.species, errors.breed, errors.size, errors.notes)."
+          },
+          "401" : {
+            "description" : "Sem token ou token inválido. Corpo vazio; o cabeçalho WWW-Authenticate: Bearer indica o esquema."
+          },
+          "403" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "O perfil não tem permissão (corpo vazio) ou a troca de senha é obrigatória (application/problem+json com reason PASSWORD_CHANGE_REQUIRED)."
+          },
+          "409" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Limite de pets ativos (20) ou cadastrados (100) atingido (reason PET_LIMIT_REACHED)."
+          }
+        },
+        "tags" : [ "pet-controller" ]
+      }
+    },
+    "/api/customer/pets/{id}" : {
+      "get" : {
+        "description" : "Perfis: CUSTOMER.",
+        "operationId" : "getPet",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "401" : {
+            "description" : "Sem token ou token inválido. Corpo vazio; o cabeçalho WWW-Authenticate: Bearer indica o esquema."
+          },
+          "403" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "O perfil não tem permissão (corpo vazio) ou a troca de senha é obrigatória (application/problem+json com reason PASSWORD_CHANGE_REQUIRED)."
+          },
+          "404" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Pet inexistente ou de outro cliente (reason PET_NOT_FOUND)."
+          }
+        },
+        "tags" : [ "pet-controller" ]
+      },
+      "put" : {
+        "description" : "Perfis: CUSTOMER.",
+        "operationId" : "updatePet",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/PetRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "400" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Dados inválidos (errors.name, errors.species, errors.breed, errors.size, errors.notes)."
+          },
+          "401" : {
+            "description" : "Sem token ou token inválido. Corpo vazio; o cabeçalho WWW-Authenticate: Bearer indica o esquema."
+          },
+          "403" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "O perfil não tem permissão (corpo vazio) ou a troca de senha é obrigatória (application/problem+json com reason PASSWORD_CHANGE_REQUIRED)."
+          },
+          "404" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Pet inexistente ou de outro cliente (reason PET_NOT_FOUND)."
+          }
+        },
+        "tags" : [ "pet-controller" ]
+      }
+    },
+    "/api/customer/pets/{id}/archive" : {
+      "post" : {
+        "description" : "Perfis: CUSTOMER.",
+        "operationId" : "archivePet",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "401" : {
+            "description" : "Sem token ou token inválido. Corpo vazio; o cabeçalho WWW-Authenticate: Bearer indica o esquema."
+          },
+          "403" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "O perfil não tem permissão (corpo vazio) ou a troca de senha é obrigatória (application/problem+json com reason PASSWORD_CHANGE_REQUIRED)."
+          },
+          "404" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Pet inexistente ou de outro cliente (reason PET_NOT_FOUND)."
+          }
+        },
+        "tags" : [ "pet-controller" ]
+      }
+    },
+    "/api/customer/pets/{id}/reactivate" : {
+      "post" : {
+        "description" : "Perfis: CUSTOMER.",
+        "operationId" : "reactivatePet",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "401" : {
+            "description" : "Sem token ou token inválido. Corpo vazio; o cabeçalho WWW-Authenticate: Bearer indica o esquema."
+          },
+          "403" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "O perfil não tem permissão (corpo vazio) ou a troca de senha é obrigatória (application/problem+json com reason PASSWORD_CHANGE_REQUIRED)."
+          },
+          "404" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Pet inexistente ou de outro cliente (reason PET_NOT_FOUND)."
+          },
+          "409" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Já existem 20 pets ativos (reason PET_LIMIT_REACHED)."
+          }
+        },
+        "tags" : [ "pet-controller" ]
       }
     },
     "/api/me" : {

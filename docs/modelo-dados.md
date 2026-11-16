@@ -7,6 +7,7 @@ Rascunho de partida. Claude modela as entidades e relacionamentos e atualiza est
 - `services` (id, provider_id, name, duration_minutes, active).
 - `availability_windows` (id, provider_id, day_of_week, start_time, end_time). Horários locais do prestador.
 - `appointments` (id, provider_id, service_id, customer_id, starts_at, ends_at, status, created_at). Entidade central. `starts_at`/`ends_at` em `timestamptz`.
+- `pets` (id, customer_id, name, species DOG/CAT, breed, size SMALL/MEDIUM/LARGE, notes, active, created_at, updated_at). **V8 (ADR 0016):** o animal atendido, do tutor (CUSTOMER); arquivar em vez de apagar; limites de 20 ativos e 100 no total na aplicação; `CHECK`s recusam texto fora da forma normalizada. Agendamento com pet e cópia (snapshot) dos dados: PR seguinte.
 - `appointment_events` (id, appointment_id, actor_id, event_type, created_at, notes). Histórico: agendado, cancelado, check-in, concluído.
 
 Relações: um prestador tem vários serviços e janelas; um agendamento pertence a um prestador, um serviço e um cliente; um agendamento tem vários eventos. O atendente é um usuário autorizado a administrar a agenda do prestador.
