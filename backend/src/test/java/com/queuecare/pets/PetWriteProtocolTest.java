@@ -37,7 +37,7 @@ class PetWriteProtocolTest {
 
 	/** Arquivos com uma criação da classe, com o nome curto OU completo: {@code new Pet(} e {@code new com.x.Pet(}. */
 	private static List<String> filesCreating(String className) throws IOException {
-		java.util.regex.Pattern creation = java.util.regex.Pattern.compile("new\s+(?:[\w.]+\.)?" + className + "\s*\(");
+		java.util.regex.Pattern creation = java.util.regex.Pattern.compile("new\\s+(?:[\\w.]+\\.)?" + className + "\\s*\\(");
 		return sources().stream().filter(p -> {
 			try {
 				return creation.matcher(Files.readString(p)).find();
