@@ -42,7 +42,8 @@ public class RowLocks {
 		this.lockTimeoutMillis = lockTimeout.toMillis();
 	}
 
-	private void limitWait() {
+	/** Limita a espera por bloqueios (e pelas restrições que esperam outra transação) ao que resta DESTA transação. */
+	public void limitWait() {
 		entityManager.createNativeQuery("select set_config('lock_timeout', ?1, true)").setParameter(1, lockTimeoutMillis + "ms").getSingleResult();
 	}
 

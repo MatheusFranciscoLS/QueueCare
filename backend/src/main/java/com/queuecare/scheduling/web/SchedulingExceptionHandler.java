@@ -56,6 +56,15 @@ class SchedulingExceptionHandler {
 		return problem(status, e.reason().name(), "cancelamento recusado");
 	}
 
+	@ExceptionHandler(com.queuecare.scheduling.application.AppointmentExceptions.RescheduleRejectedException.class)
+	ProblemDetail rescheduleRejected(com.queuecare.scheduling.application.AppointmentExceptions.RescheduleRejectedException e) {
+		HttpStatus status = switch (e.reason()) {
+			case ALREADY_CANCELLED, NOT_RESCHEDULABLE, CONCURRENT_UPDATE -> HttpStatus.CONFLICT;
+			case TOO_LATE, NO_CHANGE, RESCHEDULE_LIMIT -> HttpStatus.UNPROCESSABLE_ENTITY;
+		};
+		return problem(status, e.reason().name(), "remarcação recusada");
+	}
+
 	@ExceptionHandler(AttendanceRejectedException.class)
 	ProblemDetail attendanceRejected(AttendanceRejectedException e) {
 		HttpStatus status = e.reason() == AttendanceRejectedException.Reason.WRONG_DAY ? HttpStatus.UNPROCESSABLE_ENTITY : HttpStatus.CONFLICT;

@@ -1,9 +1,11 @@
 package com.queuecare.scheduling.web;
 
+import com.queuecare.scheduling.application.AppointmentHistoryService;
 import com.queuecare.scheduling.application.AttendanceService;
 import com.queuecare.scheduling.application.BookingRequest;
 import com.queuecare.scheduling.application.BookingService;
 import com.queuecare.scheduling.application.CancellationService;
+import com.queuecare.scheduling.application.RescheduleService;
 import com.queuecare.scheduling.persistence.Appointment;
 import com.queuecare.scheduling.persistence.AppointmentRepository;
 import jakarta.validation.Valid;
@@ -42,15 +44,20 @@ class AppointmentController {
 	private final BookingService bookingService;
 	private final CancellationService cancellationService;
 	private final AttendanceService attendanceService;
+	private final RescheduleService rescheduleService;
+	private final AppointmentHistoryService historyService;
 	private final AppointmentRepository appointments;
 	private final com.queuecare.scheduling.persistence.ProviderRepository providers;
 	private final com.queuecare.scheduling.persistence.ServiceOfferingRepository services;
 
-	AppointmentController(BookingService bookingService, CancellationService cancellationService, AttendanceService attendanceService, AppointmentRepository appointments,
+	AppointmentController(BookingService bookingService, CancellationService cancellationService, AttendanceService attendanceService, RescheduleService rescheduleService,
+			AppointmentHistoryService historyService, AppointmentRepository appointments,
 			com.queuecare.scheduling.persistence.ProviderRepository providers, com.queuecare.scheduling.persistence.ServiceOfferingRepository services) {
 		this.bookingService = bookingService;
 		this.cancellationService = cancellationService;
 		this.attendanceService = attendanceService;
+		this.rescheduleService = rescheduleService;
+		this.historyService = historyService;
 		this.appointments = appointments;
 		this.providers = providers;
 		this.services = services;
@@ -107,6 +114,35 @@ class AppointmentController {
 		}
 		PageRequest pageable = PageRequest.of(page, size, Sort.by(Sort.Order.desc("startsAt"), Sort.Order.desc("id")));
 		return respond(appointments.findByCustomerId(userId(jwt), pageable).stream().toList());
+	}
+
+	/** {@code localStart} é o NOVO horário LOCAL do prestador, como na reserva (ADR 0017). */
+	record RescheduleRequest(@NotNull LocalDateTime localStart) {
+	}
+
+	/**
+	 * Uma linha do histórico. {@code by}: CUSTOMER, STAFF ou SYSTEM. {@code actorName} só vem para a equipe do prestador (nulo para o cliente).
+	 * {@code previousStartsAt} e {@code newStartsAt} só nas remarcações (RESCHEDULED).
+	 */
+	record HistoryEntryResponse(String type, Instant at, String by, String actorName, Instant previousStartsAt, Instant newStartsAt) {
+	}
+
+	/**
+	 * Remarcar: move o MESMO agendamento para outro horário (mesma duração, mesmo pet). Cliente dono (no prazo, até 3 vezes) e equipe do
+	 * prestador (sem prazo e sem limite). Mesmas regras de horário da reserva.
+	 */
+	@PostMapping("/{id}/reschedule")
+	@PreAuthorize("hasAnyRole('CUSTOMER','PROVIDER','ATTENDANT')")
+	AppointmentResponse reschedule(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID id, @Valid @RequestBody RescheduleRequest request) {
+		return respond(List.of(rescheduleService.reschedule(id, userId(jwt), request.localStart()))).get(0);
+	}
+
+	/** Histórico do agendamento (somente leitura): o cliente dono e a equipe do prestador; só a equipe vê o nome de quem agiu. */
+	@GetMapping("/{id}/events")
+	@PreAuthorize("hasAnyRole('CUSTOMER','PROVIDER','ATTENDANT')")
+	List<HistoryEntryResponse> events(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID id) {
+		return historyService.history(id, userId(jwt)).stream()
+				.map(e -> new HistoryEntryResponse(e.type().name(), e.at(), e.by().name(), e.actorName(), e.previousStartsAt(), e.newStartsAt())).toList();
 	}
 
 	@PostMapping("/{id}/cancel")

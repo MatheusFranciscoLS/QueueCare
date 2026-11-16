@@ -16,6 +16,9 @@ import com.queuecare.scheduling.persistence.Provider;
 import com.queuecare.scheduling.persistence.ProviderRepository;
 import com.queuecare.scheduling.persistence.ServiceOffering;
 import com.queuecare.scheduling.persistence.ServiceOfferingRepository;
+import com.queuecare.scheduling.persistence.UserAccount;
+import com.queuecare.scheduling.persistence.UserAccountRepository;
+import com.queuecare.scheduling.persistence.UserRole;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
@@ -48,10 +51,14 @@ public class SlotService {
 	private final ServiceOfferingRepository services;
 	private final AvailabilityWindowRepository windows;
 	private final AppointmentRepository appointments;
+	private final UserAccountRepository users;
+	private final StaffAccess staffAccess;
 	private final Clock clock;
 
 	public SlotService(ProviderRepository providers, ServiceOfferingRepository services, AvailabilityWindowRepository windows,
-			AppointmentRepository appointments, Clock clock) {
+			AppointmentRepository appointments, UserAccountRepository users, StaffAccess staffAccess, Clock clock) {
+		this.users = users;
+		this.staffAccess = staffAccess;
 		this.providers = providers;
 		this.services = services;
 		this.windows = windows;
@@ -65,6 +72,19 @@ public class SlotService {
 
 	@Transactional(readOnly = true)
 	public List<Slot> freeSlots(UUID providerId, UUID serviceId, LocalDate date) {
+		return freeSlots(providerId, serviceId, date, null, null);
+	}
+
+	/**
+	 * Horários livres IGNORANDO o próprio agendamento {@code excludeAppointmentId} (ADR 0017, item 8): quem remarca vê livre o horário que o
+	 * agendamento atual ocupa, e pode deslocá-lo para um horário que o sobreponha. O parâmetro só vale se o agendamento for do prestador
+	 * consultado E do chamador (cliente dono, ou equipe daquele prestador); em qualquer outro caso é IGNORADO, sem erro e sem pista de que o
+	 * agendamento existe.
+	 */
+	@Transactional(readOnly = true)
+	public List<Slot> freeSlots(UUID providerId, UUID serviceId, LocalDate date, UUID excludeAppointmentId, UUID requesterId) {
+		Appointment ignoredAppointment = authorizedExclusion(providerId, serviceId, excludeAppointmentId, requesterId);
+		UUID ignoring = ignoredAppointment == null ? null : ignoredAppointment.getId();
 		Provider provider = providers.findActiveById(providerId).orElseThrow(() -> new BookingRejectedException(Reason.PROVIDER_NOT_FOUND));
 		ServiceOffering service = services.findByIdAndProviderId(serviceId, providerId)
 				.filter(ServiceOffering::isActive)
@@ -81,11 +101,14 @@ public class SlotService {
 		BookingTimeRules rules = new BookingTimeRules(Duration.ofMinutes(provider.getMinimumNoticeMinutes()));
 		LocalTimeResolver resolver = new LocalTimeResolver(zone);
 		Instant now = clock.instant();
-		Duration duration = Duration.ofMinutes(service.getDurationMinutes());
+		// Ao remarcar, o atendimento tem a duração do PRÓPRIO agendamento (a mesma que a remarcação valida), mesmo que o serviço tenha sido
+		// editado depois: os horários oferecidos e os aceitos nunca divergem.
+		Duration duration = ignoredAppointment == null ? Duration.ofMinutes(service.getDurationMinutes())
+				: Duration.between(ignoredAppointment.getStartsAt(), ignoredAppointment.getEndsAt());
 
 		Instant dayStart = date.atStartOfDay(zone).toInstant();
 		Instant dayEnd = date.plusDays(1).atStartOfDay(zone).toInstant();
-		List<TimeRange> taken = takenRanges(providerId, dayStart, dayEnd);
+		List<TimeRange> taken = takenRanges(providerId, dayStart, dayEnd, ignoring);
 
 		List<Slot> slots = new ArrayList<>();
 		for (LocalTime[] block : continuousBlocks(entities, date.getDayOfWeek())) {
@@ -131,8 +154,28 @@ public class SlotService {
 		return end.isAfter(time) && !end.isAfter(windowEnd);
 	}
 
-	private List<TimeRange> takenRanges(UUID providerId, Instant dayStart, Instant dayEnd) {
-		return appointments.findActiveOverlapping(providerId, dayStart, dayEnd).stream()
+	/**
+	 * O agendamento a ignorar, se o chamador puder; nulo caso contrário (parâmetro desconhecido, alheio ou de OUTRO serviço que o consultado é
+	 * simplesmente ignorado, sem erro e sem pista).
+	 */
+	private Appointment authorizedExclusion(UUID providerId, UUID serviceId, UUID appointmentId, UUID requesterId) {
+		if (appointmentId == null || requesterId == null) {
+			return null;
+		}
+		UserAccount requester = users.findById(requesterId).filter(UserAccount::isActive).orElse(null);
+		if (requester == null) {
+			return null;
+		}
+		return appointments.findById(appointmentId).filter(a -> a.getProviderId().equals(providerId) && a.getServiceId().equals(serviceId)).filter(a -> {
+			if (requester.getRole() == UserRole.CUSTOMER) {
+				return a.getCustomerId().equals(requester.getId());
+			}
+			return staffAccess.providerIdOf(requester).filter(providerId::equals).isPresent();
+		}).orElse(null);
+	}
+
+	private List<TimeRange> takenRanges(UUID providerId, Instant dayStart, Instant dayEnd, UUID ignoring) {
+		return appointments.findActiveOverlapping(providerId, dayStart, dayEnd).stream().filter(a -> !a.getId().equals(ignoring))
 				.map(a -> new TimeRange(a.getStartsAt(), a.getEndsAt())).toList();
 	}
 }

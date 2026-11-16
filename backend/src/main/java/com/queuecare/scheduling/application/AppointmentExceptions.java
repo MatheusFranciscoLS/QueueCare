@@ -43,6 +43,37 @@ public final class AppointmentExceptions {
 		}
 	}
 
+	/** O pedido de remarcação foi recusado por regra de negócio (ADR 0017). */
+	public static class RescheduleRejectedException extends RuntimeException {
+
+		/** Motivos de recusa. */
+		public enum Reason {
+			/** Já estava cancelado (409). */
+			ALREADY_CANCELLED,
+			/** Já chegou, está em atendimento ou foi concluído: não se remarca (409). */
+			NOT_RESCHEDULABLE,
+			/** Cliente: o agendamento atual começa dentro do prazo de cancelamento do prestador (422). */
+			TOO_LATE,
+			/** O novo horário é o mesmo do atual (422). */
+			NO_CHANGE,
+			/** Cliente: já usou as 3 remarcações permitidas deste agendamento (422). */
+			RESCHEDULE_LIMIT,
+			/** Outra requisição alterou o mesmo agendamento ao mesmo tempo (409). */
+			CONCURRENT_UPDATE
+		}
+
+		private final Reason reason;
+
+		public RescheduleRejectedException(Reason reason) {
+			super(reason.name());
+			this.reason = reason;
+		}
+
+		public Reason reason() {
+			return reason;
+		}
+	}
+
 	/** O pedido de check-in ou de conclusão foi recusado por regra de negócio. */
 	public static class AttendanceRejectedException extends RuntimeException {
 

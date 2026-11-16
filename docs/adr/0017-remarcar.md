@@ -70,3 +70,6 @@ Hoje `GET /api/providers/{id}/slots` esconde o intervalo do próprio agendamento
 
 ## Riscos a atacar na revisão
 Extração das regras sem mudar a reserva (os testes do `BookingService` e da concorrência da reserva precisam continuar iguais); a migration da V6 (índice único parcial) sobre banco com dados; remarcar x check-in x cancelar x edição de pet (todos mexem no mesmo `version`); troca de horários e impasse; limite de 3 sob corrida; o parâmetro `excludeAppointmentId` não vazar existência de agendamento alheio; histórico legível para o prestador (`previous_starts_at`, `new_starts_at`).
+
+## Atualização (implementação, PR 51)
+- Como projetado, com estes detalhes: `SlotRules` (componente compartilhado) e `RescheduleService`; `NO_CHANGE` tem precedência sobre as regras do horário (pedir o mesmo horário de um agendamento já perto demais é "sem mudança", não "perto demais"); o histórico devolve `by` = `CUSTOMER`, `STAFF` ou `SYSTEM` (e `actorName` só para a equipe); `RowLocks.limitWait()` passou a público para a remarcação limitar também a espera da restrição de exclusão.
