@@ -42,15 +42,7 @@ public class PetService {
 
 	@Transactional
 	public Pet create(UUID customerId, PetText.Input input) {
-		PetText.Normalized data = PetText.normalize(input);
-		lockCustomer(customerId);
-		if (pets.countByCustomerId(customerId) >= MAX_TOTAL) {
-			throw new PetLimitReachedException("limite de " + MAX_TOTAL + " pets cadastrados");
-		}
-		if (pets.countByCustomerIdAndActiveTrue(customerId) >= MAX_ACTIVE) {
-			throw new PetLimitReachedException("limite de " + MAX_ACTIVE + " pets ativos; arquive um para cadastrar outro");
-		}
-		return pets.saveAndFlush(new Pet(customerId, data, clock.instant()));
+		return takeActiveSlot(customerId, Activation.creating(PetText.normalize(input)));
 	}
 
 	@Transactional(readOnly = true)
@@ -86,16 +78,50 @@ public class PetService {
 	/** Reativa um pet arquivado. Só o limite de ativos vale (o total não muda). Repetir em pet já ativo é inofensivo. */
 	@Transactional
 	public Pet reactivate(UUID customerId, UUID petId) {
-		lockCustomer(customerId);
-		Pet pet = locks.lockPet(petId, customerId).orElseThrow(PetNotFoundException::new);
-		if (!pet.isActive()) {
-			if (pets.countByCustomerIdAndActiveTrue(customerId) >= MAX_ACTIVE) {
-				throw new PetLimitReachedException("limite de " + MAX_ACTIVE + " pets ativos; arquive um para reativar outro");
-			}
-			pet.reactivate(clock.instant());
-			pets.saveAndFlush(pet);
+		return takeActiveSlot(customerId, Activation.reactivating(petId));
+	}
+
+	/** O que ocupa uma vaga de pet ativo: um pet NOVO (dados normalizados) ou um pet arquivado que volta (id). Exatamente um dos dois. */
+	private record Activation(PetText.Normalized newData, UUID petId) {
+		static Activation creating(PetText.Normalized data) {
+			return new Activation(data, null);
 		}
-		return pet;
+
+		static Activation reactivating(UUID petId) {
+			return new Activation(null, petId);
+		}
+
+		boolean createsRecord() {
+			return newData != null;
+		}
+	}
+
+	/**
+	 * O PROTOCOLO ÚNICO de toda operação que torna um pet ativo (criar e reativar): bloquear a linha do cliente, depois a do pet (se já
+	 * existe), conferir os limites e gravar, tudo na mesma transação. Nenhum outro método grava um pet ativo; um ajuste de proteção feito
+	 * aqui vale para as duas operações. O teto de {@value #MAX_TOTAL} vale só para quem cria registro; o de {@value #MAX_ACTIVE}, para os dois.
+	 */
+	private Pet takeActiveSlot(UUID customerId, Activation activation) {
+		lockCustomer(customerId);
+		Pet existing = null;
+		if (!activation.createsRecord()) {
+			existing = locks.lockPet(activation.petId(), customerId).orElseThrow(PetNotFoundException::new);
+			if (existing.isActive()) {
+				return existing; // já ocupa a vaga: nada a fazer
+			}
+		}
+		if (activation.createsRecord() && pets.countByCustomerId(customerId) >= MAX_TOTAL) {
+			throw new PetLimitReachedException("limite de " + MAX_TOTAL + " pets cadastrados");
+		}
+		if (pets.countByCustomerIdAndActiveTrue(customerId) >= MAX_ACTIVE) {
+			throw new PetLimitReachedException("limite de " + MAX_ACTIVE + " pets ativos; arquive um para "
+					+ (activation.createsRecord() ? "cadastrar" : "reativar") + " outro");
+		}
+		Pet pet = activation.createsRecord() ? new Pet(customerId, activation.newData(), clock.instant()) : existing;
+		if (!activation.createsRecord()) {
+			pet.reactivate(clock.instant());
+		}
+		return pets.saveAndFlush(pet);
 	}
 
 	/** Bloqueia a linha do cliente (nível 1 da ordem de bloqueios). Conta inexistente, inativa ou que não é cliente: acesso negado. */

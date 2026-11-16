@@ -14,7 +14,12 @@ import java.util.Map;
  * <li>{@code notes}: opcional, até 500 caracteres; CRLF e CR viram LF; apara as pontas; só o LF é aceito entre os caracteres
  * de controle; vazio vira nulo.</li>
  * </ul>
- * Tamanho é contado em pontos de código (como o {@code char_length} do PostgreSQL), não em unidades UTF-16. As mensagens de erro
+ * <p><b>Controles nas pontas:</b> o que {@code String.strip()} considera espaço (TAB, LF, VT, FF, CR, U+001C a U+001F e espaços Unicode) é
+ * APARADO, pois um tutor que cola o texto com uma quebra de linha no fim não deve receber erro; qualquer outro controle (sino, NUL, DEL,
+ * C1 como U+0085) é RECUSADO em qualquer posição, inclusive nas pontas. No meio do nome e da raça todo controle é recusado; em {@code notes}
+ * só o LF.
+ *
+ * <p>Tamanho é contado em pontos de código (como o {@code char_length} do PostgreSQL), não em unidades UTF-16. As mensagens de erro
  * nunca repetem o valor recebido (as observações são dado pessoal).
  */
 public final class PetText {

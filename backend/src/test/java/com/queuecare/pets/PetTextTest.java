@@ -61,6 +61,20 @@ class PetTextTest {
 	}
 
 	@Test
+	void controlesNasPontasQueSaoEspacoSaoAparadosOsDemaisSaoRecusados() {
+		// aparados: TAB, LF, VT, FF, CR nas pontas (colar com quebra de linha no fim é normal)
+		assertEquals("Rex", ok("\t\n\u000B\f\rRex\r\f\u000B\n\t", "DOG", null, null, null).name());
+		assertEquals("Poodle", ok("Rex", "DOG", "\tPoodle\n", null, null).breed());
+		assertEquals("anotação", ok("Rex", "DOG", null, null, "\t\nanotação\u000B\f").notes());
+		// recusados mesmo nas pontas: controles que não são espaço
+		for (String bad : new String[] { "\u0007Rex", "Rex\u0007", "\u0000Rex", "Rex\u007F", "\u0085Rex", "Rex\u009F" }) {
+			assertEquals(Map.of("name", "caracteres inválidos"), errorsOf(bad, "DOG", null, null, null), "name " + bad.length());
+			assertEquals(Map.of("breed", "caracteres inválidos"), errorsOf("Rex", "DOG", bad, null, null), "breed " + bad.length());
+			assertEquals(Map.of("notes", "caracteres inválidos"), errorsOf("Rex", "DOG", null, null, bad), "notes " + bad.length());
+		}
+	}
+
+	@Test
 	void tamanhoContaPontosDeCodigoNaoUnidadesUtf16() {
 		assertEquals(80, ok("🐶".repeat(80), "DOG", null, null, null).name().codePointCount(0, 160));
 		assertEquals(Map.of("name", "até 80 caracteres"), errorsOf("🐶".repeat(81), "DOG", null, null, null));
