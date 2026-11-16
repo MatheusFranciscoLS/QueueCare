@@ -34,6 +34,13 @@ public class AppointmentEvent {
 	@Column
 	private String notes;
 
+	/** Só nas remarcações: o horário de início antes e depois (nulos nos outros tipos). */
+	@Column(name = "previous_starts_at", updatable = false)
+	private Instant previousStartsAt;
+
+	@Column(name = "new_starts_at", updatable = false)
+	private Instant newStartsAt;
+
 	protected AppointmentEvent() {
 	}
 
@@ -44,6 +51,14 @@ public class AppointmentEvent {
 		this.eventType = Objects.requireNonNull(eventType);
 		this.createdAt = Objects.requireNonNull(createdAt);
 		this.notes = notes;
+	}
+
+	/** Evento de remarcação: quem remarcou, quando e de qual horário para qual. */
+	public static AppointmentEvent rescheduled(UUID appointmentId, UUID actorId, Instant createdAt, Instant previousStartsAt, Instant newStartsAt) {
+		AppointmentEvent event = new AppointmentEvent(appointmentId, actorId, AppointmentEventType.RESCHEDULED, createdAt, null);
+		event.previousStartsAt = Objects.requireNonNull(previousStartsAt);
+		event.newStartsAt = Objects.requireNonNull(newStartsAt);
+		return event;
 	}
 
 	public UUID getId() {
@@ -60,5 +75,17 @@ public class AppointmentEvent {
 
 	public AppointmentEventType getEventType() {
 		return eventType;
+	}
+
+	public Instant getCreatedAt() {
+		return createdAt;
+	}
+
+	public Instant getPreviousStartsAt() {
+		return previousStartsAt;
+	}
+
+	public Instant getNewStartsAt() {
+		return newStartsAt;
 	}
 }

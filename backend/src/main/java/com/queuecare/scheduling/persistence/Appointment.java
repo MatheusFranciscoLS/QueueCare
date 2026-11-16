@@ -101,6 +101,12 @@ public class Appointment {
 		this.petNotes = pet.getNotes();
 	}
 
+	/** Move o agendamento para outro horário (ADR 0017). O serviço confere regras e situação antes; aqui só se muda. Mesma duração, mesmo pet. */
+	public void reschedule(Instant newStartsAt, Instant newEndsAt) {
+		this.startsAt = Objects.requireNonNull(newStartsAt);
+		this.endsAt = Objects.requireNonNull(newEndsAt);
+	}
+
 	/** Cancela o agendamento (libera o horário no banco: a restrição de exclusão ignora CANCELLED). */
 	public void cancel() {
 		this.status = AppointmentStatus.CANCELLED;

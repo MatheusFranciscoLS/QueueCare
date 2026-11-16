@@ -31,8 +31,9 @@ class SlotController {
 
 	@GetMapping("/api/providers/{providerId}/slots")
 	@org.springframework.security.access.prepost.PreAuthorize("hasAnyRole('CUSTOMER','PROVIDER','ATTENDANT')")
-	List<SlotResponse> slots(@PathVariable UUID providerId, @RequestParam UUID serviceId,
-			@RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
-		return slotService.freeSlots(providerId, serviceId, date).stream().map(SlotResponse::from).toList();
+	List<SlotResponse> slots(@org.springframework.security.core.annotation.AuthenticationPrincipal org.springframework.security.oauth2.jwt.Jwt jwt, @PathVariable UUID providerId, @RequestParam UUID serviceId,
+			@RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date, @RequestParam(required = false) UUID excludeAppointmentId) {
+		// excludeAppointmentId (remarcar): ignorado se o agendamento não for do chamador, sem erro e sem pista (ADR 0017, item 8).
+		return slotService.freeSlots(providerId, serviceId, date, excludeAppointmentId, UUID.fromString(jwt.getSubject())).stream().map(SlotResponse::from).toList();
 	}
 }
