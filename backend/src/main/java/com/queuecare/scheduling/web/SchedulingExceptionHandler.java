@@ -76,6 +76,16 @@ class SchedulingExceptionHandler {
 		return problem(HttpStatus.NOT_FOUND, "SERVICE_NOT_FOUND", "serviço não encontrado");
 	}
 
+	@ExceptionHandler(com.queuecare.scheduling.application.ProviderExceptions.SlugTakenException.class)
+	ProblemDetail slugTaken(com.queuecare.scheduling.application.ProviderExceptions.SlugTakenException e) {
+		return problem(HttpStatus.CONFLICT, "SLUG_TAKEN", "endereço público já em uso");
+	}
+
+	@ExceptionHandler(com.queuecare.scheduling.application.ProviderExceptions.StudioNotFoundException.class)
+	ProblemDetail studioNotFound(com.queuecare.scheduling.application.ProviderExceptions.StudioNotFoundException e) {
+		return problem(HttpStatus.NOT_FOUND, "STUDIO_NOT_FOUND", "estúdio não encontrado");
+	}
+
 	@ExceptionHandler(StaffNotFoundException.class)
 	ProblemDetail staffNotFound(StaffNotFoundException e) {
 		return problem(HttpStatus.NOT_FOUND, "STAFF_NOT_FOUND", "atendente não encontrado");

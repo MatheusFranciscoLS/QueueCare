@@ -46,6 +46,20 @@ public final class ProviderExceptions {
 		}
 	}
 
+	/** O endereço público escolhido já é de outro estúdio (HTTP 409). */
+	public static class SlugTakenException extends RuntimeException {
+		public SlugTakenException() {
+			super("endereço público já em uso");
+		}
+	}
+
+	/** Página pública inexistente, não publicada ou de dono inativo: sempre a mesma resposta (HTTP 404). */
+	public static class StudioNotFoundException extends RuntimeException {
+		public StudioNotFoundException() {
+			super("estúdio não encontrado");
+		}
+	}
+
 	/** Valores de configuração inválidos (HTTP 400), com o campo e a mensagem de cada erro. */
 	public static class InvalidConfigurationException extends RuntimeException {
 

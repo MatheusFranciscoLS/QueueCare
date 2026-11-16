@@ -67,8 +67,9 @@ class OpenApiConfig {
 			if (rule == null) {
 				rule = AnnotatedElementUtils.findMergedAnnotation(handler.getBeanType(), PreAuthorize.class);
 			}
-			// Só o AuthController tem rotas públicas (cadastro e login); a troca de senha dele exige token.
-			boolean publicRoute = rule == null && handler.getBeanType().getSimpleName().equals("AuthController") && !handler.getMethod().getName().equals("changePassword");
+			// Rotas públicas: cadastro e login (AuthController; a troca de senha dele exige token) e a página pública do estúdio.
+			String controller = handler.getBeanType().getSimpleName();
+			boolean publicRoute = rule == null && ((controller.equals("AuthController") && !handler.getMethod().getName().equals("changePassword")) || controller.equals("PublicStudioController"));
 			String who;
 			if (publicRoute) {
 				who = "Público (sem token).";

@@ -60,6 +60,16 @@ class RateLimitEndpointsIntegrationTest extends AuthIntegrationTestBase {
 	}
 
 	@Test
+	void paginaPublicaEhLimitadaPorEnderecoDeRede() throws Exception {
+		for (int i = 0; i < 3; i++) {
+			mvc.perform(get("/api/public/studios/nao-existe").with(from("10.0.0.1"))).andExpect(status().isNotFound());
+		}
+		mvc.perform(get("/api/public/studios/nao-existe").with(from("10.0.0.1"))).andExpect(status().isTooManyRequests())
+				.andExpect(header().exists(HttpHeaders.RETRY_AFTER));
+		mvc.perform(get("/api/public/studios/nao-existe").with(from("10.0.0.2"))).andExpect(status().isNotFound()); // outro endereço não é afetado
+	}
+
+	@Test
 	void cadastroEhLimitadoPorEndereco() throws Exception {
 		register("a@exemplo.test", "10.0.0.1").andExpect(status().isCreated());
 		register("b@exemplo.test", "10.0.0.1").andExpect(status().isCreated());

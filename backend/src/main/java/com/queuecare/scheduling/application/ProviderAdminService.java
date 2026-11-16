@@ -3,6 +3,7 @@ package com.queuecare.scheduling.application;
 import com.queuecare.scheduling.application.ProviderExceptions.InvalidConfigurationException;
 import com.queuecare.scheduling.application.ProviderExceptions.ProviderAlreadyConfiguredException;
 import com.queuecare.scheduling.application.ProviderExceptions.ProviderNotConfiguredException;
+import com.queuecare.scheduling.application.ProviderExceptions.SlugTakenException;
 import com.queuecare.scheduling.application.ProviderExceptions.ServiceNotFoundException;
 import com.queuecare.scheduling.domain.AvailabilityPolicy;
 import com.queuecare.scheduling.domain.AvailabilityWindow;
@@ -91,6 +92,38 @@ public class ProviderAdminService {
 		Provider provider = lockBusiness(ownerUserId);
 		provider.update(businessName.trim(), timeZone, minimumNoticeMinutes, cancellationDeadlineMinutes);
 		return providers.save(provider);
+	}
+
+	// --- página pública (ADR 0015) ---
+
+	static final java.util.Set<String> RESERVED_SLUGS = java.util.Set.of("admin", "api", "app", "entrar", "cadastro", "agendar", "agenda", "fila", "p", "pelo-e-ponto",
+			"pelo-ponto", "queuecare", "servicos", "equipe", "expediente", "suporte", "ajuda", "termos", "privacidade", "login", "logout", "www");
+
+	private static final java.util.regex.Pattern SLUG = java.util.regex.Pattern.compile("^[a-z0-9]+(-[a-z0-9]+)*$");
+
+	/** Define o endereço público e a publicação. Slug nulo/vazio só é aceito com a página NÃO publicada (limpa o endereço). */
+	@Transactional
+	public Provider updatePublicPage(UUID ownerUserId, String slug, boolean published) {
+		String normalized = slug == null || slug.isBlank() ? null : slug.trim();
+		if (normalized != null) {
+			if (normalized.length() < 3 || normalized.length() > 40 || !SLUG.matcher(normalized).matches()) {
+				throw new InvalidConfigurationException("slug", "de 3 a 40 caracteres: letras minúsculas, números e hífens entre grupos");
+			}
+			if (RESERVED_SLUGS.contains(normalized)) {
+				throw new InvalidConfigurationException("slug", "endereço reservado");
+			}
+		}
+		if (published && normalized == null) {
+			throw new InvalidConfigurationException("slug", "escolha um endereço para publicar");
+		}
+		Provider provider = lockBusiness(ownerUserId);
+		try {
+			provider.setPublicPage(normalized, published);
+			return providers.saveAndFlush(provider);
+		} catch (DataIntegrityViolationException e) {
+			// A restrição UNIQUE do banco decide quando dois estúdios disputam o mesmo endereço ao mesmo tempo.
+			throw new SlugTakenException();
+		}
 	}
 
 	// --- serviços ---

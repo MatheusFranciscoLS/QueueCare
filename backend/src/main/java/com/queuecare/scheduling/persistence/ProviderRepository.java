@@ -27,6 +27,12 @@ public interface ProviderRepository extends JpaRepository<Provider, UUID> {
 	@Query("select p from Provider p where p.id = :id and exists (select 1 from UserAccount u where u.id = p.userId and u.active = true)")
 	Optional<Provider> findActiveById(@Param("id") UUID id);
 
+	/** Página pública: só estúdio PUBLICADO e com dono ATIVO. Estúdio inexistente, não publicado ou com dono inativo: a mesma ausência. */
+	@Query("select p from Provider p where p.slug = :slug and p.published = true and exists (select 1 from UserAccount u where u.id = p.userId and u.active = true)")
+	Optional<Provider> findPublishedBySlug(@Param("slug") String slug);
+
+	boolean existsBySlug(String slug);
+
 	/** Catálogo para clientes: só prestadores com dono ATIVO, em ordem estável (nome sem diferenciar maiúsculas, depois id). */
 	@Query(value = "select p from Provider p where exists (select 1 from UserAccount u where u.id = p.userId and u.active = true) order by lower(p.businessName), p.id",
 			countQuery = "select count(p) from Provider p where exists (select 1 from UserAccount u where u.id = p.userId and u.active = true)")

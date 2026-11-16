@@ -316,6 +316,29 @@
         },
         "type" : "object"
       },
+      "PublicPageRequest" : {
+        "properties" : {
+          "published" : {
+            "type" : "boolean"
+          },
+          "slug" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "published" ],
+        "type" : "object"
+      },
+      "PublicPageResponse" : {
+        "properties" : {
+          "published" : {
+            "type" : "boolean"
+          },
+          "slug" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
       "QueueResponse" : {
         "properties" : {
           "checkedInAt" : {
@@ -403,16 +426,9 @@
       },
       "ServiceResponse" : {
         "properties" : {
-          "active" : {
-            "type" : "boolean"
-          },
           "durationMinutes" : {
             "format" : "int32",
             "type" : "integer"
-          },
-          "id" : {
-            "format" : "uuid",
-            "type" : "string"
           },
           "name" : {
             "type" : "string"
@@ -463,6 +479,26 @@
           },
           "userId" : {
             "format" : "uuid",
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "StudioResponse" : {
+        "properties" : {
+          "businessName" : {
+            "type" : "string"
+          },
+          "services" : {
+            "items" : {
+              "$ref" : "#/components/schemas/ServiceResponse"
+            },
+            "type" : "array"
+          },
+          "slug" : {
+            "type" : "string"
+          },
+          "timeZone" : {
             "type" : "string"
           }
         },
@@ -1660,6 +1696,108 @@
         "tags" : [ "provider-controller" ]
       }
     },
+    "/api/provider/public-page" : {
+      "get" : {
+        "description" : "Perfis: PROVIDER.",
+        "operationId" : "publicPage",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PublicPageResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "401" : {
+            "description" : "Sem token ou token inválido. Corpo vazio; o cabeçalho WWW-Authenticate: Bearer indica o esquema."
+          },
+          "403" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "O perfil não tem permissão (corpo vazio) ou a troca de senha é obrigatória (application/problem+json com reason PASSWORD_CHANGE_REQUIRED)."
+          }
+        },
+        "tags" : [ "provider-controller" ]
+      },
+      "put" : {
+        "description" : "Perfis: PROVIDER.",
+        "operationId" : "updatePublicPage",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/PublicPageRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PublicPageResponse"
+                }
+              }
+            },
+            "description" : "Endereço e publicação gravados."
+          },
+          "400" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PublicPageResponse"
+                }
+              }
+            },
+            "description" : "Endereço inválido, reservado, ou publicar sem endereço (errors.slug)."
+          },
+          "401" : {
+            "description" : "Sem token ou token inválido. Corpo vazio; o cabeçalho WWW-Authenticate: Bearer indica o esquema."
+          },
+          "403" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "O perfil não tem permissão (corpo vazio) ou a troca de senha é obrigatória (application/problem+json com reason PASSWORD_CHANGE_REQUIRED)."
+          },
+          "404" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PublicPageResponse"
+                }
+              }
+            },
+            "description" : "Prestador sem negócio cadastrado."
+          },
+          "409" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PublicPageResponse"
+                }
+              }
+            },
+            "description" : "Endereço já em uso por outro estúdio (reason SLUG_TAKEN)."
+          }
+        },
+        "tags" : [ "provider-controller" ]
+      }
+    },
     "/api/provider/services" : {
       "get" : {
         "description" : "Perfis: PROVIDER.",
@@ -2067,6 +2205,63 @@
           }
         },
         "tags" : [ "slot-controller" ]
+      }
+    },
+    "/api/public/studios/{slug}" : {
+      "get" : {
+        "description" : "Público (sem token).",
+        "operationId" : "studio",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "slug",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/StudioResponse"
+                }
+              }
+            },
+            "description" : "Estúdio publicado."
+          },
+          "404" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/StudioResponse"
+                }
+              }
+            },
+            "description" : "Endereço inexistente, inválido, não publicado ou de dono inativo: sempre a mesma resposta (reason STUDIO_NOT_FOUND)."
+          },
+          "429" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Muitos pedidos (application/problem+json sem detalhes).",
+            "headers" : {
+              "Retry-After" : {
+                "description" : "Segundos até poder tentar de novo.",
+                "schema" : {
+                  "format" : "int32",
+                  "type" : "integer"
+                }
+              }
+            }
+          }
+        },
+        "security" : [ ],
+        "tags" : [ "public-studio-controller" ]
       }
     }
   },

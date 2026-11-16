@@ -5,6 +5,9 @@ import com.queuecare.scheduling.application.ProviderAdminService.WindowInput;
 import com.queuecare.scheduling.persistence.AvailabilityWindowEntity;
 import com.queuecare.scheduling.persistence.Provider;
 import com.queuecare.scheduling.persistence.ServiceOffering;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import java.time.DayOfWeek;
@@ -87,6 +90,31 @@ class ProviderController {
 	@PutMapping
 	BusinessResponse update(@AuthenticationPrincipal Jwt jwt, @Valid @RequestBody BusinessRequest r) {
 		return BusinessResponse.from(admin.updateBusiness(userId(jwt), r.businessName(), r.timeZone(), r.minimumNoticeMinutes(), r.cancellationDeadlineMinutes()));
+	}
+
+	// --- página pública (ADR 0015) ---
+
+	record PublicPageRequest(String slug, @NotNull Boolean published) {
+	}
+
+	record PublicPageResponse(String slug, boolean published) {
+		static PublicPageResponse from(Provider p) {
+			return new PublicPageResponse(p.getSlug(), p.isPublished());
+		}
+	}
+
+	@GetMapping("/public-page")
+	PublicPageResponse publicPage(@AuthenticationPrincipal Jwt jwt) {
+		return PublicPageResponse.from(admin.getBusiness(userId(jwt)));
+	}
+
+	@ApiResponse(responseCode = "200", description = "Endereço e publicação gravados.", content = @Content(schema = @Schema(implementation = PublicPageResponse.class)))
+	@ApiResponse(responseCode = "400", description = "Endereço inválido, reservado, ou publicar sem endereço (errors.slug).")
+	@ApiResponse(responseCode = "404", description = "Prestador sem negócio cadastrado.")
+	@ApiResponse(responseCode = "409", description = "Endereço já em uso por outro estúdio (reason SLUG_TAKEN).")
+	@PutMapping("/public-page")
+	PublicPageResponse updatePublicPage(@AuthenticationPrincipal Jwt jwt, @Valid @RequestBody PublicPageRequest r) {
+		return PublicPageResponse.from(admin.updatePublicPage(userId(jwt), r.slug(), r.published()));
 	}
 
 	// --- serviços ---

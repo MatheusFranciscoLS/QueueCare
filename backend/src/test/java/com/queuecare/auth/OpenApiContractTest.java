@@ -85,12 +85,12 @@ class OpenApiContractTest extends AuthIntegrationTestBase {
 	@Test
 	void rotasPublicasNaoExigemTokenENenhumaOutraEPublica() throws Exception {
 		JsonNode paths = spec().get("paths");
-		for (String publicRoute : new String[] { "/api/auth/login", "/api/auth/register" }) {
-			JsonNode security = paths.path(publicRoute).path("post").path("security");
+		for (String publicRoute : new String[] { "/api/auth/login", "/api/auth/register", "/api/public/studios/{slug}" }) {
+			JsonNode security = paths.path(publicRoute).path(publicRoute.contains("/public/") ? "get" : "post").path("security");
 			assertTrue(security.isArray() && security.isEmpty(), publicRoute + " deve ser pública (security vazio)");
 		}
 		paths.fieldNames().forEachRemaining(path -> {
-			if (!path.startsWith("/api/auth/login") && !path.startsWith("/api/auth/register")) {
+			if (!path.startsWith("/api/auth/login") && !path.startsWith("/api/auth/register") && !path.startsWith("/api/public/studios/")) {
 				paths.get(path).forEach(op -> assertFalse(op.has("security") && op.get("security").isEmpty(), path + " não deveria ser pública"));
 			}
 		});
@@ -131,7 +131,7 @@ class OpenApiContractTest extends AuthIntegrationTestBase {
 	void respostaDe429SoExisteNasRotasRealmenteLimitadas() throws Exception {
 		JsonNode paths = spec().get("paths");
 		java.util.Set<String> expected = java.util.Set.of("post /api/auth/login", "post /api/auth/register", "post /api/auth/change-password", "post /api/admin/providers",
-				"post /api/provider/staff/accounts", "get /api/catalog/providers", "get /api/catalog/providers/{providerId}/services", "get /api/providers/{providerId}/slots");
+				"post /api/provider/staff/accounts", "get /api/catalog/providers", "get /api/catalog/providers/{providerId}/services", "get /api/providers/{providerId}/slots", "get /api/public/studios/{slug}");
 		java.util.Set<String> found = new java.util.TreeSet<>();
 		paths.fieldNames().forEachRemaining(path -> paths.get(path).fieldNames().forEachRemaining(method -> {
 			JsonNode op = paths.get(path).get(method);
@@ -143,5 +143,13 @@ class OpenApiContractTest extends AuthIntegrationTestBase {
 		}));
 		assertEquals(new java.util.TreeSet<>(expected), found, "429 só nas rotas limitadas");
 		assertFalse(paths.toString().contains("/api/test/"), "rotas de sonda dos testes não entram no contrato");
+	}
+	@Test
+	void paginaPublicaDoEstudioEDocumentadaComoPublicaSemTokenNem401() throws Exception {
+		JsonNode op = spec().at("/paths/~1api~1public~1studios~1{slug}/get");
+		assertTrue(op.path("description").asText().contains("Público (sem token)"));
+		assertEquals(0, op.path("security").size(), "sem exigência de token");
+		assertFalse(op.path("responses").has("401") || op.path("responses").has("403"), "rota pública não tem 401 nem 403");
+		assertTrue(op.path("responses").has("404") && op.path("responses").has("429"));
 	}
 }
