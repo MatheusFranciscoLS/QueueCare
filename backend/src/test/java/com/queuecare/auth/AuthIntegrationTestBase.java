@@ -83,7 +83,7 @@ abstract class AuthIntegrationTestBase {
 		// Os limitadores são em memória e compartilhados pelo contexto: cada teste começa do zero.
 		requestLimiter.clearAll();
 		loginLockoutLimiter.clearAll();
-		jdbc.execute("TRUNCATE appointment_events, appointments, availability_windows, services, providers, users CASCADE");
+		jdbc.execute("TRUNCATE appointment_events, appointments, pets, availability_windows, services, providers, users CASCADE");
 	}
 
 	/** Cria um usuário diretamente no banco, com senha {@link #PASSWORD} em BCrypt. */

@@ -1,5 +1,7 @@
 package com.queuecare.auth;
 
+import com.queuecare.pets.Pet;
+import com.queuecare.pets.PetRepository;
 import com.queuecare.scheduling.persistence.UserAccount;
 import com.queuecare.scheduling.persistence.UserAccountRepository;
 import jakarta.persistence.EntityManager;
@@ -26,11 +28,14 @@ public class RowLocks {
 
 	private final EntityManager entityManager;
 	private final UserAccountRepository users;
+	private final PetRepository pets;
 	private final long lockTimeoutMillis;
 
-	public RowLocks(EntityManager entityManager, UserAccountRepository users, @Value("${queuecare.security.user-lock-timeout:3s}") Duration lockTimeout) {
+	public RowLocks(EntityManager entityManager, UserAccountRepository users, PetRepository pets,
+			@Value("${queuecare.security.user-lock-timeout:3s}") Duration lockTimeout) {
 		this.entityManager = entityManager;
 		this.users = users;
+		this.pets = pets;
 		if (lockTimeout.compareTo(Duration.ofMillis(1)) < 0 || lockTimeout.compareTo(Duration.ofSeconds(60)) > 0) {
 			throw new IllegalArgumentException("queuecare.security.user-lock-timeout deve estar entre 1 ms e 60 s");
 		}
@@ -45,6 +50,15 @@ public class RowLocks {
 	public Optional<UserAccount> lockUser(UUID userId) {
 		limitWait();
 		return users.findByIdForUpdate(userId);
+	}
+
+	/**
+	 * Carrega o pet BLOQUEANDO a linha, só se for do cliente informado (vazio se não existe ou é de outro). Ordem global de bloqueios
+	 * (ADR 0016, item 5): cliente, depois pet, depois agendamento; quem não precisa de um nível o pula, nunca volta atrás.
+	 */
+	public Optional<Pet> lockPet(UUID petId, UUID customerId) {
+		limitWait();
+		return pets.findByIdAndCustomerIdForUpdate(petId, customerId);
 	}
 
 	/** Trava a linha única de controle: quem muda o estado de contas serializa aqui ANTES de decidir. */

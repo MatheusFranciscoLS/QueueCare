@@ -44,6 +44,7 @@ class SecurityConfig {
 						.requestMatchers("/api/admin/**").hasRole("ADMIN")
 						.requestMatchers("/api/provider/**").hasRole("PROVIDER")
 						.requestMatchers("/api/catalog/**").hasRole("CUSTOMER")
+						.requestMatchers("/api/customer/**").hasRole("CUSTOMER")
 						.requestMatchers("/api/agenda/**").hasAnyRole("PROVIDER", "ATTENDANT")
 						.requestMatchers(HttpMethod.POST, "/api/appointments").hasRole("CUSTOMER")
 						.requestMatchers(HttpMethod.GET, "/api/appointments/mine").hasRole("CUSTOMER")
