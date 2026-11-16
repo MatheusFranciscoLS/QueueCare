@@ -18,11 +18,20 @@ export function PetsPage() {
   const api = useMemo(() => petsApi(request), [request])
   const [showArchived, setShowArchived] = useState(false)
   const load = useCallback(() => api.list(showArchived), [api, showArchived])
-  const { data, error, loading, reload } = useLoad<Pet[]>(load)
+  const { data, error, loading, reload, version } = useLoad<Pet[]>(load)
   const [notice, setNotice] = useState<string | null>(null)
   // O erro de uma ação mora na LISTA (não na linha): a linha pode sumir (arquivar) ou mudar de lugar depois de recarregar.
   const [problem, setProblem] = useState<string | null>(null)
   const headingRef = useRef<HTMLHeadingElement>(null)
+  // Pedido de foco feito por uma ação: atendido quando a lista refeita (carga NOVA) já foi desenhada, para saber se a linha ainda existe.
+  const pendingFocus = useRef<{ id: string; version: number } | null>(null)
+  useEffect(() => {
+    const request = pendingFocus.current
+    if (!request || version <= request.version) return
+    pendingFocus.current = null
+    const row = document.querySelector<HTMLElement>(`[data-pet-id="${request.id}"]`)
+    ;(row ?? headingRef.current)?.focus()
+  }, [version])
 
   if (loading && !data) return <Loading />
   if (error && !data) return <p role="alert" className="error">{describeError(error)}</p>
@@ -55,8 +64,9 @@ export function PetsPage() {
             onChanged={reload}
             setNotice={setNotice}
             setProblem={setProblem}
-            onRowGone={() => headingRef.current?.focus()}
-            archivedVisible={showArchived}
+            onActed={(id) => {
+              pendingFocus.current = { id, version }
+            }}
           />
         ))}
       </ul>
@@ -78,18 +88,16 @@ export function PetsPage() {
 
 function PetRow({
   pet,
-  archivedVisible,
   onChanged,
   setNotice,
   setProblem,
-  onRowGone,
+  onActed,
 }: {
   pet: Pet
-  archivedVisible: boolean
   onChanged: () => Promise<void>
   setNotice: (message: string | null) => void
   setProblem: (message: string | null) => void
-  onRowGone: () => void
+  onActed: (petId: string) => void
 }) {
   const { request } = useAuth()
   const api = useMemo(() => petsApi(request), [request])
@@ -108,7 +116,7 @@ function PetRow({
     wasConfirming.current = confirming
   }, [confirming])
 
-  async function run(action: () => Promise<Pet>, done: (updated: Pet) => string, goneAfter: boolean) {
+  async function run(action: () => Promise<Pet>, done: (updated: Pet) => string) {
     await once(async () => {
       setProblem(null)
       setNotice(null)
@@ -118,12 +126,15 @@ function PetRow({
         setConfirming(false)
         wasConfirming.current = false
         setNotice(done(updated))
-        if (goneAfter) onRowGone()
-        else rowRef.current?.focus()
+        onActed(pet.id) // depois da lista refeita: a linha continua? foca a linha; sumiu? foca o título
+        rowRef.current?.focus()
         await onChanged()
       } catch (e) {
         setProblem(describeError(e))
         setConfirming(false)
+        wasConfirming.current = false
+        onActed(pet.id) // se a lista refeita não tiver mais a linha (alteração concorrente), o foco vai para o título
+        rowRef.current?.focus()
         // O pet pode ter mudado ou sumido no servidor: refaz a lista para a tela não mostrar um estado velho.
         await onChanged().catch(() => undefined)
       } finally {
@@ -134,7 +145,7 @@ function PetRow({
 
   if (editing) {
     return (
-      <li className="row" ref={rowRef} tabIndex={-1}>
+      <li className="row" ref={rowRef} tabIndex={-1} data-pet-id={pet.id}>
         <PetForm
           idPrefix={`pet-${pet.id}`}
           pet={pet}
@@ -154,7 +165,7 @@ function PetRow({
   }
 
   return (
-    <li className="row" ref={rowRef} tabIndex={-1} data-active={pet.active}>
+    <li className="row" ref={rowRef} tabIndex={-1} data-pet-id={pet.id} data-active={pet.active}>
       <span className="pet-info">
         <strong>{pet.name}</strong> <span className="appt-service">{petDescription(pet)}</span>{' '}
         {!pet.active && <span className="badge">Arquivado</span>}
@@ -175,7 +186,7 @@ function PetRow({
                 type="button"
                 className="button secondary"
                 disabled={busy}
-                onClick={() => run(() => api.reactivate(pet.id), (p) => `${p.name} reativado.`, false)}
+                onClick={() => run(() => api.reactivate(pet.id), (p) => `${p.name} reativado.`)}
               >
                 {busy ? 'Reativando…' : 'Reativar'}
               </button>
@@ -186,7 +197,7 @@ function PetRow({
             <span>
               Arquivar {pet.name}? Agendamentos já feitos continuam valendo, mas você não poderá marcar novos horários com ele enquanto estiver arquivado.
             </span>
-            <button type="button" className="button" disabled={busy} onClick={() => run(() => api.archive(pet.id), (p) => `${p.name} arquivado.`, !archivedVisible)}>
+            <button type="button" className="button" disabled={busy} onClick={() => run(() => api.archive(pet.id), (p) => `${p.name} arquivado.`)}>
               {busy ? 'Arquivando…' : 'Confirmar arquivamento'}
             </button>
             <button type="button" className="button secondary" ref={backRef} disabled={busy} onClick={() => setConfirming(false)}>

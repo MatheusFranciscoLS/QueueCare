@@ -40,8 +40,12 @@ export function BookPage() {
   const loadPets = useCallback(() => pets.list(), [pets])
   const petList = useLoad<Pet[]>(loadPets)
   const [petChoice, setPetChoice] = useState<string | null>(null)
+  // Versão da lista de pets no momento em que a API recusou um pet: enquanto nenhuma carga NOVA der certo, a lista é velha e não vale
+  // (se a atualização falhar, os dados antigos continuam na tela, mas nenhum pet pode ser escolhido nem vir escolhido sozinho).
+  const [refusedAtVersion, setRefusedAtVersion] = useState<number | null>(null)
+  const petsFresh = refusedAtVersion === null || petList.version > refusedAtVersion
   // Um só pet ativo já vem escolhido; com mais de um a pessoa escolhe. Um id que sumiu da lista (arquivado em outra tela) deixa de valer.
-  const pet = petList.data?.find((p) => p.id === petChoice) ?? (petList.data?.length === 1 ? petList.data[0] : null)
+  const pet = !petsFresh ? null : (petList.data?.find((p) => p.id === petChoice) ?? (petList.data?.length === 1 ? petList.data[0] : null))
   // Sobe quando a API recusa o horário escolhido: a lista de horários é refeita do zero.
   const [slotsVersion, setSlotsVersion] = useState(0)
   const [bookingError, setBookingError] = useState<string | null>(null)
@@ -60,6 +64,7 @@ export function BookPage() {
         if (e instanceof ApiError && e.reason && PET_REASONS.has(e.reason)) {
           // O problema é o pet: o horário continua valendo. Refaz a lista de pets (o pet pode ter sido arquivado) e pede nova escolha.
           setPetChoice(null)
+          setRefusedAtVersion(petList.version)
           await petList.reload()
         } else {
           setSlot(null)
@@ -161,7 +166,7 @@ export function BookPage() {
             error={petList.error}
             reload={petList.reload}
             selected={pet}
-            disabled={submitting}
+            disabled={submitting || !petsFresh}
             onSelect={(id) => {
               setPetChoice(id)
               setBookingError(null)

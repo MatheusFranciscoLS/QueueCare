@@ -294,6 +294,8 @@ describe('meus pets: editar, arquivar e reativar', () => {
 
     expect(await screen.findByText('Não encontramos esse pet. Atualize a lista e escolha de novo.')).toBeInTheDocument()
     await waitFor(() => expect(screen.queryByText('Rex')).not.toBeInTheDocument())
+    // a linha sumiu depois do erro: o foco vai para o título (não fica num botão que deixou de existir)
+    await waitFor(() => expect(screen.getByRole('heading', { name: 'Meus pets' })).toHaveFocus())
   })
 
   it('reativar manda a chamada certa e o pet volta ao normal', async () => {
@@ -324,6 +326,8 @@ describe('meus pets: editar, arquivar e reativar', () => {
     await user.click(await screen.findByRole('button', { name: 'Reativar' }))
     expect(await screen.findByText(/chegou ao limite de pets/)).toBeInTheDocument()
     expect(screen.getByText('Arquivado')).toBeInTheDocument()
+    // o erro não tira o foco da linha: ela continua na lista
+    await waitFor(() => expect(screen.getByText('Arquivado').closest('li')).toHaveFocus())
   })
 })
 
@@ -419,24 +423,56 @@ describe('agendar: escolha do pet', () => {
     expect(await screen.findByRole('radio', { name: /Rex/ })).toBeChecked()
   })
 
-  it('pet arquivado em outra tela (422): mostra o motivo, mantém o horário e refaz a lista de pets', async () => {
-    const KIKA = { id: 'pet-4', name: 'Kika', species: 'CAT', breed: null, size: null, notes: null, active: true }
+  const KIKA = { id: 'pet-4', name: 'Kika', species: 'CAT', breed: null, size: null, notes: null, active: true }
+
+  it.each([
+    ['PET_INACTIVE', 422, 'Esse pet está arquivado. Reative-o em Meus pets ou escolha outro.'],
+    ['PET_NOT_FOUND', 404, 'Não encontramos esse pet. Atualize a lista e escolha de novo.'],
+  ])('recusa %s: mostra o motivo, mantém o horário, limpa a escolha e refaz a lista de pets', async (reason, status, message) => {
     let listed = [REX, MEL, KIKA]
     const { user } = await openBook({
       'GET /api/customer/pets': () => json(200, listed),
       'POST /api/appointments': () => {
         listed = [MEL, KIKA]
-        return problem(422, 'agendamento recusado', { reason: 'PET_INACTIVE' })
+        return problem(status, 'agendamento recusado', { reason })
       },
     })
     await user.click(await screen.findByRole('radio', { name: /Rex/ }))
     await user.click(screen.getByRole('button', { name: 'Confirmar agendamento' }))
 
-    expect(await screen.findByText('Esse pet está arquivado. Reative-o em Meus pets ou escolha outro.')).toBeInTheDocument()
+    expect(await screen.findByText(message)).toBeInTheDocument()
     await waitFor(() => expect(screen.queryByRole('radio', { name: /Rex/ })).not.toBeInTheDocument())
     expect(screen.getByRole('radio', { name: /Mel/ })).not.toBeChecked() // a escolha foi limpa
     expect(screen.getByRole('button', { name: '09:00' })).toHaveAttribute('aria-pressed', 'true') // o horário continua escolhido
     expect(screen.getByRole('button', { name: 'Confirmar agendamento' })).toBeDisabled()
+  })
+
+  it('se a lista de pets não conseguir ser atualizada depois da recusa, o único pet NÃO volta escolhido e a confirmação fica bloqueada até uma lista nova', async () => {
+    let phase: 'before' | 'broken' | 'fixed' = 'before'
+    const { user } = await openBook({
+      'GET /api/customer/pets': () => (phase === 'before' ? json(200, [REX]) : phase === 'broken' ? problem(500, 'erro') : json(200, [MEL])),
+      'POST /api/appointments': () => {
+        phase = 'broken'
+        return problem(422, 'agendamento recusado', { reason: 'PET_INACTIVE' })
+      },
+    })
+    expect(await screen.findByRole('radio', { name: /Rex/ })).toBeChecked() // único pet: vinha escolhido
+    await user.click(screen.getByRole('button', { name: 'Confirmar agendamento' }))
+
+    expect(await screen.findByText('Esse pet está arquivado. Reative-o em Meus pets ou escolha outro.')).toBeInTheDocument()
+    // a atualização falhou: os dados antigos continuam na tela, com aviso, mas o pet recusado não pode estar escolhido
+    expect(await screen.findByText(/Não foi possível atualizar os dados/)).toBeInTheDocument()
+    expect(screen.getByRole('radio', { name: /Rex/ })).not.toBeChecked()
+    expect(screen.getByRole('radio', { name: /Rex/ })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Confirmar agendamento' })).toBeDisabled()
+
+    phase = 'fixed'
+    await user.click(screen.getAllByRole('button', { name: 'Tentar de novo' })[0])
+
+    // lista nova: o único pet agora é a Mel, que vem escolhida, e a confirmação libera
+    expect(await screen.findByRole('radio', { name: /Mel/ })).toBeChecked()
+    expect(screen.queryByRole('radio', { name: /Rex/ })).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Confirmar agendamento' })).toBeEnabled()
   })
 
   it('durante o envio as escolhas de pet ficam bloqueadas', async () => {
