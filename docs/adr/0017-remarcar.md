@@ -47,7 +47,15 @@ O limite de 3 remarcações do cliente é contado por esses eventos, dentro da t
 Hoje `GET /api/providers/{id}/slots` esconde o intervalo do próprio agendamento (ele conta como ocupado), então a tela não ofereceria deslocar de 10:00 para 10:30 num serviço de 60 minutos. Proposta: parâmetro opcional `excludeAppointmentId`, **ignorado** se o agendamento não for do chamador (cliente dono, ou equipe do prestador): não revela nada. Entra no PR de backend, pequeno.
 
 ### 9. Histórico consultável, não só gravado
-`GET /api/appointments/{id}/events` (somente leitura): lista os eventos do agendamento em ordem, com tipo, instante e, nas remarcações, o horário anterior e o novo. Quem pode: a **equipe** do prestador (com o nome de quem agiu) e o **cliente dono** (só se a ação foi "você" ou "equipe", sem nome de funcionário). Agendamento de outra pessoa ou inexistente: a mesma 404. Fica no PR de backend, pequeno.
+`GET /api/appointments/{id}/events` (somente leitura): lista os eventos do agendamento **por instante (`created_at`) e, em empate, por id** (ordem determinística), com tipo, instante e, nas remarcações, o horário anterior e o novo. Quem pode: a **equipe** do prestador (com o nome de quem agiu) e o **cliente dono** (só se a ação foi "você" ou "equipe", sem nome de funcionário). Agendamento de outra pessoa ou inexistente: a mesma 404. Fica no PR de backend, pequeno.
+
+### Testes de autorização do histórico (obrigatórios no PR de backend)
+- **Cliente dono** vê o histórico **sem nomes de funcionários** (só "você" ou "equipe").
+- **Equipe vinculada ao prestador** vê os nomes de quem agiu.
+- **Cliente alheio** recebe a **mesma 404** que um id inexistente (sem pista de existência).
+- **Equipe de outro prestador** não acessa (mesma 404); atendente sem vínculo recebe 403 antes de qualquer consulta.
+- **ADMIN** não acessa.
+- Dois eventos no **mesmo instante** saem sempre na mesma ordem (desempate por id).
 
 ## Testes que provam a diferença entre os papéis (obrigatórios no PR de backend)
 - Cliente: a 4ª remarcação do mesmo agendamento recebe 422 `RESCHEDULE_LIMIT`; as 3 primeiras passam.
