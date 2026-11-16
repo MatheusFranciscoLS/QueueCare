@@ -538,9 +538,29 @@ input[type='date'] {
     padding-top: var(--space-4);
   }
 
+  /* cabeçalho em UMA linha: o nome encolhe com reticências, "Trocar senha" e "Sair" ficam sempre à vista */
   .who {
-    width: 100%;
-    justify-content: space-between;
+    flex: 1 1 100%;
+    flex-wrap: nowrap;
+    gap: var(--space-2);
+  }
+
+  .who > span {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .who .link {
+    flex: none;
+  }
+
+  .who .button {
+    flex: none;
+    min-height: var(--target);
+    padding-inline: var(--space-3);
   }
 }
 
