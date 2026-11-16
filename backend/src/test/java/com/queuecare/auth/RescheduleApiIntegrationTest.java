@@ -534,6 +534,38 @@ class RescheduleApiIntegrationTest extends AuthIntegrationTestBase {
 		assertEquals(plain, slots(tokenA, date, UUID.randomUUID().toString()));
 	}
 
+	@Test
+	void horariosLivresDaRemarcacaoUsamADuracaoDoProprioAgendamentoEIgnoramOParametroDeOutroServico() throws Exception {
+		String mine = book(tokenA, slot(7, 9)); // 60 minutos
+		jdbc.update("UPDATE services SET duration_minutes = 90 WHERE id = ?", serviceP); // o serviço foi editado depois da reserva
+		String date = day(7).toString();
+
+		assertEquals(Duration.ofMinutes(90), slotLength(slots(tokenA, date, null)), "sem o parâmetro: a duração atual do serviço");
+		String withParam = slots(tokenA, date, mine);
+		assertEquals(Duration.ofMinutes(60), slotLength(withParam), "ao remarcar: a duração do PRÓPRIO agendamento, a mesma que a remarcação valida");
+		// e todo horário oferecido é aceito pela remarcação (nunca diverge)
+		for (String offered : JsonPath.<List<String>>read(withParam, "$[*].localStart").subList(0, 3)) {
+			if (!offered.equals(slot(7, 9))) {
+				reschedule(tokenA, mine, offered).andExpect(status().isOk());
+				break;
+			}
+		}
+
+		// parâmetro de um agendamento de OUTRO serviço: ignorado (o horário dele continua ocupado e a duração é a do serviço consultado)
+		UUID other = jdbc.queryForObject("INSERT INTO services (provider_id, name, duration_minutes) VALUES (?, 'Hidratação', 30) RETURNING id", UUID.class, providerP);
+		String booked = book(tokenA, slot(8, 9));
+		String otherSlots = send(get("/api/providers/" + providerP + "/slots").param("serviceId", other.toString()).param("date", day(8).toString()).param("excludeAppointmentId", booked),
+				tokenA, null).andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+		assertFalse(JsonPath.<List<String>>read(otherSlots, "$[*].localStart").contains(slot(8, 9)), "agendamento de outro serviço não é ignorado");
+		assertEquals(Duration.ofMinutes(30), slotLength(otherSlots));
+	}
+
+	private static Duration slotLength(String slotsJson) {
+		List<String> starts = JsonPath.read(slotsJson, "$[*].startsAt");
+		List<String> ends = JsonPath.read(slotsJson, "$[*].endsAt");
+		return Duration.between(Instant.parse(starts.get(0)), Instant.parse(ends.get(0)));
+	}
+
 	private String slots(String bearer, String date, String exclude) throws Exception {
 		MockHttpServletRequestBuilder req = get("/api/providers/" + providerP + "/slots").param("serviceId", serviceP.toString()).param("date", date);
 		if (exclude != null) {

@@ -83,7 +83,8 @@ public class SlotService {
 	 */
 	@Transactional(readOnly = true)
 	public List<Slot> freeSlots(UUID providerId, UUID serviceId, LocalDate date, UUID excludeAppointmentId, UUID requesterId) {
-		UUID ignoring = authorizedExclusion(providerId, excludeAppointmentId, requesterId);
+		Appointment ignoredAppointment = authorizedExclusion(providerId, serviceId, excludeAppointmentId, requesterId);
+		UUID ignoring = ignoredAppointment == null ? null : ignoredAppointment.getId();
 		Provider provider = providers.findActiveById(providerId).orElseThrow(() -> new BookingRejectedException(Reason.PROVIDER_NOT_FOUND));
 		ServiceOffering service = services.findByIdAndProviderId(serviceId, providerId)
 				.filter(ServiceOffering::isActive)
@@ -100,7 +101,10 @@ public class SlotService {
 		BookingTimeRules rules = new BookingTimeRules(Duration.ofMinutes(provider.getMinimumNoticeMinutes()));
 		LocalTimeResolver resolver = new LocalTimeResolver(zone);
 		Instant now = clock.instant();
-		Duration duration = Duration.ofMinutes(service.getDurationMinutes());
+		// Ao remarcar, o atendimento tem a duração do PRÓPRIO agendamento (a mesma que a remarcação valida), mesmo que o serviço tenha sido
+		// editado depois: os horários oferecidos e os aceitos nunca divergem.
+		Duration duration = ignoredAppointment == null ? Duration.ofMinutes(service.getDurationMinutes())
+				: Duration.between(ignoredAppointment.getStartsAt(), ignoredAppointment.getEndsAt());
 
 		Instant dayStart = date.atStartOfDay(zone).toInstant();
 		Instant dayEnd = date.plusDays(1).atStartOfDay(zone).toInstant();
@@ -150,8 +154,11 @@ public class SlotService {
 		return end.isAfter(time) && !end.isAfter(windowEnd);
 	}
 
-	/** O agendamento a ignorar, se o chamador puder; nulo caso contrário (parâmetro desconhecido ou alheio é simplesmente ignorado). */
-	private UUID authorizedExclusion(UUID providerId, UUID appointmentId, UUID requesterId) {
+	/**
+	 * O agendamento a ignorar, se o chamador puder; nulo caso contrário (parâmetro desconhecido, alheio ou de OUTRO serviço que o consultado é
+	 * simplesmente ignorado, sem erro e sem pista).
+	 */
+	private Appointment authorizedExclusion(UUID providerId, UUID serviceId, UUID appointmentId, UUID requesterId) {
 		if (appointmentId == null || requesterId == null) {
 			return null;
 		}
@@ -159,12 +166,12 @@ public class SlotService {
 		if (requester == null) {
 			return null;
 		}
-		return appointments.findById(appointmentId).filter(a -> a.getProviderId().equals(providerId)).filter(a -> {
+		return appointments.findById(appointmentId).filter(a -> a.getProviderId().equals(providerId) && a.getServiceId().equals(serviceId)).filter(a -> {
 			if (requester.getRole() == UserRole.CUSTOMER) {
 				return a.getCustomerId().equals(requester.getId());
 			}
 			return staffAccess.providerIdOf(requester).filter(providerId::equals).isPresent();
-		}).map(Appointment::getId).orElse(null);
+		}).orElse(null);
 	}
 
 	private List<TimeRange> takenRanges(UUID providerId, Instant dayStart, Instant dayEnd, UUID ignoring) {
