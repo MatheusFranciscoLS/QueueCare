@@ -56,7 +56,7 @@ Todos em `frontend/src/ui/`, com testes de comportamento e verificação visual 
 
 ## 4. Layout e navegação
 - **Computador (≥ 1024 px):** **barra lateral fixa de 240 px** (marca no topo, grupos de navegação por perfil, e no rodapé o usuário, o perfil, o tema e "Sair"); conteúdo com largura máxima de leitura (~72 rem), títulos de página com ação principal à direita.
-- **Tablet e celular (< 1024 px):** barra superior com a marca e o botão de menu; o menu abre como gaveta (`<dialog>`), com foco preso, Esc e fechamento ao navegar. Sem rolagem horizontal a partir de **320 px**. As ações de cada linha cabem sem esconder o texto.
+- **Tablet e celular (< 1024 px):** barra superior com a marca e o botão de menu; o menu abre como gaveta (`<dialog>`) e o ciclo de foco é critério verificado: **foco inicial** dentro da gaveta; **foco contido** nela e **fundo inerte** (não clicável nem focável) enquanto aberta; **Esc** fecha; **fechar ao navegar** sem deixar o foco num elemento removido (vai para o título da nova página); **retorno do foco** ao botão que abriu; e o foco **nunca fica encoberto** por barras fixas. Sem rolagem horizontal a partir de **320 px**. As ações de cada linha cabem sem esconder o texto.
 - **Navegação por perfil:** PROVIDER (Início, **Agenda**, **Fila**, Serviços, Expediente, Equipe, Meu negócio); ATTENDANT (Início, **Agenda**, **Fila**); CUSTOMER (Início, Agendar, Meus agendamentos, Meus pets); ADMIN (Contas, Novo prestador). **Agenda e Fila são telas separadas**; a **semana é uma modalidade da Agenda** (controle Dia/Semana na mesma tela).
 - **Rotas atuais não mudam** (`/agenda`, `/fila`, `/agendar`...); só entram `/p/:endereco` (página pública) e o modo semana da agenda (parâmetro de endereço).
 - **Atalho para o conteúdo** no topo (skip link), marcos (`header`, `nav`, `main`), título de página único por tela e foco movido ao título quando a rota muda.
@@ -66,7 +66,7 @@ Todos em `frontend/src/ui/`, com testes de comportamento e verificação visual 
 |---|---|
 | Entrar, Cadastrar, Trocar senha | cartão estreito centrado com a marca e a frase de apresentação; campos do design system; erros por campo |
 | Início por perfil | **Equipe:** "Hoje" com o resumo (agendados, na fila, concluídos, próximo atendimento) e atalhos; **Cliente:** próximo agendamento e atalhos; **Admin:** atalhos |
-| **Agenda** (dia e semana) | cabeçalho com data, navegação por dia e controle Dia/Semana; **dia:** Linha de Atendimento do dia; **semana:** 7 colunas no computador, lista por dia no celular, com o estado de cada atendimento |
+| **Agenda** (dia e semana) | cabeçalho com data, navegação por dia e controle Dia/Semana; **dia:** Linha de Atendimento do dia; **semana:** comportamento explícito pela LARGURA DA ÁREA DE CONTEÚDO (não pela da janela): **≥ 960 px, sete colunas** (janela de ~1200 px ou mais, já descontada a barra lateral de 240 px); **abaixo disso, lista por dia** empilhada (uma seção por dia, com o estado de cada atendimento). Legibilidade vale mais que manter sete colunas: a semana é validada em 1024 px, que cai no segundo caso |
 | **Fila** | quem chegou, na ordem de chegada, com posição, tempo de espera e "Concluir atendimento" |
 | Serviços, Expediente, Equipe, Meu negócio | formulários e listas com o design system; Meu negócio inclui o endereço público e "publicar" |
 | **Página pública do estúdio** (`/p/:endereco`) | **sem fotos** (tipografia e formas): nome, fuso, serviços (nome e duração), chamada "Agendar um horário" que leva a entrar ou cadastrar e depois ao agendamento já no estúdio; estado "não encontrado" igual para inexistente e não publicado (ADR 0015) |
@@ -76,20 +76,20 @@ Todos em `frontend/src/ui/`, com testes de comportamento e verificação visual 
 | 404 e estados vazios | frase, ícone e próxima ação |
 
 ## 6. Tema claro e escuro
-Tokens semânticos nos dois temas (tabelas acima). O tema **segue o sistema** por padrão e o usuário pode **forçar claro ou escuro** no rodapé do menu; a escolha fica em `localStorage` (com `try/catch`: se falhar, segue o sistema). Nenhum componente tem cor fixa.
+Tokens semânticos nos dois temas (tabelas acima). O tema **segue o sistema** por padrão e o usuário pode **forçar claro ou escuro** no rodapé do menu; a escolha fica em `localStorage` (com `try/catch`: se falhar, segue o sistema). **Sem flash:** um pequeno script em linha no `index.html` aplica o tema **antes da primeira renderização visível**, para que ninguém com preferência escura veja a tela clara por um instante; o critério é verificado no navegador (captura do primeiro quadro com a preferência escura salva). Nenhum componente tem cor fixa.
 
 ## 7. Acessibilidade (WCAG 2.2 AA)
-Contraste medido (tabelas acima); foco **sempre visível** (anel de 3 px, nunca encoberto por barras fixas); teclado em tudo (ordem lógica, sem armadilha, Esc fecha a gaveta); alvos de 44 px; `lang="pt-BR"`; rótulos, dicas e erros ligados aos campos; avisos em regiões `status` e `alert`; título da página por rota; nada depende só de cor; reflow sem rolagem horizontal a 320 px; texto cresce até 200 % sem perder conteúdo; `prefers-reduced-motion` respeitado.
+Contraste medido (tabelas acima); foco **sempre visível** (anel de 3 px, nunca encoberto por barras fixas, WCAG 2.4.11); teclado em tudo (ordem lógica, sem armadilha); gaveta com o ciclo de foco completo da seção 4; alvos de 44 px; `lang="pt-BR"`; rótulos, dicas e erros ligados aos campos; avisos em regiões `status` e `alert`; título da página por rota; nada depende só de cor; reflow sem rolagem horizontal a 320 px; texto cresce até 200 % sem perder conteúdo; `prefers-reduced-motion` respeitado.
 
 ## 8. Como se verifica "perfeito" (critérios mensuráveis)
 Um site "perfeito" não é verificável; estes critérios são. **Cada PR de tela os cumpre e mostra a evidência:**
 1. **Os testes existentes passam** (backend e front) e a mutação dos comportamentos tocados continua.
-2. **Navegador real (Playwright):** a tela é aberta, percorrida e fotografada em **1280 px e 390 px**, nos temas **claro e escuro** (4 capturas por tela, anexadas no PR e mostradas ao Matheus, que aprova o visual).
+2. **Navegador real (Playwright):** a tela é aberta, percorrida e fotografada em **1280 px e 390 px**, nos temas **claro e escuro** (4 capturas por tela, anexadas no PR e mostradas ao Matheus, que aprova o visual; a verificação do primeiro quadro com tema escuro salvo entra na fundação).
 3. **axe-core** (`@axe-core/playwright`): **zero violações graves ou críticas** por tela e tema; as moderadas ficam justificadas.
 4. **Teclado:** percurso por Tab em ordem lógica e **foco visível em todo elemento interativo** (script que mede o contorno), e Esc fecha o menu.
 5. **Contraste:** pares críticos conferidos com a fórmula (a mesma tabela deste ADR) e, no navegador, pelo axe.
-6. **Responsivo:** sem rolagem horizontal em 320, 390, 768 e 1280 px; alvos ≥ 44 px.
-7. **Desempenho:** CSS + JS iniciais ≤ 120 kB comprimidos e fontes ≤ 90 kB (latim, 4 arquivos no máximo), sem pedido a terceiros; sem salto de layout visível ao carregar as fontes (`font-display: swap` com métricas de reserva).
+6. **Responsivo e zoom:** sem rolagem horizontal em **320, 390, 768, 1024 e 1280 px**; alvos ≥ 44 px; **zoom de 200 %** sem perda de conteúdo nem de função, especialmente formulários, menu, Agenda e Fila; a **semana** é validada na largura intermediária (1024 px), além do computador e do celular; o **ciclo de foco da gaveta** (seção 4) tem teste no menu do celular.
+7. **Desempenho, com orçamento fundamentado.** **Baseline medido hoje** (build de produção, `gzip -9`, que é mais pesado que o Brotli da hospedagem e por isso conservador): **JS 103,1 kB** (um único pacote com todas as rotas), **CSS 6,8 kB**, **fontes 73,1 kB** (só os arquivos latinos que a página baixa: Inter 48,3 + Manrope 24,8, em WOFF2, que já é comprimido). **Metas** (separadas, por recurso, medidas nas rotas `/entrar` e `/agenda`, que são a primeira visita e a rota mais pesada): **JS inicial ≤ 130 kB**, **CSS ≤ 14 kB**, **fontes ≤ 100 kB** (Archivo e DM Sans variáveis, só latim, no máximo 4 arquivos), **nenhum pedido a terceiros**, sem salto de layout visível ao carregar as fontes (`font-display: swap` com métricas de reserva). **As metas são provisórias até o R1:** o R1 mede os candidatos reais (os pacotes de fontes, o Lucide e as telas) e **fixa os números**; se alguma meta for inviável, este ADR é **atualizado com a justificativa antes do R2**, não no R11. Código das rotas menos usadas (admin, página pública) é carregado sob demanda.
 8. **Sem regressão funcional** nos fluxos tocados (testes de front e a verificação em navegador).
 A **suíte E2E crítica consolidada** vem **depois** da estabilização: agendamento completo (inclusive a partir da página pública), cancelamento e remarcação pelo cliente, check-in e fila pela equipe, e controle de acesso entre cliente e equipe (3 a 5 fluxos, sem automatizar cada detalhe visual).
 
@@ -99,12 +99,12 @@ Docker nem sempre está ligado, então o ambiente local usa um **servidor de des
 ## Plano (PRs pequenos, em ordem de dependência; cada um revisado pelo ChatGPT, com mutação onde houver comportamento)
 | PR | Escopo | Esforço |
 |---|---|---|
-| R1 | Ambiente local com dados de demonstração + Playwright e axe + roteiro de capturas e de checagens | ALTO |
-| R2 | Fundação: tokens, fontes, tema claro e escuro (com alternância), componentes base (Button, Field, Card, Badge, Notice), sem mudar o desenho das telas | ALTO |
-| R3 | Estrutura: barra lateral, gaveta no celular, menu por perfil, atalho para o conteúdo, títulos e foco por rota | ALTO |
+| R1 | Ambiente local com dados de demonstração + Playwright e axe + roteiro de capturas e de checagens + **medição do baseline e fixação dos orçamentos de desempenho** | ALTO |
+| R2 | Fundação: tokens, fontes, tema claro e escuro (com alternância e sem flash), componentes base (Button, Field, Card, Badge, Notice). **Condição:** testados numa **página de demonstração isolada** (rota só de desenvolvimento, fora do build de produção), **sem migrar as telas atuais nem redesenhar o layout**: a substituição da estrutura visual é do R3 em diante | ALTO |
+| R3 | Estrutura: barra lateral, gaveta no celular (com o ciclo de foco testado), menu por perfil, atalho para o conteúdo, títulos e foco por rota | ALTO |
 | R4 | Entrada: entrar, cadastrar, trocar senha, 404, Início por perfil | MÉDIO |
 | R5 | Agenda do dia e Fila com a Linha de Atendimento | ALTO |
-| R6 | Agenda da semana (nova visão) | MÉDIO |
+| R6 | Agenda da semana (nova visão, com o comportamento por largura da seção 5) | MÉDIO |
 | R7 | Cliente: Agendar, Meus agendamentos, Meus pets | MÉDIO |
 | R8 | Prestador: Serviços, Expediente, Equipe, Meu negócio | MÉDIO |
 | R9 | Página pública do estúdio e o endereço público no Meu negócio; agendar já no estúdio | MÉDIO |
