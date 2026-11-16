@@ -18,8 +18,8 @@ export function Layout() {
         </Link>
         {user && (
           <div className="who">
-            <span>
-              {user.name} <span className="badge">{ROLE_LABEL[user.role]}</span>
+            <span className="who-name">
+              <span className="who-text">{user.name}</span> <span className="badge">{ROLE_LABEL[user.role]}</span>
             </span>
             {!user.mustChangePassword && (
               <Link to="/trocar-senha" className="link">

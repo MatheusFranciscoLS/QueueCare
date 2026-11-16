@@ -39,3 +39,6 @@ A tela inicial do prestador e do atendente mostra o resumo de hoje (agendados, n
 ## Atualização (PR 5/10): agendar
 Horários em grade, o escolhido com visto (`✓`, além de `aria-pressed` e da cor); prestador e serviço como cartões de escolha (o marcado ganha borda e fundo); a confirmação fica colada ao pé da tela (`position: sticky`, área segura do aparelho) para o botão estar sempre à vista no celular. Só CSS e uma classe; nenhuma regra de reserva mudou.
 - (revisão do PR 41) A confirmação só fica colada ao pé da tela em telas com pelo menos 45 rem de altura; em telas baixas (ex.: 390x667) ela fica no fluxo normal para não cobrir os horários. As margens negativas usam `--card-pad` (a mesma variável do padding do cartão, 1,5 rem no desktop e 1 rem no celular). O visto declara `content: '✓'` e, depois, a versão com texto alternativo vazio, como reserva para navegadores sem essa sintaxe. `:has()` é só realce: sem suporte, o botão de opção nativo continua marcando a escolha. Não reverifiquei no navegador real após esta correção (servidor local de teste fora do ar).
+
+## Atualização (PR 6/10): cabeçalho no celular
+Em telas estreitas o cabeçalho cabe em uma linha: o nome encolhe com reticências e "Trocar senha" e "Sair" nunca somem (alvo de 44 px). Só CSS. Pendente: conferir em navegador real quando o ambiente local estiver no ar.
