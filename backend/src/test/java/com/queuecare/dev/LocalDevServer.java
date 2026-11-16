@@ -38,7 +38,10 @@ public final class LocalDevServer {
 		System.setProperty("spring.datasource.username", "postgres");
 		System.setProperty("spring.datasource.password", "teste");
 		System.setProperty("spring.flyway.enabled", "true");
-		System.setProperty("queuecare.jwt.secret", "dGVzdGUtZXhjbHVzaXZvLWRlLXRlc3RlLTMyLWJ5dGVzLSEh");
+		// Segredo ALEATÓRIO a cada subida (nada literal no código): as sessões do ambiente de demonstração não sobrevivem a um reinício, como esperado.
+		byte[] secret = new byte[32];
+		new java.security.SecureRandom().nextBytes(secret);
+		System.setProperty("queuecare.jwt.secret", java.util.Base64.getEncoder().encodeToString(secret));
 		System.setProperty("queuecare.security.bcrypt-strength", "4");
 		System.setProperty("queuecare.cors.allowed-origins", "http://localhost:5173,http://127.0.0.1:5173,http://localhost:4173,http://127.0.0.1:4173");
 		// A verificação automática faz muitas chamadas do mesmo endereço: limites altos só aqui.
