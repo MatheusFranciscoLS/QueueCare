@@ -1,5 +1,6 @@
 import AxeBuilder from '@axe-core/playwright'
-import { expect, test, type Page } from '@playwright/test'
+import { expect, test } from '@playwright/test'
+import { alvosPequenos, checarFoco } from './medidas'
 import { LARGURAS_ROLAGEM, TELAS, TEMAS, VIEWPORTS, abrirTela, gravarJson } from './support'
 
 /**
@@ -25,43 +26,6 @@ interface Achado {
   alvosPequenos: string[]
 }
 const achados: Achado[] = []
-
-const descricao = `(el) => {
-  const tag = el.tagName.toLowerCase()
-  const nome = (el.getAttribute('aria-label') || el.textContent || el.getAttribute('name') || '').trim().slice(0, 40)
-  return tag + (nome ? ' "' + nome + '"' : '')
-}`
-
-/** Percorre a página com Tab e confere se cada elemento focado tem contorno visível (outline com largura, ou sombra). */
-async function checarFoco(page: Page): Promise<{ sem: string[]; total: number }> {
-  const sem: string[] = []
-  let total = 0
-  await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur())
-  for (let i = 0; i < 80; i++) {
-    await page.keyboard.press('Tab')
-    const r = await page.evaluate(`(() => {
-      const el = document.activeElement
-      if (!el || el === document.body) return null
-      const cs = getComputedStyle(el)
-      const outline = cs.outlineStyle !== 'none' && parseFloat(cs.outlineWidth) >= 2
-      const sombra = cs.boxShadow !== 'none'
-      const descrever = ${descricao}
-      return { visivel: outline || sombra, nome: descrever(el), id: el.tagName + (el.id || '') + (el.textContent || '').slice(0, 20) }
-    })()`) as { visivel: boolean; nome: string; id: string } | null
-    if (!r) break
-    total += 1
-    if (!r.visivel) sem.push(r.nome)
-  }
-  return { sem, total }
-}
-
-async function alvosPequenos(page: Page): Promise<string[]> {
-  return (await page.evaluate(`(() => {
-    const descrever = ${descricao}
-    const itens = [...document.querySelectorAll('button, [role=button], input:not([type=checkbox]):not([type=radio]):not([type=hidden]), select, textarea, nav a, a.button')]
-    return itens.filter((el) => { const r = el.getBoundingClientRect(); return r.width > 0 && r.height > 0 && r.height < 44 }).map(descrever)
-  })()`)) as string[]
-}
 
 for (const tela of telas) {
   for (const [nomeJanela, viewport] of Object.entries(VIEWPORTS)) {

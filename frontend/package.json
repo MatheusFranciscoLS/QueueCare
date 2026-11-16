@@ -12,6 +12,7 @@
     "dev:api": "node e2e/dev-api.mjs",
     "e2e:capturas": "playwright test e2e/capturas.spec.ts",
     "e2e:verificar": "playwright test e2e/verificacoes.spec.ts",
+    "e2e:verificador": "playwright test e2e/verificador.spec.ts",
     "e2e:peso": "node e2e/medir-peso.mjs"
   },
   "dependencies": {

@@ -12,8 +12,9 @@ Todo PR de tela do redesign é conferido **em navegador real**, com números, n�
 | Comando | O que faz |
 |---|---|
 | `npm run e2e:capturas` | fotografa **todas as telas** em **1280 e 390 px**, nos temas **claro e escuro** (68 imagens em `e2e/saida/capturas/`); `QC_TELAS=agenda,fila` filtra |
-| `npm run e2e:verificar` | por tela, tema e janela: **axe** (WCAG 2.2 AA, graves e críticas), **foco visível** em cada elemento (percurso por Tab), **rolagem horizontal** em 320/390/768/1024/1280 px e **alvos de toque** menores que 44 px; grava `e2e/saida/relatorio.json` |
+| `npm run e2e:verificar` | por tela, tema e janela: **axe** (WCAG 2.2 AA, graves e críticas), **foco visível** em cada elemento (percurso por Tab; medido pelos **pixels**: fotografa com e sem foco e exige um anel de pelo menos 2 px com contraste de 3:1, como a WCAG 2.4.13), **rolagem horizontal** em 320/390/768/1024/1280 px e **alvos de toque** com largura ou altura menor que 44 px (caixas de marcar e botões de opção contam com o rótulo); grava `e2e/saida/relatorio.json` |
 | `QC_STRICT=1 npm run e2e:verificar` | o mesmo, mas **qualquer violação reprova**: é como cada PR de tela é conferido |
+| `npm run e2e:verificador` | testa **o próprio verificador** (páginas mínimas com casos que devem passar e casos que devem reprovar); sem API |
 | `npm run e2e:peso` | build de produção e **peso real transferido por rota** (gzip -9) por tipo (JS, CSS, fontes) |
 
 A saída (`e2e/saida/`) não vai para o repositório. As capturas são o que o Matheus (e o ChatGPT) aprovam a cada PR.
@@ -21,12 +22,12 @@ A saída (`e2e/saida/`) não vai para o repositório. As capturas são o que o M
 ## Linha de base do produto ANTES do redesign (16/11/2026)
 Medida em Edge, 17 telas x 2 janelas x 2 temas = 68 combinações:
 - **axe, violações graves ou críticas: 0.**
-- **Foco sem contorno visível: 120** (campos de data e de horário da agenda e do expediente, entre outros): o foco existe, mas não se enxerga.
+- **Foco sem indicador visível: 2 de 832 paradas** (o link "Abrir a agenda" do início do prestador, no celular, fica 18 pixels abaixo do mínimo). Uma primeira medida, que só olhava o CSS (contorno de 2 px ou qualquer sombra), apontava 120; o revisor mostrou que ela não provava visibilidade real, e a medida por pixels (com e sem foco) a substituiu.
 - **Rolagem horizontal a 320 px** em todas as telas do prestador e do administrador (e a 390 px nas telas do administrador): 44 larguras no total.
-- **Alvos de toque menores que 44 px: 0.**
+- **Alvos de toque com largura ou altura menor que 44 px: 8** (um campo de marcar na tela de pets, em 4 combinações dela e 4 da tela vazia). A primeira medida olhava só a altura e ignorava caixas de marcar e botões de opção, e por isso apontava 0.
 - **Peso, primeira visita a `/entrar`: 183,4 kB** (JS 103,2, CSS 6,8, fontes 73,1, outros 0,3). Há um único pacote de JS: nada é carregado a mais depois de entrar nem ao abrir a agenda.
 
-Esses números são o ponto de partida: o redesign precisa terminar com **zero** nos três primeiros itens e dentro das metas de peso fixadas no ADR 0018.
+Esses números são o ponto de partida: o redesign precisa terminar com **zero** nos quatro primeiros itens e dentro das metas de peso fixadas no ADR 0018.
 
 ## Limites conhecidos
 - O token da sessão fica só em memória (decisão de segurança do ADR 0003): os roteiros entram pela tela de login e navegam **pelo menu**, nunca recarregando a página.

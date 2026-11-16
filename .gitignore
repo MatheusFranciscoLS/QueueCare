@@ -61,3 +61,6 @@ HELP.md
 
 # Saídas da verificação em navegador (capturas e relatórios; ADR 0018)
 frontend/e2e/saida/
+
+# Artefatos de compilação do TypeScript
+*.tsbuildinfo
