@@ -2,8 +2,7 @@ import { useMemo, useState } from 'react'
 import { ApiError } from '../../api/client'
 import { longDate, todayIn } from '../../api/dates'
 import { describeError } from '../../api/messages'
-import { bookingApi, type BookedAppointment, type CatalogProvider, type CatalogService, type FreeSlot } from '../../api/booking'
-import { useAuth } from '../../auth/session'
+import type { CatalogProvider, CatalogService, FreeSlot } from '../../api/booking'
 import { useSingleFlight } from '../useSingleFlight'
 import { DayStep, SlotStep } from './BookingSteps'
 
@@ -16,22 +15,38 @@ const SLOT_REASONS = new Set(['SLOT_TAKEN', 'IN_THE_PAST', 'TOO_SOON', 'OUTSIDE_
  * expediente, antecedência, horário ocupado) são da API; as recusas aparecem aqui com o motivo. Recusa por causa do HORÁRIO mantém a caixa
  * aberta; qualquer outra (prazo, limite, agendamento que mudou) fecha a caixa e entrega o motivo à lista.
  */
-export function RescheduleBox({
+/** O agendamento que se remarca: o que a tela já sabe dele (cliente e equipe têm formatos diferentes de lista). */
+export interface RescheduleTarget {
+  id: string
+  providerId: string
+  serviceId: string
+  serviceName: string | null
+  businessName: string | null
+  startsAt: string
+  endsAt: string
+  timeZone: string
+}
+
+export function RescheduleBox<T extends { startsAt: string; endsAt: string }>({
   item,
+  reschedule,
+  hint,
   onRescheduled,
   onClose,
   onRefused,
 }: {
-  item: BookedAppointment
+  item: RescheduleTarget
+  /** Faz a chamada à API (cliente e equipe usam a mesma rota). */
+  reschedule: (localStart: string) => Promise<T>
+  /** Texto de apoio: o que vale para quem remarca (limite e prazo do cliente; histórico da equipe). */
+  hint: string
   /** O agendamento já movido, como a API devolveu. */
-  onRescheduled: (updated: BookedAppointment) => Promise<void>
+  onRescheduled: (updated: T) => Promise<void>
   onClose: () => void
   /** A API recusou por um motivo que não é o horário: a lista mostra a mensagem e se refaz (o agendamento pode ter mudado). */
   onRefused: (message: string, error: unknown) => Promise<void>
 }) {
-  const { request } = useAuth()
-  const api = useMemo(() => bookingApi(request), [request])
-  const zone = item.timeZone ?? 'UTC'
+  const zone = item.timeZone
   const provider = useMemo<CatalogProvider>(() => ({ id: item.providerId, businessName: item.businessName ?? '', timeZone: zone }), [item.providerId, item.businessName, zone])
   const service = useMemo<CatalogService>(
     () => ({ id: item.serviceId, name: item.serviceName ?? 'Serviço', durationMinutes: Math.round((Date.parse(item.endsAt) - Date.parse(item.startsAt)) / 60000) }),
@@ -55,7 +70,7 @@ export function RescheduleBox({
       setError(null)
       setBusy(true)
       try {
-        const updated = await api.reschedule(item.id, sent.localStart)
+        const updated = await reschedule(sent.localStart)
         await onRescheduled(updated)
       } catch (e) {
         if (e instanceof ApiError && e.reason && SLOT_REASONS.has(e.reason)) {
@@ -74,7 +89,7 @@ export function RescheduleBox({
   return (
     <section className="step reschedule" aria-label="Remarcar agendamento">
       <h2>Remarcar para qual dia e horário?</h2>
-      <p className="hint">O agendamento continua o mesmo: só muda o horário. Até 3 remarcações, dentro do prazo do estúdio.</p>
+      <p className="hint">{hint}</p>
       <p role="alert" className="error" hidden={!error}>
         {error}
       </p>

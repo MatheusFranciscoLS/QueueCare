@@ -11,6 +11,8 @@ import { RefreshWarning } from '../RefreshWarning'
 import { useLoad } from '../useLoad'
 import { useSingleFlight } from '../useSingleFlight'
 import { Loading } from '../Loading'
+import { AppointmentHistory } from '../customer/AppointmentHistory'
+import { RescheduleBox } from '../customer/RescheduleBox'
 
 /** Agenda do dia do prestador, para o dono e para o atendente vinculado. O fuso e o negócio vêm do servidor (o atendente não os conhece). */
 export function AgendaPage() {
@@ -74,12 +76,12 @@ function Day({ workplace }: { workplace: Workplace }) {
       </div>
       <h2>{longDate(date)}</h2>
       {/* A chave é a data: trocar de dia refaz a lista do zero (nunca aparece a lista de outro dia sob a data nova). */}
-      <DayList key={date} date={date} timeZone={workplace.timeZone} />
+      <DayList key={date} date={date} timeZone={workplace.timeZone} workplace={workplace} />
     </section>
   )
 }
 
-function DayList({ date, timeZone }: { date: string; timeZone: string }) {
+function DayList({ date, timeZone, workplace }: { date: string; timeZone: string; workplace: Workplace }) {
   const { request } = useAuth()
   const api = useMemo(() => agendaApi(request), [request])
   const load = useCallback(() => api.day(date), [api, date])
@@ -135,7 +137,13 @@ function DayList({ date, timeZone }: { date: string; timeZone: string }) {
             status={laterOf(item.status, statuses.get(item.id))}
             timeZone={timeZone}
             canCheckIn={isToday}
+            workplace={workplace}
             onChanged={reload}
+            onRescheduled={(updated) => {
+              // A linha foi para outro horário: no mesmo dia ela só muda de lugar (a lista refeita a reposiciona); em outro dia sai da lista na hora.
+              focusNotice.current = true
+              if (todayIn(timeZone, new Date(updated.startsAt)) !== date) setCancelled((current) => new Set(current).add(item.id))
+            }}
             onCancelled={() => {
               focusNotice.current = true
               setCancelled((current) => new Set(current).add(item.id))
@@ -162,14 +170,16 @@ function laterOf(server: string, local: string | undefined): string {
 const STATUS_LABEL: Record<string, string> = { SCHEDULED: 'Agendado', CHECKED_IN: 'Chegou', COMPLETED: 'Concluído' }
 
 /** Motivos em que o agendamento JÁ mudou no servidor: a linha volta a valer o que o servidor diz e a lista é refeita. */
-const STATE_CHANGED = new Set(['ALREADY_CANCELLED', 'NOT_CANCELLABLE', 'INVALID_STATE', 'CONCURRENT_UPDATE'])
+const STATE_CHANGED = new Set(['ALREADY_CANCELLED', 'NOT_CANCELLABLE', 'NOT_RESCHEDULABLE', 'INVALID_STATE', 'CONCURRENT_UPDATE'])
 
 function AppointmentRow({
   item,
   status,
   timeZone,
   canCheckIn,
+  workplace,
   onChanged,
+  onRescheduled,
   onCancelled,
   onStatus,
   setNotice,
@@ -179,7 +189,9 @@ function AppointmentRow({
   status: string
   timeZone: string
   canCheckIn: boolean
+  workplace: Workplace
   onChanged: () => Promise<void>
+  onRescheduled: (updated: { startsAt: string; endsAt: string }) => void
   onCancelled: () => void
   onStatus: (status: string | null) => void
   setNotice: (message: string | null) => void
@@ -189,6 +201,8 @@ function AppointmentRow({
   const api = useMemo(() => agendaApi(request), [request])
   const [confirming, setConfirming] = useState(false)
   const [busy, setBusy] = useState(false)
+  const [rescheduling, setRescheduling] = useState(false)
+  const [historyOpen, setHistoryOpen] = useState(false)
   const once = useSingleFlight()
   const customer = item.customerName ?? 'Cliente'
   // Foco (teclado e leitor de tela): a confirmação abre em "Voltar" (a opção segura); ao fechar volta para "Cancelar agendamento";
@@ -197,6 +211,12 @@ function AppointmentRow({
   const openRef = useRef<HTMLButtonElement>(null)
   const backRef = useRef<HTMLButtonElement>(null)
   const wasConfirming = useRef(false)
+  const rescheduleRef = useRef<HTMLButtonElement>(null)
+  const wasRescheduling = useRef(false)
+  useEffect(() => {
+    if (!rescheduling && wasRescheduling.current) rescheduleRef.current?.focus()
+    wasRescheduling.current = rescheduling
+  }, [rescheduling])
   useEffect(() => {
     if (confirming) backRef.current?.focus()
     else if (wasConfirming.current) openRef.current?.focus()
@@ -247,6 +267,27 @@ function AppointmentRow({
       setNotice(`Atendimento de ${customer} concluído.`)
     })
 
+  async function rescheduled(updated: { startsAt: string; endsAt: string }) {
+    setProblem(null)
+    setRescheduling(false)
+    wasRescheduling.current = false // a caixa fecha com sucesso: o foco vai para o aviso do resultado (a linha pode sair do dia)
+    setNotice(`Agendamento de ${customer} remarcado para ${longDate(todayIn(timeZone, new Date(updated.startsAt)))}, às ${timeIn(updated.startsAt, timeZone)}.`)
+    onRescheduled(updated)
+    await onChanged()
+  }
+
+  async function refused(message: string, e: unknown) {
+    setNotice(null)
+    setProblem(message)
+    setRescheduling(false)
+    wasRescheduling.current = false
+    rowRef.current?.focus()
+    if (e instanceof ApiError && e.reason && STATE_CHANGED.has(e.reason)) {
+      onStatus(null)
+      await onChanged().catch(() => undefined)
+    }
+  }
+
   return (
     <li className="row appt" data-status={status} ref={rowRef} tabIndex={-1}>
       <span className="appt-info">
@@ -268,6 +309,9 @@ function AppointmentRow({
                   {busy ? 'Enviando…' : 'Chegou'}
                 </button>
               )}
+              <button type="button" className="button secondary" ref={rescheduleRef} disabled={busy} aria-expanded={rescheduling} onClick={() => setRescheduling((open) => !open)}>
+                Remarcar
+              </button>
               <button type="button" className="button secondary" ref={openRef} disabled={busy} onClick={() => setConfirming(true)}>
                 Cancelar agendamento
               </button>
@@ -291,6 +335,28 @@ function AppointmentRow({
             {busy ? 'Enviando…' : 'Concluir atendimento'}
           </button>
         </span>
+      )}
+      <span className="row-extra">
+        <button type="button" className="button secondary" aria-expanded={historyOpen} onClick={() => setHistoryOpen((open) => !open)}>
+          {historyOpen ? 'Ocultar histórico' : 'Histórico'}
+        </button>
+      </span>
+      {rescheduling && status === 'SCHEDULED' && (
+        <div className="row-extra">
+          <RescheduleBox
+            item={{ ...item, providerId: workplace.providerId, businessName: workplace.businessName, timeZone }}
+            reschedule={(localStart) => api.reschedule(item.id, localStart)}
+            hint="O agendamento continua o mesmo: só muda o horário. A equipe remarca sem prazo e sem limite; o histórico registra quem remarcou."
+            onRescheduled={rescheduled}
+            onClose={() => setRescheduling(false)}
+            onRefused={refused}
+          />
+        </div>
+      )}
+      {historyOpen && (
+        <div className="row-extra">
+          <AppointmentHistory key={item.startsAt + status} appointmentId={item.id} timeZone={timeZone} showNames />
+        </div>
       )}
     </li>
   )

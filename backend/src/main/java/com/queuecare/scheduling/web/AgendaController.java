@@ -58,7 +58,8 @@ class AgendaController {
 		}
 	}
 
-	record WorkplaceResponse(String businessName, String timeZone) {
+	/** O id do prestador serve para a equipe consultar horários livres (remarcar); é o mesmo id público do catálogo. */
+	record WorkplaceResponse(UUID providerId, String businessName, String timeZone) {
 	}
 
 	/** Negócio e fuso do lugar onde a pessoa trabalha (dono ou atendente vinculado); os horários da agenda valem nesse fuso. */
@@ -66,7 +67,7 @@ class AgendaController {
 	@PreAuthorize("hasAnyRole('PROVIDER','ATTENDANT')")
 	WorkplaceResponse workplace(@AuthenticationPrincipal Jwt jwt) {
 		AgendaService.Workplace w = agendaService.workplace(UUID.fromString(jwt.getSubject()));
-		return new WorkplaceResponse(w.businessName(), w.timeZone());
+		return new WorkplaceResponse(w.providerId(), w.businessName(), w.timeZone());
 	}
 
 	@ApiResponse(responseCode = "200", description = "Agendamentos não cancelados, por horário.", content = @Content(array = @ArraySchema(schema = @Schema(implementation = AgendaResponse.class))))

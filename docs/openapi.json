@@ -710,6 +710,10 @@
           "businessName" : {
             "type" : "string"
           },
+          "providerId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
           "timeZone" : {
             "type" : "string"
           }
