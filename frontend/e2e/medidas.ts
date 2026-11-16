@@ -13,7 +13,7 @@ const descricao = `(el) => {
  * Foco VISÍVEL, medido pelos PIXELS e pela GEOMETRIA (uma sombra transparente ou um contorno sem contraste passariam numa checagem de CSS,
  * e uma mudança de fundo passaria numa contagem solta de pixels). Para cada elemento que recebe foco por Tab: fotografa a região dele
  * (com uma margem) COM foco e SEM foco e marca o pixel que mudou com contraste de pelo menos 3:1 contra o anterior (WCAG 2.4.13).
- * Em cada um dos quatro lados, o indicador precisa ocupar uma faixa de pelo menos 2 px de espessura em 95 % do trecho reto do lado
+ * Em cada um dos quatro lados, o indicador precisa ocupar uma faixa de pelo menos 2 px de espessura em 95 % do trecho reto do lado, de pixels SEGUIDOS (dois pixels soltos não formam anel)
  * (a faixa vai da margem de fora até 3 px para dentro da borda, o que aceita anel por fora, no limite e por dentro; os cantos, de
  * onde sai a curvatura, ficam de fora do trecho reto). E o interior do elemento não pode ter mudado em sua maior parte: fundo que
  * muda inteiro não é anel. O elemento é centralizado na janela antes de medir; se mesmo assim algum lado não couber (colado na borda ou maior que a janela), REPROVA: nenhum lado fica de fora.
@@ -54,14 +54,15 @@ const compararFotos = `async (a) => {
     const e = reto(compr)
     let boas = 0, total = 0
     for (let t = e; t < compr - e; t++) {
-      let cont = 0
+      let seguidos = 0, maior = 0 // espessura = pixels que mudaram SEGUIDOS, na direção perpendicular à borda
       for (let k = -m; k < dentro; k++) {
         const x = horizontal ? rx + t : lado === 'left' ? rx + k : rx + rw - 1 - k
         const y = horizontal ? (lado === 'top' ? ry + k : ry + rh - 1 - k) : ry + t
-        cont += em(x, y)
+        seguidos = em(x, y) ? seguidos + 1 : 0
+        if (seguidos > maior) maior = seguidos
       }
       total += 1
-      if (cont >= ${ESPESSURA_MINIMA}) boas += 1
+      if (maior >= ${ESPESSURA_MINIMA}) boas += 1
     }
     return total === 0 ? 0 : boas / total
   }

@@ -19,6 +19,7 @@ test.describe('foco visível, medido pelos pixels', () => {
          <div class="linha"><button id="transparente">Sombra transparente</button></div>
          <div class="linha"><button id="fraco">Contorno quase invisível</button></div>
          <div class="linha"><button id="fino">Contorno de 1 px</button></div>
+         <div class="linha"><button id="solto">Dois fios separados</button></div>
          <div class="linha"><button id="fundo">Só o fundo muda</button></div>
          <div class="linha"><button id="topo">Anel só em cima</button></div>
          <div class="linha"><button id="interno">Anel por dentro</button></div>
@@ -29,6 +30,7 @@ test.describe('foco visível, medido pelos pixels', () => {
          #transparente:focus{outline:none;box-shadow:0 0 0 4px rgba(0,0,0,0)}
          #fraco:focus{outline:3px solid #fefefe;outline-offset:2px}
          #fino:focus{outline:1px solid #0b57d0;outline-offset:0}
+         #solto:focus{outline:1px solid #0b57d0;outline-offset:4px;box-shadow:0 0 0 1px #0b57d0}
          #fundo:focus{outline:none;background:#0b57d0;color:#fff}
          #topo:focus{outline:none;box-shadow:0 -3px 0 0 #0b57d0}
          #interno:focus{outline:3px solid #0b57d0;outline-offset:-4px}
@@ -37,13 +39,14 @@ test.describe('foco visível, medido pelos pixels', () => {
       ),
     )
     const r = await checarFoco(page)
-    expect(r.total).toBe(9)
+    expect(r.total).toBe(10)
     const reprovados = r.sem.map((s) => s.split(' (')[0])
     expect(reprovados).toEqual([
       'button "Sem indicador"',
       'button "Sombra transparente"',
       'button "Contorno quase invisível"',
       'button "Contorno de 1 px"',
+      'button "Dois fios separados"', // dois pixels soltos de espessura, sem contiguidade: não é um anel de 2 px
       'button "Só o fundo muda"', // mudança de fundo, sem anel: não é indicador de foco
       'button "Anel só em cima"', // um lado só: o anel precisa cercar o elemento
     ])
