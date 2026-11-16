@@ -79,6 +79,10 @@ export function HomePage() {
               <Link to="/meus-agendamentos">Meus agendamentos</Link>
               <span>veja e cancele os seus agendamentos</span>
             </li>
+            <li>
+              <Link to="/pets">Meus pets</Link>
+              <span>cadastre, edite e arquive os animais que você leva ao estúdio</span>
+            </li>
           </ul>
         </>
       )}

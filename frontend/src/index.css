@@ -231,7 +231,8 @@ label {
 }
 
 input,
-select {
+select,
+textarea {
   width: 100%;
   min-height: var(--target);
   padding: 0.6rem 0.75rem;
@@ -254,7 +255,9 @@ input[type='radio'] {
   accent-color: var(--accent);
 }
 
-input[aria-invalid='true'] {
+input[aria-invalid='true'],
+select[aria-invalid='true'],
+textarea[aria-invalid='true'] {
   border-color: var(--danger);
 }
 
@@ -667,6 +670,32 @@ input[type='date'] {
 
 .appt-service {
   color: var(--muted);
+}
+
+/* o pet do agendamento (cópia gravada nele) e as observações do tutor, em uma linha própria */
+.appt-pet {
+  font-weight: 600;
+}
+
+.appt-notes,
+.pet-notes {
+  flex-basis: 100%;
+  margin-top: var(--space-1);
+  color: var(--muted);
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+
+.pet-info {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 var(--space-3);
+  min-width: 0;
+}
+
+textarea {
+  resize: vertical;
 }
 
 .sep {

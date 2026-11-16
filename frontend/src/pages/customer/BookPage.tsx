@@ -1,21 +1,28 @@
 import { useCallback, useMemo, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { addDays, isDate, longDate, todayIn } from '../../api/dates'
 import { describeError } from '../../api/messages'
+import { ApiError } from '../../api/client'
 import { bookingApi, type BookedAppointment, type CatalogProvider, type CatalogService, type FreeSlot } from '../../api/booking'
+import { petDescription, petsApi, type Pet, type PetInput } from '../../api/pets'
 import { useAuth } from '../../auth/session'
 import { RefreshWarning } from '../RefreshWarning'
 import { useLoad } from '../useLoad'
 import { useSingleFlight } from '../useSingleFlight'
 import { Loading } from '../Loading'
+import { PetForm } from './PetForm'
 
 /** Quantos dias à frente a API oferece horários (SlotService.MAX_DAYS_AHEAD). */
 const MAX_DAYS_AHEAD = 90
 const PAGE_SIZE = 50
+/** Recusas da API que dizem respeito ao PET (não ao horário): o horário escolhido continua valendo. */
+const PET_REASONS = new Set(['PET_NOT_FOUND', 'PET_INACTIVE'])
 
 /**
  * Agendar: prestador, serviço, dia, horário livre e confirmação. Cada passo só aparece depois do anterior; trocar uma escolha
  * descarta as seguintes. As regras (disponibilidade, antecedência, reserva dupla) são da API; um 409 ou 422 ao reservar mostra o
- * motivo e atualiza os horários.
+ * motivo e atualiza os horários. O pet é obrigatório: escolhe-se um dos ativos (ou cadastra-se um na hora); com um só pet ativo ele já vem
+ * escolhido. Recusa por causa do PET (arquivado em outra tela, por exemplo) mantém o horário e refaz a lista de pets.
  */
 export function BookPage() {
   const [provider, setProvider] = useState<CatalogProvider | null>(null)
@@ -23,29 +30,46 @@ export function BookPage() {
   const [date, setDate] = useState<string | null>(null)
   const [slot, setSlot] = useState<FreeSlot | null>(null)
   // O que foi CONFIRMADO, copiado no instante do envio: o resumo mostra exatamente o que a API recebeu, mesmo que a tela mude depois.
-  const [done, setDone] = useState<{ appointment: BookedAppointment; serviceName: string; businessName: string; localStart: string } | null>(null)
+  const [done, setDone] = useState<{ appointment: BookedAppointment; serviceName: string; businessName: string; localStart: string; petName: string } | null>(null)
   // Enquanto uma reserva está em andamento NENHUMA escolha pode mudar (prestador, serviço, dia, horário): o estado fica aqui, no pai.
   const [submitting, setSubmitting] = useState(false)
   const once = useSingleFlight()
   const { request } = useAuth()
   const api = useMemo(() => bookingApi(request), [request])
+  const pets = useMemo(() => petsApi(request), [request])
+  const loadPets = useCallback(() => pets.list(), [pets])
+  const petList = useLoad<Pet[]>(loadPets)
+  const [petChoice, setPetChoice] = useState<string | null>(null)
+  // Versão da lista de pets no momento em que a API recusou um pet: enquanto nenhuma carga NOVA der certo, a lista é velha e não vale
+  // (se a atualização falhar, os dados antigos continuam na tela, mas nenhum pet pode ser escolhido nem vir escolhido sozinho).
+  const [refusedAtVersion, setRefusedAtVersion] = useState<number | null>(null)
+  const petsFresh = refusedAtVersion === null || petList.version > refusedAtVersion
+  // Um só pet ativo já vem escolhido; com mais de um a pessoa escolhe. Um id que sumiu da lista (arquivado em outra tela) deixa de valer.
+  const pet = !petsFresh ? null : (petList.data?.find((p) => p.id === petChoice) ?? (petList.data?.length === 1 ? petList.data[0] : null))
   // Sobe quando a API recusa o horário escolhido: a lista de horários é refeita do zero.
   const [slotsVersion, setSlotsVersion] = useState(0)
   const [bookingError, setBookingError] = useState<string | null>(null)
 
   async function confirm() {
-    if (!provider || !service || !slot) return
-    const sent = { provider, service, slot } // snapshot imutável do que está sendo enviado
+    if (!provider || !service || !slot || !pet) return
+    const sent = { provider, service, slot, pet } // snapshot imutável do que está sendo enviado
     await once(async () => {
       setSubmitting(true)
       try {
-        const appointment = await api.book({ providerId: sent.provider.id, serviceId: sent.service.id, localStart: sent.slot.localStart })
-        setDone({ appointment, serviceName: sent.service.name, businessName: sent.provider.businessName, localStart: sent.slot.localStart })
+        const appointment = await api.book({ providerId: sent.provider.id, serviceId: sent.service.id, localStart: sent.slot.localStart, petId: sent.pet.id })
+        setDone({ appointment, serviceName: sent.service.name, businessName: sent.provider.businessName, localStart: sent.slot.localStart, petName: sent.pet.name })
       } catch (e) {
         // A API recusou este horário: mostra o motivo e refaz a lista de horários (o escolhido pode não existir mais).
         setBookingError(describeError(e))
-        setSlot(null)
-        setSlotsVersion((v) => v + 1)
+        if (e instanceof ApiError && e.reason && PET_REASONS.has(e.reason)) {
+          // O problema é o pet: o horário continua valendo. Refaz a lista de pets (o pet pode ter sido arquivado) e pede nova escolha.
+          setPetChoice(null)
+          setRefusedAtVersion(petList.version)
+          await petList.reload()
+        } else {
+          setSlot(null)
+          setSlotsVersion((v) => v + 1)
+        }
       } finally {
         setSubmitting(false)
       }
@@ -57,7 +81,7 @@ export function BookPage() {
       <section className="card">
         <h1>Agendamento confirmado</h1>
         <p role="status" className="notice">
-          {done.serviceName} em {done.businessName}, {longDate(done.localStart.slice(0, 10))}, às {done.localStart.slice(11, 16)} (horário do negócio).
+          {done.serviceName} para {done.petName} em {done.businessName}, {longDate(done.localStart.slice(0, 10))}, às {done.localStart.slice(11, 16)} (horário do negócio).
         </p>
         <button
           type="button"
@@ -135,7 +159,27 @@ export function BookPage() {
         </>
       )}
       {provider && service && slot && (
-        <ConfirmStep provider={provider} service={service} slot={slot} busy={submitting} onConfirm={confirm} onCancel={() => setSlot(null)} />
+        <>
+          <PetStep
+            pets={petList.data}
+            loading={petList.loading}
+            error={petList.error}
+            reload={petList.reload}
+            selected={pet}
+            disabled={submitting || !petsFresh}
+            onSelect={(id) => {
+              setPetChoice(id)
+              setBookingError(null)
+            }}
+            onCreate={async (input) => {
+              const created = await pets.create(input)
+              await petList.reload()
+              setPetChoice(created.id)
+              setBookingError(null)
+            }}
+          />
+          <ConfirmStep provider={provider} service={service} slot={slot} pet={pet} busy={submitting} onConfirm={confirm} onCancel={() => setSlot(null)} />
+        </>
       )}
     </section>
   )
@@ -276,6 +320,7 @@ function ConfirmStep({
   provider,
   service,
   slot,
+  pet,
   busy,
   onConfirm,
   onCancel,
@@ -283,19 +328,20 @@ function ConfirmStep({
   provider: CatalogProvider
   service: CatalogService
   slot: FreeSlot
+  pet: Pet | null
   busy: boolean
   onConfirm: () => void
   onCancel: () => void
 }) {
   return (
     <section className="step confirm" aria-label="Confirmar agendamento">
-      <h2>5. Confirme</h2>
+      <h2>6. Confirme</h2>
       <p>
-        <strong>{service.name}</strong> ({service.durationMinutes} min) em <strong>{provider.businessName}</strong>, {longDate(slot.localStart.slice(0, 10))}, às{' '}
+        <strong>{service.name}</strong> ({service.durationMinutes} min){pet && <> para <strong>{pet.name}</strong></>} em <strong>{provider.businessName}</strong>, {longDate(slot.localStart.slice(0, 10))}, às{' '}
         <strong>{slot.localStart.slice(11, 16)}</strong> (horário do negócio).
       </p>
       <span className="actions">
-        <button type="button" className="button" disabled={busy} onClick={onConfirm}>
+        <button type="button" className="button" disabled={busy || !pet} onClick={onConfirm}>
           {busy ? 'Agendando…' : 'Confirmar agendamento'}
         </button>
         <button type="button" className="button secondary" disabled={busy} onClick={onCancel}>
@@ -303,5 +349,75 @@ function ConfirmStep({
         </button>
       </span>
     </section>
+  )
+}
+
+/** Passo do pet: escolher um dos ativos ou cadastrar um na hora. Sem pet escolhido o botão de confirmar fica desabilitado. */
+function PetStep({
+  pets,
+  loading,
+  error,
+  reload,
+  selected,
+  disabled,
+  onSelect,
+  onCreate,
+}: {
+  pets: Pet[] | undefined
+  loading: boolean
+  error: unknown
+  reload: () => Promise<void>
+  selected: Pet | null
+  disabled: boolean
+  onSelect: (id: string) => void
+  onCreate: (input: PetInput) => Promise<void>
+}) {
+  const [adding, setAdding] = useState(false)
+  if (loading && !pets) return <Loading>Carregando seus pets…</Loading>
+  if (error && !pets) {
+    return (
+      <p role="alert" className="error">
+        {describeError(error)}{' '}
+        <button type="button" className="button secondary" onClick={reload}>
+          Tentar de novo
+        </button>
+      </p>
+    )
+  }
+  const none = !pets || pets.length === 0
+  return (
+    <fieldset className="step">
+      <legend>5. Escolha o pet</legend>
+      {error !== undefined && pets && <RefreshWarning onRetry={reload} />}
+      {none && <p className="notice">Cadastre o pet que será atendido.</p>}
+      {pets?.map((p) => (
+        <label key={p.id} className="choice">
+          <input type="radio" name="pet" disabled={disabled} checked={selected?.id === p.id} onChange={() => onSelect(p.id)} />
+          <span>
+            {p.name} · {petDescription(p)}
+          </span>
+        </label>
+      ))}
+      {!none && !adding && (
+        <p>
+          <button type="button" className="button secondary" disabled={disabled} onClick={() => setAdding(true)}>
+            Cadastrar outro pet
+          </button>{' '}
+          <Link to="/pets">Gerenciar meus pets</Link>
+        </p>
+      )}
+      {(none || adding) && (
+        <PetForm
+          idPrefix="book-pet"
+          submitLabel="Cadastrar e escolher"
+          busyLabel="Cadastrando…"
+          onCancel={none ? undefined : () => setAdding(false)}
+          onSubmit={async (input) => {
+            await onCreate(input)
+            setAdding(false)
+          }}
+        />
+      )}
+    </fieldset>
   )
 }

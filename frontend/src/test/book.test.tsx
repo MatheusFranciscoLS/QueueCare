@@ -19,6 +19,7 @@ const SERVICES = [
   { id: 's-1', name: 'Troca de óleo', durationMinutes: 60 },
   { id: 's-2', name: 'Alinhamento', durationMinutes: 30 },
 ]
+const REX = { id: 'pet-1', name: 'Rex', species: 'DOG', breed: 'Poodle', size: 'MEDIUM', notes: null, active: true }
 const slot = (date: string, hhmm: string) => ({ localStart: `${date}T${hhmm}:00`, startsAt: `${date}T${hhmm}:00Z`, endsAt: `${date}T${hhmm}:00Z` })
 
 function deferred<T>() {
@@ -33,6 +34,7 @@ async function loginAsCustomer(routes: Routes, role = 'CUSTOMER') {
     'GET /api/me': () => json(200, { ...USER, role, name: 'Maria Souza' }),
     'GET /api/catalog/providers?page=0&size=50': () => json(200, PROVIDERS),
     'GET /api/catalog/providers/p-1/services': () => json(200, SERVICES),
+    'GET /api/customer/pets': () => json(200, [REX]),
     ...routes,
   })
   const view = renderWithHarness()
@@ -157,8 +159,8 @@ describe('agendar: reservar', () => {
     await user.click(screen.getByRole('button', { name: 'Confirmar agendamento' }))
 
     expect(await screen.findByRole('heading', { name: 'Agendamento confirmado' })).toBeInTheDocument()
-    expect(screen.getByRole('status')).toHaveTextContent(/Troca de óleo em Oficina Central.*às 09:00/)
-    expect(book(calls)?.body).toEqual({ providerId: 'p-1', serviceId: 's-1', localStart: `${today}T09:00:00` })
+    expect(screen.getByRole('status')).toHaveTextContent(/Troca de óleo para Rex em Oficina Central.*às 09:00/)
+    expect(book(calls)?.body).toEqual({ providerId: 'p-1', serviceId: 's-1', localStart: `${today}T09:00:00`, petId: 'pet-1' })
   })
 
   it('"Agendar outro horário" volta ao começo', async () => {
@@ -292,7 +294,7 @@ describe('agendar: nada muda durante o envio da reserva', () => {
 
     await act(async () => slow.resolve(json(201, { id: 'a-1', providerId: 'p-1', serviceId: 's-1', startsAt: '', endsAt: '', status: 'SCHEDULED', businessName: 'Oficina Central', timeZone: ZONE, serviceName: 'Troca de óleo' })))
 
-    expect(await screen.findByRole('status')).toHaveTextContent(`Troca de óleo em Oficina Central, ${longDate(today)}, às 09:00`)
+    expect(await screen.findByRole('status')).toHaveTextContent(`Troca de óleo para Rex em Oficina Central, ${longDate(today)}, às 09:00`)
     expect(calls.filter((c) => c.method === 'POST' && c.path === '/api/appointments')).toHaveLength(1)
     expect((calls.find((c) => c.method === 'POST' && c.path === '/api/appointments')!.body as { localStart: string }).localStart).toBe(`${today}T09:00:00`)
   })

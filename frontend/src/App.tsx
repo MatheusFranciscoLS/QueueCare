@@ -14,6 +14,7 @@ import { AgendaPage } from './pages/agenda/AgendaPage'
 import { QueuePage } from './pages/agenda/QueuePage'
 import { BookPage } from './pages/customer/BookPage'
 import { MyAppointmentsPage } from './pages/customer/MyAppointmentsPage'
+import { PetsPage } from './pages/customer/PetsPage'
 import { TeamPage } from './pages/provider/TeamPage'
 import { RegisterPage } from './pages/RegisterPage'
 
@@ -41,6 +42,7 @@ export function App() {
           <Route element={<RequireRole roles={['CUSTOMER']} />}>
             <Route path="/agendar" element={<BookPage />} />
             <Route path="/meus-agendamentos" element={<MyAppointmentsPage />} />
+            <Route path="/pets" element={<PetsPage />} />
           </Route>
           <Route element={<RequireRole roles={['PROVIDER', 'ATTENDANT']} />}>
             <Route path="/agenda" element={<AgendaPage />} />

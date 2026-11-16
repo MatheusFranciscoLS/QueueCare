@@ -1,4 +1,5 @@
 import type { AuthApi } from '../auth/session'
+import type { PetOnAppointment } from './pets'
 
 export interface Workplace {
   businessName: string
@@ -14,6 +15,8 @@ export interface AgendaItem {
   serviceName: string | null
   customerId: string
   customerName: string | null
+  /** O pet (cópia gravada no agendamento); nulo em agendamento sem pet. Raça e observações vêm na agenda do dia e na fila. */
+  pet?: PetOnAppointment | null
 }
 
 /** Quem chegou e espera, por ordem de chegada (a posição vem do servidor). */
@@ -27,6 +30,7 @@ export interface QueueItem {
   customerId: string
   customerName: string | null
   checkedInAt: string
+  pet?: PetOnAppointment | null
 }
 
 type Request = AuthApi['request']

@@ -29,6 +29,8 @@ export interface BookedAppointment {
   businessName: string | null
   timeZone: string | null
   serviceName: string | null
+  /** Cópia dos dados do pet no momento da reserva (só nome e espécie); nulo em agendamento sem pet. */
+  pet?: { name: string; species: string } | null
 }
 
 type Request = AuthApi['request']
@@ -42,6 +44,6 @@ export function bookingApi(request: Request) {
       request<FreeSlot[]>(`/api/providers/${encodeURIComponent(providerId)}/slots?serviceId=${encodeURIComponent(serviceId)}&date=${encodeURIComponent(date)}`),
     mine: (page = 0, size = 50) => request<BookedAppointment[]>(`/api/appointments/mine?page=${page}&size=${size}`),
     cancel: (appointmentId: string) => request<BookedAppointment>(`/api/appointments/${encodeURIComponent(appointmentId)}/cancel`, { method: 'POST' }),
-    book: (input: { providerId: string; serviceId: string; localStart: string }) => request<BookedAppointment>('/api/appointments', { method: 'POST', body: input }),
+    book: (input: { providerId: string; serviceId: string; localStart: string; petId: string }) => request<BookedAppointment>('/api/appointments', { method: 'POST', body: input }),
   }
 }
