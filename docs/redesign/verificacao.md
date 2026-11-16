@@ -12,7 +12,7 @@ Todo PR de tela do redesign é conferido **em navegador real**, com números, n�
 | Comando | O que faz |
 |---|---|
 | `npm run e2e:capturas` | fotografa **todas as telas** em **1280 e 390 px**, nos temas **claro e escuro** (68 imagens em `e2e/saida/capturas/`); `QC_TELAS=agenda,fila` filtra |
-| `npm run e2e:verificar` | por tela, tema e janela: **axe** (WCAG 2.2 AA, graves e críticas), **foco visível** em cada elemento (percurso por Tab; medido pelos **pixels**: fotografa com e sem foco e exige um anel de pelo menos 2 px com contraste de 3:1, como a WCAG 2.4.13), **rolagem horizontal** em 320/390/768/1024/1280 px e **alvos de toque** com largura ou altura menor que 44 px (caixas de marcar e botões de opção contam com o rótulo); grava `e2e/saida/relatorio.json` |
+| `npm run e2e:verificar` | por tela, tema e janela: **axe** (WCAG 2.2 AA, graves e críticas), **foco visível** em cada elemento (percurso por Tab; medido pelos **pixels e pela geometria**: fotografa com e sem foco e exige, nos quatro lados, uma faixa de pelo menos 2 px com contraste de 3:1 (WCAG 2.4.13); fundo que muda inteiro não conta), **rolagem horizontal** em 320/390/768/1024/1280 px e **alvos de toque** com largura ou altura menor que 44 px (caixas de marcar e botões de opção contam com o rótulo); grava `e2e/saida/relatorio.json` |
 | `QC_STRICT=1 npm run e2e:verificar` | o mesmo, mas **qualquer violação reprova**: é como cada PR de tela é conferido |
 | `npm run e2e:verificador` | testa **o próprio verificador** (páginas mínimas com casos que devem passar e casos que devem reprovar); sem API |
 | `npm run e2e:peso` | build de produção e **peso real transferido por rota** (gzip -9) por tipo (JS, CSS, fontes) |
@@ -20,7 +20,7 @@ Todo PR de tela do redesign é conferido **em navegador real**, com números, n�
 A saída (`e2e/saida/`) não vai para o repositório. As capturas são o que o Matheus (e o ChatGPT) aprovam a cada PR.
 
 ## Linha de base do produto ANTES do redesign (16/11/2026)
-Medida em Edge, 17 telas x 2 janelas x 2 temas = 68 combinações:
+Medida em Edge, 17 telas x 2 janelas x 2 temas = 68 combinações: (a linha de foco foi medida com a versão anterior do critério, que contava pixels sem checar a geometria do anel; ela será medida de novo com o critério final na primeira verificação de tela do R2, sem rodada à parte)
 - **axe, violações graves ou críticas: 0.**
 - **Foco sem indicador visível: 2 de 832 paradas** (o link "Abrir a agenda" do início do prestador, no celular, fica 18 pixels abaixo do mínimo). Uma primeira medida, que só olhava o CSS (contorno de 2 px ou qualquer sombra), apontava 120; o revisor mostrou que ela não provava visibilidade real, e a medida por pixels (com e sem foco) a substituiu.
 - **Rolagem horizontal a 320 px** em todas as telas do prestador e do administrador (e a 390 px nas telas do administrador): 44 larguras no total.

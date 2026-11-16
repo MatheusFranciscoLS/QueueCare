@@ -18,19 +18,36 @@ test.describe('foco visível, medido pelos pixels', () => {
          <div class="linha"><button id="nenhum">Sem indicador</button></div>
          <div class="linha"><button id="transparente">Sombra transparente</button></div>
          <div class="linha"><button id="fraco">Contorno quase invisível</button></div>
-         <div class="linha"><button id="fino">Contorno de 1 px</button></div>`,
+         <div class="linha"><button id="fino">Contorno de 1 px</button></div>
+         <div class="linha"><button id="fundo">Só o fundo muda</button></div>
+         <div class="linha"><button id="topo">Anel só em cima</button></div>
+         <div class="linha"><button id="interno">Anel por dentro</button></div>
+         <div class="linha"><button id="pilula">Botão em pílula</button></div>`,
         `button{padding:10px 16px;border:1px solid #888;background:#eee}
          #bom:focus{outline:3px solid #0b57d0;outline-offset:2px}
          #nenhum:focus{outline:none}
          #transparente:focus{outline:none;box-shadow:0 0 0 4px rgba(0,0,0,0)}
          #fraco:focus{outline:3px solid #fefefe;outline-offset:2px}
-         #fino:focus{outline:1px solid #0b57d0;outline-offset:0}`,
+         #fino:focus{outline:1px solid #0b57d0;outline-offset:0}
+         #fundo:focus{outline:none;background:#0b57d0;color:#fff}
+         #topo:focus{outline:none;box-shadow:0 -3px 0 0 #0b57d0}
+         #interno:focus{outline:3px solid #0b57d0;outline-offset:-4px}
+         #pilula{border-radius:999px;padding:10px 28px}
+         #pilula:focus{outline:3px solid #0b57d0;outline-offset:2px}`,
       ),
     )
     const r = await checarFoco(page)
-    expect(r.total).toBe(5)
+    expect(r.total).toBe(9)
     const reprovados = r.sem.map((s) => s.split(' (')[0])
-    expect(reprovados).toEqual(['button "Sem indicador"', 'button "Sombra transparente"', 'button "Contorno quase invisível"', 'button "Contorno de 1 px"'])
+    expect(reprovados).toEqual([
+      'button "Sem indicador"',
+      'button "Sombra transparente"',
+      'button "Contorno quase invisível"',
+      'button "Contorno de 1 px"',
+      'button "Só o fundo muda"', // mudança de fundo, sem anel: não é indicador de foco
+      'button "Anel só em cima"', // um lado só: o anel precisa cercar o elemento
+    ])
+    expect(r.sem.find((m) => m.includes('Só o fundo muda'))).toContain('fundo inteiro muda')
   })
 
   test('campo de data: anel aprova, ausência reprova, e todos os pedaços do campo contam como um só elemento', async ({ page }) => {

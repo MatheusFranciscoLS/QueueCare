@@ -10,17 +10,23 @@ const descricao = `(el) => {
 }`
 
 /**
- * Foco VISÍVEL, medido pelos PIXELS e não pelas propriedades de CSS (uma sombra transparente ou um contorno sem contraste passariam
- * numa checagem de propriedades). Para cada elemento que recebe foco por Tab: fotografa a região dele (com uma margem) COM foco e SEM foco
- * e compara pixel a pixel. Conta como indicador o pixel que mudou e tem contraste de pelo menos 3:1 contra o que havia antes
- * (WCAG 2.4.13: mudança de contraste de 3:1; área de pelo menos um anel de 2 px ao redor do elemento).
+ * Foco VISÍVEL, medido pelos PIXELS e pela GEOMETRIA (uma sombra transparente ou um contorno sem contraste passariam numa checagem de CSS,
+ * e uma mudança de fundo passaria numa contagem solta de pixels). Para cada elemento que recebe foco por Tab: fotografa a região dele
+ * (com uma margem) COM foco e SEM foco e marca o pixel que mudou com contraste de pelo menos 3:1 contra o anterior (WCAG 2.4.13).
+ * Em cada um dos quatro lados, o indicador precisa ocupar uma faixa de pelo menos 2 px de espessura em 95 % do trecho reto do lado
+ * (a faixa vai da margem de fora até 3 px para dentro da borda, o que aceita anel por fora, no limite e por dentro; os cantos, de
+ * onde sai a curvatura, ficam de fora do trecho reto). E o interior do elemento não pode ter mudado em sua maior parte: fundo que
+ * muda inteiro não é anel. Lado cuja faixa cai fora da janela não pode ser fotografado e fica de fora.
  */
 const MARGEM_FOCO = 6
 const CONTRASTE_MINIMO = 3
 const ESPESSURA_MINIMA = 2
+const FAIXA_PARA_DENTRO = 3
+const COBERTURA_MINIMA = 0.95
+const INTERIOR_MAXIMO = 0.5
 
-/** Roda dentro da página: recebe as duas fotos (base64 PNG) e devolve quantos pixels formam o indicador. */
-const compararFotos = `async (fotos) => {
+/** Roda dentro da página: recebe as duas fotos (base64 PNG) e o retângulo do elemento; devolve os lados sem anel e a mudança do interior. */
+const compararFotos = `async (a) => {
   const carregar = async (b64) => {
     const bytes = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0))
     const bmp = await createImageBitmap(new Blob([bytes], { type: 'image/png' }))
@@ -29,16 +35,44 @@ const compararFotos = `async (fotos) => {
     cx.drawImage(bmp, 0, 0)
     return cx.getImageData(0, 0, bmp.width, bmp.height)
   }
-  const [com, sem] = [await carregar(fotos.com), await carregar(fotos.sem)]
+  const [com, sem] = [await carregar(a.com), await carregar(a.sem)]
+  const W = com.width, H = com.height
   const lin = (v) => { const s = v / 255; return s <= 0.03928 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4) }
   const lum = (d, i) => 0.2126 * lin(d[i]) + 0.7152 * lin(d[i + 1]) + 0.0722 * lin(d[i + 2])
-  let pixels = 0
-  for (let i = 0; i < com.data.length; i += 4) {
-    const a = lum(com.data, i), b = lum(sem.data, i)
-    const razao = (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05)
-    if (razao >= ${CONTRASTE_MINIMO}) pixels += 1
+  const mudou = new Uint8Array(W * H)
+  for (let p = 0; p < W * H; p++) {
+    const l1 = lum(com.data, p * 4), l2 = lum(sem.data, p * 4)
+    mudou[p] = (Math.max(l1, l2) + 0.05) / (Math.min(l1, l2) + 0.05) >= ${CONTRASTE_MINIMO} ? 1 : 0
   }
-  return { pixels, largura: com.width, altura: com.height }
+  const em = (x, y) => (x >= 0 && y >= 0 && x < W && y < H ? mudou[y * W + x] : 0)
+  const rx = Math.round(a.rx), ry = Math.round(a.ry), rw = Math.round(a.rw), rh = Math.round(a.rh)
+  const m = ${MARGEM_FOCO}, dentro = ${FAIXA_PARA_DENTRO}
+  const reto = (comprimento) => Math.min(12, Math.floor(comprimento / 4)) // fora dos cantos
+  const cobertura = (lado) => {
+    const horizontal = lado === 'top' || lado === 'bottom'
+    const compr = horizontal ? rw : rh
+    const e = reto(compr)
+    let boas = 0, total = 0
+    for (let t = e; t < compr - e; t++) {
+      let cont = 0
+      for (let k = -m; k < dentro; k++) {
+        const x = horizontal ? rx + t : lado === 'left' ? rx + k : rx + rw - 1 - k
+        const y = horizontal ? (lado === 'top' ? ry + k : ry + rh - 1 - k) : ry + t
+        cont += em(x, y)
+      }
+      total += 1
+      if (cont >= ${ESPESSURA_MINIMA}) boas += 1
+    }
+    return total === 0 ? 0 : boas / total
+  }
+  const falhos = []
+  for (const lado of ['top', 'bottom', 'left', 'right']) {
+    if (!a.medido[lado]) continue
+    if (cobertura(lado) < ${COBERTURA_MINIMA}) falhos.push(lado)
+  }
+  let mudouInterior = 0, totalInterior = 0
+  for (let y = ry + dentro + 1; y < ry + rh - dentro - 1; y++) for (let x = rx + dentro + 1; x < rx + rw - dentro - 1; x++) { totalInterior += 1; mudouInterior += em(x, y) }
+  return { falhos, interior: totalInterior === 0 ? 0 : mudouInterior / totalInterior, medidos: Object.values(a.medido).filter(Boolean).length }
 }`
 
 /** Percorre a página com Tab e confere se cada elemento focado mostra um indicador de foco real, medido pelos pixels. */
@@ -91,10 +125,22 @@ export async function checarFoco(page: Page): Promise<{ sem: string[]; total: nu
     await page.evaluate(() => document.getElementById('__sorvedouro')?.focus())
     await page.waitForTimeout(120)
     const sem64 = (await page.screenshot({ clip, animations: 'disabled' })).toString('base64')
-    const { pixels } = (await page.evaluate(`(${compararFotos})(${JSON.stringify({ com, sem: sem64 })})`)) as { pixels: number }
-    // Um anel de 2 px ao redor do elemento tem, no mínimo, 2 x o perímetro em pixels; exige-se três quartos disso (cantos arredondados, recortes).
-    const exigido = Math.round(0.75 * ESPESSURA_MINIMA * 2 * (Math.min(caixa.w, janela.width) + Math.min(caixa.h, janela.height)))
-    if (pixels < exigido) sem.push(`${caixa.nome} (${pixels} px de indicador, mínimo ${exigido})`)
+    const medido = {
+      top: caixa.y - MARGEM_FOCO >= 0,
+      bottom: caixa.y + caixa.h + MARGEM_FOCO <= janela.height,
+      left: caixa.x - MARGEM_FOCO >= 0,
+      right: caixa.x + caixa.w + MARGEM_FOCO <= janela.width,
+    }
+    const r = (await page.evaluate(`(${compararFotos})(${JSON.stringify({ com, sem: sem64, rx: caixa.x - x, ry: caixa.y - y, rw: caixa.w, rh: caixa.h, medido })})`)) as {
+      falhos: string[]
+      interior: number
+      medidos: number
+    }
+    const motivos: string[] = []
+    if (r.medidos === 0) motivos.push('nenhum lado cabe na janela para medir')
+    if (r.falhos.length > 0) motivos.push(`sem anel de ${ESPESSURA_MINIMA} px em: ${r.falhos.join(', ')}`)
+    if (r.interior > INTERIOR_MAXIMO) motivos.push(`o fundo inteiro muda (${Math.round(r.interior * 100)} %), isso não é um anel`)
+    if (motivos.length > 0) sem.push(`${caixa.nome} (${motivos.join('; ')})`)
     // Devolve o foco ao elemento para o próximo Tab seguir a ordem do percurso (em campos de data e hora, recomeça no primeiro pedaço).
     await page.evaluate(() => (window as unknown as { __alvoFoco?: HTMLElement }).__alvoFoco?.focus())
   }
