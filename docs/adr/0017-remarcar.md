@@ -1,6 +1,6 @@
 # ADR 0017: remarcar agendamento
 
-- **Status:** Proposed (aguarda a revisão do ChatGPT e a aprovação do Matheus antes de qualquer código)
+- **Status:** Accepted (ChatGPT: APPROVE no commit b688a60, após dois REQUEST CHANGES; a decisão de produto "equipe sem limite" foi confirmada pelo Matheus, que delegou ao melhor argumento verificado com o ChatGPT). A implementação (PR de backend, ALTO) só começa quando o Matheus mandar.
 - **Data:** 16/11/2026
 - **Esforço:** ALTO (muda o histórico no banco, a concorrência dos agendamentos e três serviços)
 - **Contexto de produto:** no banho e tosa mudar o horário é rotina. Hoje o cliente cancela e reserva de novo: são duas operações, a vaga pode ser perdida entre as duas, o prazo de cancelamento pode barrar quem só quer mudar de horário e o histórico vira dois agendamentos sem ligação.
