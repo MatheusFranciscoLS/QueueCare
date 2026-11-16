@@ -1,0 +1,25 @@
+{
+  "compilerOptions": {
+    "target": "es2023",
+    "lib": [
+      "ES2023",
+      "DOM"
+    ],
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "types": [
+      "node"
+    ],
+    "noEmit": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "erasableSyntaxOnly": true,
+    "verbatimModuleSyntax": true,
+    "allowImportingTsExtensions": true,
+    "noUnusedLocals": true
+  },
+  "include": [
+    "e2e",
+    "playwright.config.ts"
+  ]
+}
