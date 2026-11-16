@@ -23,11 +23,12 @@ export function PetsPage() {
   // O erro de uma ação mora na LISTA (não na linha): a linha pode sumir (arquivar) ou mudar de lugar depois de recarregar.
   const [problem, setProblem] = useState<string | null>(null)
   const headingRef = useRef<HTMLHeadingElement>(null)
-  // Pedido de foco feito por uma ação: atendido quando a lista refeita (carga NOVA) já foi desenhada, para saber se a linha ainda existe.
-  const pendingFocus = useRef<{ id: string; version: number } | null>(null)
+  // Pedido de foco feito por uma ação: atendido quando a PRÓXIMA carga bem-sucedida da lista (a versão muda) já foi desenhada, para saber
+  // se a linha ainda existe. Se a atualização falhar, a linha continua e o foco já foi para ela na hora da ação.
+  const pendingFocus = useRef<{ id: string } | null>(null)
   useEffect(() => {
     const request = pendingFocus.current
-    if (!request || version <= request.version) return
+    if (!request) return
     pendingFocus.current = null
     const row = document.querySelector<HTMLElement>(`[data-pet-id="${request.id}"]`)
     ;(row ?? headingRef.current)?.focus()
@@ -65,7 +66,7 @@ export function PetsPage() {
             setNotice={setNotice}
             setProblem={setProblem}
             onActed={(id) => {
-              pendingFocus.current = { id, version }
+              pendingFocus.current = { id }
             }}
           />
         ))}
