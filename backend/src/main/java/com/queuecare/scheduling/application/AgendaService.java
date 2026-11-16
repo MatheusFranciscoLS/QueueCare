@@ -83,19 +83,36 @@ public class AgendaService {
 
 	@Transactional(readOnly = true)
 	public List<AgendaItem> day(UUID userId, LocalDate date) {
+		return range(userId, date, 1);
+	}
+
+	/**
+	 * Semana do prestador: 7 dias CIVIS a partir de {@code start} (a data LOCAL do prestador). É o intervalo [início do primeiro dia,
+	 * início do oitavo dia) no fuso IANA dele, então cobre 167 ou 169 horas em semanas com horário de verão. Mesmas regras da agenda do dia
+	 * (sem cancelados, só id e nome do cliente, prestador sempre vindo do usuário autenticado). A API devolve instantes UTC; quem agrupa por
+	 * dia é a tela, no fuso do negócio.
+	 */
+	@Transactional(readOnly = true)
+	public List<AgendaItem> week(UUID userId, LocalDate start) {
+		return range(userId, start, WEEK_DAYS);
+	}
+
+	static final int WEEK_DAYS = 7;
+
+	private List<AgendaItem> range(UUID userId, LocalDate firstDay, int days) {
 		Provider provider = resolveProvider(userId);
 		UUID providerId = provider.getId();
 
 		ZoneId zone = ZoneId.of(provider.getTimeZone());
-		Instant dayStart = date.atStartOfDay(zone).toInstant();
-		Instant dayEnd = date.plusDays(1).atStartOfDay(zone).toInstant();
-		List<Appointment> day = appointments.findDayAgenda(providerId, dayStart, dayEnd);
+		Instant rangeStart = firstDay.atStartOfDay(zone).toInstant();
+		Instant rangeEnd = firstDay.plusDays(days).atStartOfDay(zone).toInstant();
+		List<Appointment> found = appointments.findDayAgenda(providerId, rangeStart, rangeEnd);
 
-		Map<UUID, String> serviceNames = services.findAllById(day.stream().map(Appointment::getServiceId).distinct().toList()).stream()
+		Map<UUID, String> serviceNames = services.findAllById(found.stream().map(Appointment::getServiceId).distinct().toList()).stream()
 				.collect(Collectors.toMap(ServiceOffering::getId, ServiceOffering::getName));
-		Map<UUID, String> customerNames = users.findAllById(day.stream().map(Appointment::getCustomerId).distinct().toList()).stream()
+		Map<UUID, String> customerNames = users.findAllById(found.stream().map(Appointment::getCustomerId).distinct().toList()).stream()
 				.collect(Collectors.toMap(UserAccount::getId, UserAccount::getName, (a, b) -> a, java.util.HashMap::new));
-		return day.stream().map(a -> new AgendaItem(a.getId(), a.getStartsAt(), a.getEndsAt(), a.getStatus(), a.getServiceId(),
+		return found.stream().map(a -> new AgendaItem(a.getId(), a.getStartsAt(), a.getEndsAt(), a.getStatus(), a.getServiceId(),
 				serviceNames.get(a.getServiceId()), a.getCustomerId(), customerNames.get(a.getCustomerId()))).toList();
 	}
 

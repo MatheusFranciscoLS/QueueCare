@@ -59,6 +59,13 @@ class AgendaController {
 		return agendaService.day(UUID.fromString(jwt.getSubject()), date).stream().map(AgendaResponse::from).toList();
 	}
 
+	/** Os 7 dias a partir de {@code start} (data local do prestador), para o calendário semanal. Mesmas regras e a mesma resposta da agenda do dia. */
+	@GetMapping("/api/agenda/week")
+	@PreAuthorize("hasAnyRole('PROVIDER','ATTENDANT')")
+	List<AgendaResponse> week(@AuthenticationPrincipal Jwt jwt, @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate start) {
+		return agendaService.week(UUID.fromString(jwt.getSubject()), start).stream().map(AgendaResponse::from).toList();
+	}
+
 	/** Fila de hoje do prestador em que a pessoa opera, por ordem de chegada. */
 	@GetMapping("/api/agenda/queue")
 	@PreAuthorize("hasAnyRole('PROVIDER','ATTENDANT')")
