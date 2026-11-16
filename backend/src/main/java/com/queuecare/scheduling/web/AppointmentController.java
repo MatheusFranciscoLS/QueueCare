@@ -57,7 +57,7 @@ class AppointmentController {
 	}
 
 	/** {@code localStart} é o horário LOCAL do prestador, ex.: 2026-11-17T10:00:00. */
-	record CreateAppointmentRequest(@NotNull UUID providerId, @NotNull UUID serviceId, @NotNull LocalDateTime localStart) {
+	record CreateAppointmentRequest(@NotNull UUID providerId, @NotNull UUID serviceId, @NotNull LocalDateTime localStart, UUID petId) {
 	}
 
 	/**
@@ -65,7 +65,11 @@ class AppointmentController {
 	 * vêm do histórico: continuam aparecendo mesmo se o prestador ou o serviço forem desativados depois.
 	 */
 	record AppointmentResponse(UUID id, UUID providerId, UUID serviceId, Instant startsAt, Instant endsAt, String status, String businessName,
-			String timeZone, String serviceName) {
+			String timeZone, String serviceName, AppointmentPetResponse pet) {
+	}
+
+	/** Pet do agendamento (cópia gravada nele): só nome e espécie; ausente (nulo) em agendamento sem pet. */
+	record AppointmentPetResponse(String name, String species) {
 	}
 
 	private List<AppointmentResponse> respond(List<Appointment> list) {
@@ -79,7 +83,8 @@ class AppointmentController {
 			var provider = byProvider.get(a.getProviderId());
 			var service = byService.get(a.getServiceId());
 			return new AppointmentResponse(a.getId(), a.getProviderId(), a.getServiceId(), a.getStartsAt(), a.getEndsAt(), a.getStatus().name(),
-					provider == null ? null : provider.getBusinessName(), provider == null ? null : provider.getTimeZone(), service == null ? null : service.getName());
+					provider == null ? null : provider.getBusinessName(), provider == null ? null : provider.getTimeZone(), service == null ? null : service.getName(),
+					a.getPetId() == null ? null : new AppointmentPetResponse(a.getPetName(), a.getPetSpecies().name()));
 		}).toList();
 	}
 
@@ -88,7 +93,7 @@ class AppointmentController {
 	@PreAuthorize("hasRole('CUSTOMER')")
 	AppointmentResponse book(@AuthenticationPrincipal Jwt jwt, @Valid @RequestBody CreateAppointmentRequest request) {
 		Appointment appointment = bookingService
-				.book(new BookingRequest(request.providerId(), request.serviceId(), userId(jwt), request.localStart()));
+				.book(new BookingRequest(request.providerId(), request.serviceId(), userId(jwt), request.localStart(), request.petId()));
 		return respond(List.of(appointment)).get(0);
 	}
 

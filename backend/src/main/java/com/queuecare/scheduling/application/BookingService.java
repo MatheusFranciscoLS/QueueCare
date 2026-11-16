@@ -1,5 +1,7 @@
 package com.queuecare.scheduling.application;
 
+import com.queuecare.auth.RowLocks;
+import com.queuecare.pets.Pet;
 import com.queuecare.scheduling.application.BookingRejectedException.Reason;
 import com.queuecare.scheduling.domain.AvailabilityPolicy;
 import com.queuecare.scheduling.domain.AvailabilityWindow;
@@ -49,18 +51,20 @@ public class BookingService {
 	private final AvailabilityWindowRepository windows;
 	private final AppointmentRepository appointments;
 	private final AppointmentEventRepository events;
+	private final RowLocks locks;
 	private final TransactionTemplate transaction;
 	private final Clock clock;
 
 	public BookingService(ProviderRepository providers, ServiceOfferingRepository services, UserAccountRepository users,
 			AvailabilityWindowRepository windows, AppointmentRepository appointments, AppointmentEventRepository events,
-			PlatformTransactionManager transactionManager, Clock clock) {
+			RowLocks locks, PlatformTransactionManager transactionManager, Clock clock) {
 		this.providers = providers;
 		this.services = services;
 		this.users = users;
 		this.windows = windows;
 		this.appointments = appointments;
 		this.events = events;
+		this.locks = locks;
 		this.transaction = new TransactionTemplate(transactionManager);
 		this.clock = clock;
 	}
@@ -93,6 +97,8 @@ public class BookingService {
 				.filter(UserAccount::isActive)
 				.orElseThrow(() -> new BookingRejectedException(Reason.CUSTOMER_NOT_FOUND_OR_INACTIVE));
 
+		Pet pet = lockPetOf(request, customer);
+
 		ZoneId zone = ZoneId.of(provider.getTimeZone());
 		Instant start = resolveStart(zone, request);
 		TimeRange range = new TimeRange(start, start.plus(Duration.ofMinutes(service.getDurationMinutes())));
@@ -114,10 +120,31 @@ public class BookingService {
 			throw new BookingConflictException();
 		}
 
-		Appointment appointment = appointments.saveAndFlush(
-				new Appointment(provider.getId(), service.getId(), customer.getId(), range.startsAt(), range.endsAt(), now));
+		Appointment draft = new Appointment(provider.getId(), service.getId(), customer.getId(), range.startsAt(), range.endsAt(), now);
+		if (pet != null) {
+			draft.attachPet(pet); // cópia dos dados do pet no momento da reserva (ADR 0016)
+		}
+		Appointment appointment = appointments.saveAndFlush(draft);
 		events.save(new AppointmentEvent(appointment.getId(), customer.getId(), AppointmentEventType.SCHEDULED, now, null));
 		return appointment;
+	}
+
+	/**
+	 * O pet da reserva (ADR 0016), ou nulo se a reserva não escolheu um. Bloqueia a LINHA do pet (só se for do cliente) e SÓ DEPOIS confere
+	 * {@code active}: arquivar bloqueia a mesma linha, então ou a reserva vence (e o arquivamento seguinte continua permitido) ou o
+	 * arquivamento vence e a reserva falha com PET_INACTIVE. Ler {@code active} sem bloquear não bastaria: entre a leitura e a gravação o
+	 * tutor poderia arquivar. Pet inexistente e pet de outro cliente têm a MESMA resposta (PET_NOT_FOUND), e a conferência do dono vem antes
+	 * da de ativo. Ordem global de bloqueios: cliente, pet, agendamento (aqui, o cliente só é lido).
+	 */
+	private Pet lockPetOf(BookingRequest request, UserAccount customer) {
+		if (request.petId() == null) {
+			return null;
+		}
+		Pet pet = locks.lockPet(request.petId(), customer.getId()).orElseThrow(() -> new BookingRejectedException(Reason.PET_NOT_FOUND));
+		if (!pet.isActive()) {
+			throw new BookingRejectedException(Reason.PET_INACTIVE);
+		}
+		return pet;
 	}
 
 	private Instant resolveStart(ZoneId zone, BookingRequest request) {

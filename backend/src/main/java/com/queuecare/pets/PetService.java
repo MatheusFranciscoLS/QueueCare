@@ -3,6 +3,7 @@ package com.queuecare.pets;
 import com.queuecare.auth.RowLocks;
 import com.queuecare.pets.PetExceptions.PetLimitReachedException;
 import com.queuecare.pets.PetExceptions.PetNotFoundException;
+import com.queuecare.scheduling.persistence.AppointmentRepository;
 import com.queuecare.scheduling.persistence.UserAccount;
 import com.queuecare.scheduling.persistence.UserRole;
 import java.time.Clock;
@@ -21,6 +22,8 @@ import org.springframework.transaction.annotation.Transactional;
  * na mesma transação: bloquear a linha do CLIENTE, contar, gravar. Este serviço é o único lugar que escreve em {@code pets} por
  * esses caminhos; sem o bloqueio, dois pedidos simultâneos leriam a mesma contagem e passariam do limite.
  *
+ * <p>Editar o pet atualiza, na mesma transação, a cópia dos dados nos agendamentos ainda SCHEDULED (ADR 0016, item 2).
+ *
  * <p>Ordem de bloqueios (nunca invertida): cliente, depois pet, depois agendamento. Arquivar e editar bloqueiam só o pet.
  * Os bloqueios têm espera limitada (409 RESOURCE_BUSY, nunca espera infinita; veja {@link RowLocks}).
  */
@@ -31,11 +34,13 @@ public class PetService {
 	public static final int MAX_TOTAL = 100;
 
 	private final PetRepository pets;
+	private final AppointmentRepository appointments;
 	private final RowLocks locks;
 	private final Clock clock;
 
-	public PetService(PetRepository pets, RowLocks locks, Clock clock) {
+	public PetService(PetRepository pets, AppointmentRepository appointments, RowLocks locks, Clock clock) {
 		this.pets = pets;
+		this.appointments = appointments;
 		this.locks = locks;
 		this.clock = clock;
 	}
@@ -61,7 +66,11 @@ public class PetService {
 		PetText.Normalized data = PetText.normalize(input);
 		Pet pet = locks.lockPet(petId, customerId).orElseThrow(PetNotFoundException::new);
 		pet.update(data, clock.instant());
-		return pets.saveAndFlush(pet);
+		Pet saved = pets.saveAndFlush(pet);
+		// A cópia dos dados nos agendamentos ainda SCHEDULED acompanha a edição (o prestador vê o dado mais atual de quem ainda vai atender);
+		// os demais ficam congelados. Esta transação só carrega o pet, nunca entidades Appointment.
+		appointments.refreshPetSnapshot(saved.getId(), saved.getName(), saved.getSpecies(), saved.getBreed(), saved.getSize(), saved.getNotes());
+		return saved;
 	}
 
 	/** Arquiva (não apaga). Repetir é inofensivo. Agendamento futuro continua válido; só novas reservas passam a ser recusadas. */

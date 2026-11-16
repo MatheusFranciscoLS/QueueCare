@@ -11,6 +11,10 @@ public class BookingRejectedException extends RuntimeException {
 		PROVIDER_NOT_FOUND,
 		SERVICE_NOT_FOUND_OR_INACTIVE,
 		CUSTOMER_NOT_FOUND_OR_INACTIVE,
+		/** Pet inexistente OU de outro cliente: a mesma resposta (404), para não revelar quais pets existem. */
+		PET_NOT_FOUND,
+		/** O pet é do cliente, mas está arquivado (422). */
+		PET_INACTIVE,
 		/** Horário local que não existe (pulado pelo horário de verão). */
 		NONEXISTENT_LOCAL_TIME,
 		/** Horário local que acontece duas vezes (volta do horário de verão). */

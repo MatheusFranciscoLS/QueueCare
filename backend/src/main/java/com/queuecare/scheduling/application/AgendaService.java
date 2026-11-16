@@ -1,5 +1,7 @@
 package com.queuecare.scheduling.application;
 
+import com.queuecare.pets.PetSize;
+import com.queuecare.pets.PetSpecies;
 import com.queuecare.scheduling.application.ProviderExceptions.ProviderNotConfiguredException;
 import com.queuecare.scheduling.persistence.Appointment;
 import com.queuecare.scheduling.persistence.AppointmentRepository;
@@ -49,14 +51,29 @@ public class AgendaService {
 		this.staffAccess = staffAccess;
 	}
 
+	/**
+	 * O pet do agendamento, lido da CÓPIA gravada nele (nunca do cadastro): só quem já tem acesso ao agendamento chega aqui, porque as
+	 * consultas da agenda e da fila filtram pelo prestador em que a pessoa opera. {@code breed} e {@code notes} são nulos na visão da semana
+	 * (várias linhas de uma vez); aparecem na agenda do dia e na fila, onde o atendimento acontece (ADR 0016, item 4).
+	 */
+	public record PetInfo(String name, PetSpecies species, String breed, PetSize size, String notes) {
+		/** Nulo se o agendamento não tem pet (antigo ou feito sem escolher um). */
+		static PetInfo of(Appointment a, boolean withDetails) {
+			if (a.getPetId() == null) {
+				return null;
+			}
+			return new PetInfo(a.getPetName(), a.getPetSpecies(), withDetails ? a.getPetBreed() : null, a.getPetSize(), withDetails ? a.getPetNotes() : null);
+		}
+	}
+
 	/** Um agendamento da agenda. */
 	public record AgendaItem(UUID id, Instant startsAt, Instant endsAt, AppointmentStatus status, UUID serviceId, String serviceName,
-			UUID customerId, String customerName) {
+			UUID customerId, String customerName, PetInfo pet) {
 	}
 
 	/** Uma pessoa na fila: posição (1 = a primeira a chegar), quem é, o que vai fazer e quando chegou. */
 	public record QueueItem(int position, UUID id, Instant startsAt, Instant endsAt, UUID serviceId, String serviceName, UUID customerId, String customerName,
-			Instant checkedInAt) {
+			Instant checkedInAt, PetInfo pet) {
 	}
 
 	/** Onde a pessoa trabalha: o negócio e o fuso em que os horários da agenda valem (o atendente não tem acesso a /api/provider). */
@@ -83,7 +100,7 @@ public class AgendaService {
 
 	@Transactional(readOnly = true)
 	public List<AgendaItem> day(UUID userId, LocalDate date) {
-		return range(userId, date, 1);
+		return range(userId, date, 1, true);
 	}
 
 	/**
@@ -94,7 +111,7 @@ public class AgendaService {
 	 */
 	@Transactional(readOnly = true)
 	public List<AgendaItem> week(UUID userId, LocalDate start) {
-		return range(userId, start, WEEK_DAYS);
+		return range(userId, start, WEEK_DAYS, false);
 	}
 
 	static final int WEEK_DAYS = 7;
@@ -103,7 +120,7 @@ public class AgendaService {
 	static final LocalDate MIN_DATE = LocalDate.of(1970, 1, 1);
 	static final LocalDate MAX_DATE = LocalDate.of(2100, 12, 31);
 
-	private List<AgendaItem> range(UUID userId, LocalDate firstDay, int days) {
+	private List<AgendaItem> range(UUID userId, LocalDate firstDay, int days, boolean petDetails) {
 		if (firstDay.isBefore(MIN_DATE) || firstDay.isAfter(MAX_DATE)) {
 			throw new ProviderExceptions.InvalidConfigurationException("date", "entre " + MIN_DATE + " e " + MAX_DATE);
 		}
@@ -120,7 +137,7 @@ public class AgendaService {
 		Map<UUID, String> customerNames = users.findAllById(found.stream().map(Appointment::getCustomerId).distinct().toList()).stream()
 				.collect(Collectors.toMap(UserAccount::getId, UserAccount::getName, (a, b) -> a, java.util.HashMap::new));
 		return found.stream().map(a -> new AgendaItem(a.getId(), a.getStartsAt(), a.getEndsAt(), a.getStatus(), a.getServiceId(),
-				serviceNames.get(a.getServiceId()), a.getCustomerId(), customerNames.get(a.getCustomerId()))).toList();
+				serviceNames.get(a.getServiceId()), a.getCustomerId(), customerNames.get(a.getCustomerId()), PetInfo.of(a, petDetails))).toList();
 	}
 
 
@@ -143,7 +160,7 @@ public class AgendaService {
 		for (AppointmentRepository.QueueRow row : rows) {
 			Appointment a = row.appointment();
 			queue.add(new QueueItem(queue.size() + 1, a.getId(), a.getStartsAt(), a.getEndsAt(), a.getServiceId(), serviceNames.get(a.getServiceId()), a.getCustomerId(),
-					customerNames.get(a.getCustomerId()), row.checkedInAt()));
+					customerNames.get(a.getCustomerId()), row.checkedInAt(), PetInfo.of(a, true)));
 		}
 		return queue;
 	}

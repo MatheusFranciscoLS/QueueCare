@@ -1,6 +1,26 @@
 {
   "components" : {
     "schemas" : {
+      "AgendaPetResponse" : {
+        "properties" : {
+          "breed" : {
+            "type" : "string"
+          },
+          "name" : {
+            "type" : "string"
+          },
+          "notes" : {
+            "type" : "string"
+          },
+          "size" : {
+            "type" : "string"
+          },
+          "species" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
       "AgendaResponse" : {
         "properties" : {
           "customerId" : {
@@ -17,6 +37,9 @@
           "id" : {
             "format" : "uuid",
             "type" : "string"
+          },
+          "pet" : {
+            "$ref" : "#/components/schemas/AgendaPetResponse"
           },
           "serviceId" : {
             "format" : "uuid",
@@ -35,6 +58,17 @@
         },
         "type" : "object"
       },
+      "AppointmentPetResponse" : {
+        "properties" : {
+          "name" : {
+            "type" : "string"
+          },
+          "species" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
       "AppointmentResponse" : {
         "properties" : {
           "businessName" : {
@@ -47,6 +81,9 @@
           "id" : {
             "format" : "uuid",
             "type" : "string"
+          },
+          "pet" : {
+            "$ref" : "#/components/schemas/AppointmentPetResponse"
           },
           "providerId" : {
             "format" : "uuid",
@@ -157,6 +194,10 @@
         "properties" : {
           "localStart" : {
             "format" : "date-time",
+            "type" : "string"
+          },
+          "petId" : {
+            "format" : "uuid",
             "type" : "string"
           },
           "providerId" : {
@@ -406,6 +447,9 @@
           "id" : {
             "format" : "uuid",
             "type" : "string"
+          },
+          "pet" : {
+            "$ref" : "#/components/schemas/AgendaPetResponse"
           },
           "position" : {
             "format" : "int32",
