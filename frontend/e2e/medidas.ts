@@ -16,7 +16,7 @@ const descricao = `(el) => {
  * Em cada um dos quatro lados, o indicador precisa ocupar uma faixa de pelo menos 2 px de espessura em 95 % do trecho reto do lado
  * (a faixa vai da margem de fora até 3 px para dentro da borda, o que aceita anel por fora, no limite e por dentro; os cantos, de
  * onde sai a curvatura, ficam de fora do trecho reto). E o interior do elemento não pode ter mudado em sua maior parte: fundo que
- * muda inteiro não é anel. Lado cuja faixa cai fora da janela não pode ser fotografado e fica de fora.
+ * muda inteiro não é anel. O elemento é centralizado na janela antes de medir; se mesmo assim algum lado não couber (colado na borda ou maior que a janela), REPROVA: nenhum lado fica de fora.
  */
 const MARGEM_FOCO = 6
 const CONTRASTE_MINIMO = 3
@@ -99,7 +99,7 @@ export async function checarFoco(page: Page): Promise<{ sem: string[]; total: nu
       const vistos = (window.__vistos ??= new WeakSet())
       if (vistos.has(el)) return { repetido: true } // outro pedaço do mesmo campo de data ou hora: já medido
       vistos.add(el)
-      el.scrollIntoView({ block: 'nearest', inline: 'nearest' })
+      el.scrollIntoView({ block: 'center', inline: 'center' }) // centraliza para a margem de medida caber nos quatro lados
       window.__alvoFoco = el
       const r = el.getBoundingClientRect()
       const descrever = ${descricao}
@@ -137,7 +137,7 @@ export async function checarFoco(page: Page): Promise<{ sem: string[]; total: nu
       medidos: number
     }
     const motivos: string[] = []
-    if (r.medidos === 0) motivos.push('nenhum lado cabe na janela para medir')
+    if (r.medidos < 4) motivos.push(`só ${r.medidos} de 4 lados cabem na janela para medir (elemento colado na borda ou maior que a janela)`)
     if (r.falhos.length > 0) motivos.push(`sem anel de ${ESPESSURA_MINIMA} px em: ${r.falhos.join(', ')}`)
     if (r.interior > INTERIOR_MAXIMO) motivos.push(`o fundo inteiro muda (${Math.round(r.interior * 100)} %), isso não é um anel`)
     if (motivos.length > 0) sem.push(`${caixa.nome} (${motivos.join('; ')})`)

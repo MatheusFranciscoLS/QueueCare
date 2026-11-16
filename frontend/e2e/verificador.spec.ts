@@ -50,6 +50,21 @@ test.describe('foco visível, medido pelos pixels', () => {
     expect(r.sem.find((m) => m.includes('Só o fundo muda'))).toContain('fundo inteiro muda')
   })
 
+  test('elemento colado na borda da janela reprova (lado não mensurável); elemento longe, abaixo da dobra, é rolado até o centro e aprova', async ({ page }) => {
+    await page.setContent(
+      base(
+        `<button id="colado" style="position:fixed;left:0;top:300px">Colado na borda</button>
+         <div style="height:1600px"></div>
+         <button id="longe">Abaixo da dobra</button><div style="height:900px"></div>`,
+        `button{padding:10px 16px;border:1px solid #888;background:#eee}
+         button:focus{outline:3px solid #0b57d0;outline-offset:2px}`,
+      ),
+    )
+    const r = await checarFoco(page)
+    expect(r.sem.map((m) => m.split(' (')[0])).toEqual(['button "Colado na borda"'])
+    expect(r.sem[0]).toContain('de 4 lados')
+  })
+
   test('campo de data: anel aprova, ausência reprova, e todos os pedaços do campo contam como um só elemento', async ({ page }) => {
     await page.setContent(
       base(
