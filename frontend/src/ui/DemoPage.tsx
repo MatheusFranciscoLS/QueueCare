@@ -52,7 +52,7 @@ export default function DemoPage() {
         <section aria-labelledby="tipo">
           <h2 id="tipo" style={{ font: '700 1.375rem/1.15 var(--pp-display)', margin: '0 0 12px' }}>Tipografia</h2>
           <p style={{ font: '700 2.75rem/1.05 var(--pp-display)', margin: 0 }}>10:30 Bidu</p>
-          <p style={{ maxWidth: '60ch' }}>Texto corrido em Atkinson Hyperlegible Next. Os algarismos de toda a interface vêm da Bricolage: 1 h 30, 45 min, 08:00, 20/11/2026.</p>
+          <p style={{ maxWidth: '38rem' }}>Texto corrido em Atkinson Hyperlegible Next. Os algarismos de toda a interface vêm da Bricolage: 1 h 30, 45 min, 08:00, 20/11/2026.</p>
         </section>
 
         <section aria-labelledby="botoes">

@@ -11,7 +11,79 @@
   font-display: swap;
   font-weight: 200 800;
   src: url('../../node_modules/@fontsource-variable/bricolage-grotesque/files/bricolage-grotesque-latin-wght-normal.woff2') format('woff2-variations');
+  unicode-range: U+0030-003A;
+}
+
+/* Fontes de RESERVA com métricas ajustadas (ADR 0018, seção 2): enquanto as fontes reais carregam (font-display: swap), o texto usa
+   Arial (ou equivalente) escalada para ocupar o mesmo espaço, de modo que a troca não desloque o layout. Os valores foram MEDIDOS no navegador
+   com e2e/medir-metricas.mjs (largura de amostras reais; ascendente e descendente pelo canvas) e a geometria é verificada em e2e/fontes.spec.ts. */
+/* Algarismos (U+0030-0039) e dois-pontos (U+003A) têm larguras diferentes entre Arial e Bricolage: faces separadas, por peso. */
+@font-face {
+  font-family: 'Pelo Numerais Reserva';
+  font-display: swap;
+  font-weight: 200 500;
+  src: local('Arial'), local('ArialMT'), local('Helvetica'), local('Liberation Sans');
+  size-adjust: 108.5%;
+  ascent-override: 92%;
+  descent-override: 25.5%;
   unicode-range: U+0030-0039;
+}
+@font-face {
+  font-family: 'Pelo Numerais Reserva';
+  font-display: swap;
+  font-weight: 600 800;
+  src: local('Arial Bold'), local('Arial-BoldMT'), local('Helvetica Bold'), local('Liberation Sans Bold');
+  size-adjust: 111%;
+  ascent-override: 92.2%;
+  descent-override: 27%;
+  unicode-range: U+0030-0039;
+}
+@font-face {
+  font-family: 'Pelo Numerais Reserva';
+  font-display: swap;
+  font-weight: 200 500;
+  src: local('Arial'), local('ArialMT'), local('Helvetica'), local('Liberation Sans');
+  size-adjust: 74%;
+  ascent-override: 92%;
+  descent-override: 25.5%;
+  unicode-range: U+003A;
+}
+@font-face {
+  font-family: 'Pelo Numerais Reserva';
+  font-display: swap;
+  font-weight: 600 800;
+  src: local('Arial Bold'), local('Arial-BoldMT'), local('Helvetica Bold'), local('Liberation Sans Bold');
+  size-adjust: 67.6%;
+  ascent-override: 92.2%;
+  descent-override: 27%;
+  unicode-range: U+003A;
+}
+@font-face {
+  font-family: 'Bricolage Reserva';
+  font-display: swap;
+  font-weight: 500 800;
+  src: local('Arial Bold'), local('Arial-BoldMT'), local('Helvetica Bold'), local('Liberation Sans Bold');
+  size-adjust: 100.46%;
+  ascent-override: 92.5%;
+  descent-override: 27%;
+}
+@font-face {
+  font-family: 'Atkinson Reserva';
+  font-display: swap;
+  font-weight: 400 500;
+  src: local('Arial'), local('ArialMT'), local('Helvetica'), local('Liberation Sans');
+  size-adjust: 98.1%;
+  ascent-override: 101.9%;
+  descent-override: 31.9%;
+}
+@font-face {
+  font-family: 'Atkinson Reserva';
+  font-display: swap;
+  font-weight: 600 800;
+  src: local('Arial Bold'), local('Arial-BoldMT'), local('Helvetica Bold'), local('Liberation Sans Bold');
+  size-adjust: 98.41%;
+  ascent-override: 101.6%;
+  descent-override: 31.8%;
 }
 
 .pp {
@@ -39,8 +111,8 @@
   --pp-done: #1d5a46;
   --pp-st-cancelled-fg: #46555f;
   --pp-st-cancelled-bg: #e4e8eb;
-  --pp-display: 'Bricolage Grotesque Variable', 'Trebuchet MS', system-ui, sans-serif;
-  --pp-body: 'Pelo Numerais', 'Atkinson Hyperlegible Next Variable', 'Segoe UI', system-ui, sans-serif;
+  --pp-display: 'Bricolage Grotesque Variable', 'Pelo Numerais Reserva', 'Bricolage Reserva', 'Trebuchet MS', system-ui, sans-serif;
+  --pp-body: 'Pelo Numerais', 'Pelo Numerais Reserva', 'Atkinson Hyperlegible Next Variable', 'Atkinson Reserva', 'Segoe UI', system-ui, sans-serif;
   --pp-space-1: 0.25rem;
   --pp-space-2: 0.5rem;
   --pp-space-3: 0.75rem;
@@ -51,6 +123,7 @@
   background: var(--pp-bg);
   color: var(--pp-text);
   font: 400 1rem/1.5 var(--pp-body);
+  font-variant-numeric: tabular-nums; /* algarismos de largura fixa: horários alinham e a fonte de reserva tem métrica exata */
 }
 
 @media (prefers-color-scheme: dark) {

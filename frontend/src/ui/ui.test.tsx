@@ -66,6 +66,44 @@ describe('Button', () => {
   })
 })
 
+describe('Button em formulário', () => {
+  function Formulario({ carregando }: { carregando: boolean }) {
+    return (
+      <form onSubmit={(e) => { e.preventDefault(); enviar() }}>
+        <label>
+          Nome
+          <input />
+        </label>
+        <Button type="submit" variant="primary" loading={carregando}>
+          Agendar
+        </Button>
+      </form>
+    )
+  }
+  const enviar = vi.fn()
+
+  it('Enter no campo envia o formulário quando não está carregando', async () => {
+    enviar.mockClear()
+    render(<Formulario carregando={false} />)
+    await userEvent.setup().type(screen.getByLabelText('Nome'), 'Thor{Enter}')
+    expect(enviar).toHaveBeenCalledTimes(1)
+  })
+
+  it('Enter no campo NÃO reenvia enquanto o botão está carregando (a proteção cobre o envio por teclado, não só o clique)', async () => {
+    enviar.mockClear()
+    render(<Formulario carregando />)
+    await userEvent.setup().type(screen.getByLabelText('Nome'), 'Thor{Enter}{Enter}')
+    expect(enviar).not.toHaveBeenCalled()
+  })
+
+  it('clique no botão carregando também não envia', async () => {
+    enviar.mockClear()
+    render(<Formulario carregando />)
+    await userEvent.setup().click(screen.getByRole('button'))
+    expect(enviar).not.toHaveBeenCalled()
+  })
+})
+
 describe('Field', () => {
   it('liga rótulo, dica e erro ao campo; o erro é anunciado e marca o campo como inválido', () => {
     render(
