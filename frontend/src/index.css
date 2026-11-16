@@ -193,7 +193,8 @@ body {
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: var(--radius-md);
-  padding: var(--space-6);
+  --card-pad: var(--space-6);
+  padding: var(--card-pad);
   box-shadow: var(--shadow-card);
 }
 
@@ -459,10 +460,69 @@ input[type='date'] {
 }
 
 .slots {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(5.25rem, 1fr));
   gap: var(--space-2);
   margin-bottom: var(--space-2);
+}
+
+.slots .button {
+  font-variant-numeric: tabular-nums;
+}
+
+/* o horário escolhido não depende só da cor: ganha um visto (o estado também vai em aria-pressed) */
+.slots .button[aria-pressed='true']::before {
+  content: '✓';
+  content: '✓' / ''; /* com texto alternativo vazio onde há suporte; antes, o visto simples serve de reserva */
+  margin-right: 0.35em;
+}
+
+/* prestador e serviço como cartões de escolha; o escolhido fica destacado (borda e fundo) além do botão de opção marcado */
+.step .choice {
+  padding: 0 var(--space-3);
+  margin-bottom: var(--space-2);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+}
+
+.step .choice:has(input:checked) {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  font-weight: 600;
+}
+
+/* confirmação: no celular fica colada ao pé da tela, sempre à vista, respeitando a área segura do aparelho */
+.step.confirm {
+  margin: var(--space-4) calc(var(--card-pad) * -1) calc(var(--card-pad) * -1);
+  padding: var(--space-3) var(--card-pad) calc(var(--space-3) + env(safe-area-inset-bottom));
+  background: var(--surface);
+  border: 0;
+  border-top: 1px solid var(--line);
+  border-radius: 0 0 var(--radius-md) var(--radius-md);
+  box-shadow: 0 -6px 14px rgb(20 48 47 / 8%);
+}
+
+/* só gruda no pé da tela quando ela é alta o bastante; em telas baixas (ex.: 390x667) a barra cobriria os horários, então fica no fluxo normal */
+@media (min-height: 45rem) {
+  .step.confirm {
+    position: sticky;
+    bottom: 0;
+    z-index: 1;
+  }
+}
+
+.step.confirm h2 {
+  margin: 0 0 var(--space-1);
+  font-size: 1rem;
+}
+
+.step.confirm p {
+  margin: 0 0 var(--space-2);
+  font-size: 0.95rem;
+}
+
+.step.confirm .actions .button {
+  flex: 1 1 10rem;
 }
 
 [hidden] {
@@ -471,7 +531,7 @@ input[type='date'] {
 
 @media (max-width: 30rem) {
   .card {
-    padding: var(--space-4);
+    --card-pad: var(--space-4);
   }
 
   .content {
