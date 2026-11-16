@@ -555,6 +555,9 @@ input[type='date'] {
 
   .who .link {
     flex: none;
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--target);
   }
 
   .who .button {
