@@ -1,0 +1,439 @@
+<title>Pelo & Ponto, prévia da agenda</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Next:wght@400;500;600;700&family=Bricolage+Grotesque:opsz,wght@12..96,500..800&display=swap">
+<style>
+/* Direção: "o fio do dia". Um fio pespontado liga os atendimentos: pontilhado enquanto falta, cheio quando termina.
+   Layout: barra lateral só de texto + conteúdo em linha do tempo; a hora é o numeral principal. Sem cartões repetidos. */
+:root{
+  --bg:#EEF2F4; --surface:#FFFFFF; --text:#14202B; --muted:#46555F; --line:#CBD5DB; --field:#6B7B86;
+  --primary:#115E7A; --primary-strong:#0B4A61; --on-primary:#FFFFFF;
+  --gold:#F2B138; --on-gold:#14202B; --gold-mark:#B97F00;
+  --danger:#A3231A; --focus:#115E7A; --scrim:rgba(20,32,43,.55);
+  --st-sched-fg:#0B4A61; --st-sched-bg:#DCEBF1;
+  --st-wait-fg:#5E3F00;  --st-wait-bg:#FCE9BE;
+  --st-done-fg:#1D5A46;  --st-done-bg:#D8EEE4; --done:#1D5A46;
+  --st-off-fg:#46555F;   --st-off-bg:#E4E8EB;
+  --display:"Bricolage Grotesque","Trebuchet MS",system-ui,sans-serif;
+  --body:"Atkinson Hyperlegible Next","Segoe UI",system-ui,sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0E1721; --surface:#16212D; --text:#E8EEF3; --muted:#A3B2BE; --line:#2B3947; --field:#6F808D;
+  --primary:#7CC4E0; --primary-strong:#A9DBEE; --on-primary:#07202B;
+  --gold:#F5BE52; --on-gold:#14202B; --gold-mark:#F5BE52; --danger:#FF9C92; --focus:#9ADCF2; --scrim:rgba(0,0,0,.65);
+  --st-sched-fg:#A9DBEE; --st-sched-bg:#173443; --st-wait-fg:#F8D58A; --st-wait-bg:#40300C;
+  --st-done-fg:#A5E0C6; --st-done-bg:#143A2D; --done:#A5E0C6; --st-off-fg:#B5C2CC; --st-off-bg:#26323D;
+  color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0E1721; --surface:#16212D; --text:#E8EEF3; --muted:#A3B2BE; --line:#2B3947; --field:#6F808D;
+  --primary:#7CC4E0; --primary-strong:#A9DBEE; --on-primary:#07202B;
+  --gold:#F5BE52; --on-gold:#14202B; --gold-mark:#F5BE52; --danger:#FF9C92; --focus:#9ADCF2; --scrim:rgba(0,0,0,.65);
+  --st-sched-fg:#A9DBEE; --st-sched-bg:#173443; --st-wait-fg:#F8D58A; --st-wait-bg:#40300C;
+  --st-done-fg:#A5E0C6; --st-done-bg:#143A2D; --done:#A5E0C6; --st-off-fg:#B5C2CC; --st-off-bg:#26323D;
+  color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--text);font:400 16px/1.5 var(--body);padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0}
+a,button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--focus);outline-offset:3px;border-radius:6px}
+/* números do texto corrido na fonte de títulos: o zero de Atkinson vem cortado por uma barra. No produto isso vira unicode-range. */
+.n{font-family:var(--display);font-weight:600;font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+.app{display:grid;grid-template-columns:232px minmax(0,1fr);gap:48px;max-width:1280px;margin:0 auto;min-height:100vh}
+
+/* barra lateral */
+.rail{padding:28px 0;display:flex;flex-direction:column;gap:28px;position:sticky;top:0;align-self:start;height:100vh}
+.brand{font:700 26px/1 var(--display);letter-spacing:-.02em;margin:0}
+.brand b{color:var(--gold-mark);font-weight:700}
+.sig{display:flex;gap:6px;margin-top:10px}
+.sig i{width:10px;height:10px;border-radius:50%;border:2px solid var(--primary);display:block}
+.sig i:nth-child(2){background:linear-gradient(90deg,var(--gold-mark) 50%,transparent 50%);border-color:var(--gold-mark)}
+.sig i:nth-child(3){background:var(--done);border-color:var(--done)}
+nav ul{list-style:none;margin:0;padding:0;display:grid;gap:2px}
+nav a{display:flex;align-items:center;gap:12px;min-height:44px;padding:0 12px 0 0;text-decoration:none;color:var(--muted);font-weight:500;cursor:pointer}
+nav a::before{content:"";width:14px;border-top:2px dotted var(--field)}
+nav a[aria-current="page"]{color:var(--text);font-weight:700}
+nav a[aria-current="page"]::before{border-top:3px solid var(--primary);width:22px;margin-right:-8px}
+nav a:hover{color:var(--text)}
+.who{margin-top:auto;display:grid;gap:6px;justify-items:start;font-size:14px;color:var(--muted)}
+.who strong{color:var(--text);display:block}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:0 18px;border-radius:10px;border:2px solid var(--field);background:transparent;cursor:pointer;font-weight:600;white-space:nowrap}
+.btn:hover{border-color:var(--text)}
+.btn.primary{background:var(--primary);border-color:var(--primary);color:var(--on-primary)}
+.btn.primary:hover{background:var(--primary-strong);border-color:var(--primary-strong)}
+.btn.gold{background:var(--gold);border-color:var(--gold);color:var(--on-gold)}
+.btn.quiet{border-color:transparent;color:var(--muted);padding:0 12px}
+.btn.quiet:hover{color:var(--text);border-color:var(--line)}
+.btn.danger{color:var(--danger);border-color:transparent;padding:0 12px}
+.btn.danger:hover{border-color:var(--danger)}
+.who .btn.quiet{padding-left:0}
+.menubtn{display:none}
+
+main{padding:36px 0 64px;min-width:0}
+.head{display:flex;flex-wrap:wrap;gap:16px 24px;align-items:flex-end;justify-content:space-between}
+h1{font:700 clamp(30px,5vw,44px)/1.05 var(--display);letter-spacing:-.025em;margin:0;text-wrap:balance}
+.date{color:var(--muted);margin:6px 0 0}
+.seg{display:inline-flex;border:2px solid var(--field);border-radius:10px;overflow:hidden}
+.seg button{min-height:40px;padding:0 16px;border:0;background:transparent;font-weight:600;cursor:pointer;color:var(--muted)}
+.seg button[aria-pressed="true"]{background:var(--text);color:var(--bg)}
+.summary{margin:28px 0 36px;font-size:18px;max-width:60ch;text-wrap:pretty}
+.summary b{font-family:var(--display);font-weight:700}
+[data-view][hidden]{display:none}
+
+/* estados: forma + texto + cor */
+.state{display:inline-block;padding:2px 10px;border-radius:999px;font-size:14px;font-weight:700}
+.state.sched{background:var(--st-sched-bg);color:var(--st-sched-fg)}
+.state.wait{background:var(--st-wait-bg);color:var(--st-wait-fg)}
+.state.done{background:var(--st-done-bg);color:var(--st-done-fg)}
+.state.off{background:var(--st-off-bg);color:var(--st-off-fg)}
+.dot{width:24px;height:24px;border-radius:50%;border:3px solid var(--primary);background:var(--bg);position:relative;z-index:1;flex:none}
+.wait .dot,.dot.wait{border-color:var(--gold-mark);background:linear-gradient(90deg,var(--gold-mark) 50%,var(--bg) 50%)}
+.done .dot,.dot.done{border-color:var(--done);background:var(--done)}
+.done .dot::after,.dot.done::after{content:"";position:absolute;left:6px;top:2px;width:6px;height:11px;border:solid var(--bg);border-width:0 3px 3px 0;transform:rotate(40deg)}
+.off .dot,.dot.off{border-color:var(--field);background:var(--bg)}
+.off .dot::after,.dot.off::after{content:"";position:absolute;left:3px;top:8px;width:12px;border-top:3px solid var(--field)}
+
+/* DIA: o fio vertical */
+.day{list-style:none;margin:0;padding:0;max-width:760px}
+.row{display:grid;grid-template-columns:72px 24px minmax(0,1fr);column-gap:16px;position:relative;padding-bottom:30px}
+.row:last-child{padding-bottom:0}
+.time{font:600 30px/1 var(--display);letter-spacing:-.02em;font-variant-numeric:tabular-nums;padding-top:2px;text-align:right}
+.off .time{color:var(--muted);text-decoration:line-through;text-decoration-thickness:2px}
+.node{position:relative;display:flex;justify-content:center}
+.node::after{content:"";position:absolute;top:30px;bottom:-30px;left:50%;transform:translateX(-50%);border-left:3px dotted var(--field)}
+.row:last-child .node::after{display:none}
+.row.done .node::after{border-left:4px solid var(--done)}
+.node .dot{margin-top:4px}
+.body{min-width:0;display:grid;gap:10px}
+.top{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:baseline}
+.pet{font:700 22px/1.15 var(--display);letter-spacing:-.01em;margin:0}
+.tutor{color:var(--muted)}
+.meta{margin:0;color:var(--muted)}
+.acts{display:flex;flex-wrap:wrap;gap:8px}
+.now{display:grid;grid-template-columns:72px 24px minmax(0,1fr);column-gap:16px;align-items:center;padding-bottom:30px;margin-top:-6px;max-width:760px}
+.now .tag{justify-self:end;background:var(--gold);color:var(--on-gold);font:700 14px/1 var(--display);padding:7px 10px;border-radius:6px}
+.now .bar{height:3px;background:var(--gold-mark)}
+.now .lbl{font:600 14px/1 var(--display);color:var(--muted)}
+
+/* SEMANA: sete colunas quando a ÁREA DE CONTEÚDO tem 880 px ou mais; abaixo disso, uma lista por dia */
+.week{container-type:inline-size}
+.cols{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:0 18px;margin-top:32px}
+.dcol h2{font:700 18px/1.1 var(--display);margin:0;display:flex;flex-wrap:wrap;gap:6px 8px;align-items:center}
+h1:focus{outline:none}
+.dcol .dn{color:var(--muted);font:500 14px var(--body);margin:2px 0 0}
+.hoje{background:var(--gold);color:var(--on-gold);font:700 12px/1 var(--display);padding:4px 6px;border-radius:5px}
+.slots{list-style:none;margin:16px 0 0 10px;padding:0 0 0 22px;border-left:3px dotted var(--field);display:grid;gap:16px}
+.slots.full{border-left:4px solid var(--done)}
+.slot{position:relative;display:grid;gap:2px;font-size:15px}
+.slot .dot{position:absolute;left:-34px;top:2px;width:20px;height:20px;border-width:3px}
+.slot.done .dot::after{left:4px;top:1px;width:5px;height:9px}
+.slot.off .dot::after{left:2px;top:6px;width:10px}
+.slot .n{font-size:18px}
+.slot .pn{font-weight:700}
+.slot .st{font-size:13px;color:var(--muted)}
+.closed{color:var(--muted);margin:16px 0 0;font-size:15px}
+@container (max-width:879px){
+  .cols{grid-template-columns:minmax(0,1fr);gap:30px}
+  .dcol{display:grid;grid-template-columns:150px minmax(0,1fr);gap:0 24px}
+  .slots{margin-top:2px}
+  .closed{margin-top:2px}
+}
+
+/* FILA: a ordem de chegada é informação, por isso o número é a posição */
+.queue{list-style:none;margin:0;padding:0;max-width:760px;display:grid;gap:30px}
+.q{display:grid;grid-template-columns:72px minmax(0,1fr);column-gap:16px}
+.pos{font:700 44px/1 var(--display);letter-spacing:-.03em;text-align:right;color:var(--muted);display:flex;justify-content:flex-end}
+.pos .dot{margin-top:6px}
+.acts>.btn.quiet:first-child{margin-left:-12px}
+.q.cur .pos{color:var(--text)}
+.q .acts{margin-top:2px}
+.qh{font:700 14px/1 var(--display);color:var(--muted);margin:0 0 14px;letter-spacing:.01em}
+.curtag{background:var(--gold);color:var(--on-gold);font:700 13px/1 var(--display);padding:5px 8px;border-radius:5px}
+.sep{height:0;border-top:3px dotted var(--field);margin:34px 0 22px;max-width:760px}
+
+/* FORMULÁRIO */
+.form{max-width:640px;display:grid;gap:28px;margin-top:32px}
+.fld{display:grid;gap:6px}
+.fld>label,.fld>legend{font-weight:700}
+fieldset{border:0;padding:0;margin:0;min-width:0}
+legend{padding:0;margin-bottom:6px}
+.hint{color:var(--muted);font-size:14px;margin:0}
+.inp{min-height:48px;padding:0 14px;border:2px solid var(--field);border-radius:10px;background:var(--surface);width:100%}
+textarea.inp{padding:12px 14px;min-height:92px}
+.inp:focus-visible{outline-offset:2px}
+.fld.err .inp{border-color:var(--danger)}
+.errm{color:var(--danger);font-weight:600;font-size:15px;margin:0;display:flex;gap:8px;align-items:center}
+.errm::before{content:"!";display:inline-grid;place-items:center;width:20px;height:20px;border-radius:50%;background:var(--danger);color:var(--bg);font:700 13px var(--display);flex:none}
+.opts{display:grid;gap:10px}
+.opt{display:flex;gap:14px;align-items:center;min-height:56px;padding:8px 14px;border:2px solid var(--field);border-radius:10px;background:var(--surface);cursor:pointer}
+.opt input{width:22px;height:22px;accent-color:var(--primary);flex:none}
+.opt:has(input:checked){border-color:var(--primary);box-shadow:inset 0 0 0 1px var(--primary)}
+.opt>span{display:grid}
+.opt small{color:var(--muted);font-size:14px}
+.slotsg{display:grid;grid-template-columns:repeat(auto-fill,minmax(88px,1fr));gap:10px}
+.sl{min-height:48px;border:2px solid var(--field);border-radius:10px;background:var(--surface);cursor:pointer;font:600 17px var(--display);font-variant-numeric:tabular-nums}
+.sl[aria-pressed="true"]{background:var(--primary);border-color:var(--primary);color:var(--on-primary)}
+.sl[disabled]{color:var(--muted);text-decoration:line-through;border-style:dashed;cursor:not-allowed}
+.formacts{display:flex;flex-wrap:wrap;gap:10px}
+
+.foot{margin-top:44px;color:var(--muted);font-size:14px;max-width:62ch}
+
+/* gaveta do celular: <dialog> nativo (foco preso, Esc fecha, fundo inerte) */
+dialog.drawer{margin:0;inset:0 auto 0 0;height:100%;max-height:none;width:min(320px,88vw);border:0;padding:24px max(20px,env(safe-area-inset-left,0px));background:var(--bg);color:var(--text);display:none;flex-direction:column;gap:24px}
+dialog.drawer[open]{display:flex}
+dialog.drawer::backdrop{background:var(--scrim)}
+.drawer .hd{display:flex;justify-content:space-between;align-items:flex-start}
+
+@media (max-width:900px){
+  .app{grid-template-columns:minmax(0,1fr);gap:0}
+  .rail{position:static;height:auto;padding:14px 0 6px;flex-direction:row;align-items:center;justify-content:space-between;gap:12px}
+  .rail nav,.rail .who{display:none}
+  .menubtn{display:inline-flex}
+  main{padding-top:20px}
+}
+@media (min-width:901px){dialog.drawer{display:none!important}}
+@media (max-width:520px){
+  .row,.now{grid-template-columns:60px 24px minmax(0,1fr);column-gap:8px}
+  .q{grid-template-columns:48px minmax(0,1fr);column-gap:12px}.pos{font-size:36px}
+  .time{font-size:22px}
+  .pet{font-size:20px}
+  .acts .btn{flex:1 1 40%}
+  .dcol{grid-template-columns:minmax(0,1fr)}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+
+<div class="app">
+  <aside class="rail">
+    <div>
+      <p class="brand">Pelo <b>&amp;</b> Ponto</p>
+      <div class="sig" aria-hidden="true"><i></i><i></i><i></i></div>
+    </div>
+    <button class="btn menubtn" id="abrir" type="button" aria-haspopup="dialog">Menu</button>
+    <nav aria-label="Principal" id="nav">
+      <ul>
+        <li><a data-go="inicio">Início</a></li>
+        <li><a data-go="dia" aria-current="page">Agenda</a></li>
+        <li><a data-go="fila">Fila</a></li>
+        <li><a data-go="form">Novo agendamento</a></li>
+        <li><a data-go="servicos">Serviços</a></li>
+        <li><a data-go="expediente">Expediente</a></li>
+        <li><a data-go="equipe">Equipe</a></li>
+      </ul>
+    </nav>
+    <div class="who">
+      <div><strong>Helena Prado</strong>Estúdio Bem-te-vi</div>
+      <button class="btn quiet" data-tema type="button">Tema: sistema</button>
+    </div>
+  </aside>
+
+  <main id="main">
+    <!-- AGENDA, DIA -->
+    <section data-view="dia">
+      <div class="head">
+        <div>
+          <h1>Terça, 17 de novembro</h1>
+          <p class="date">Estúdio Bem-te-vi, horário de Brasília</p>
+        </div>
+        <div class="seg" role="group" aria-label="Visão da agenda">
+          <button type="button" data-go="dia" aria-pressed="true">Dia</button>
+          <button type="button" data-go="semana" aria-pressed="false">Semana</button>
+        </div>
+      </div>
+      <p class="summary"><b>2 concluídos</b>, <b>1 esperando</b> e <b>2 por vir</b>. O próximo a chegar é a Nina, às <span class="n">11:30</span>.</p>
+      <ol class="day">
+        <li class="row done">
+          <div class="time">08:30</div><div class="node"><span class="dot"></span></div>
+          <div class="body">
+            <div class="top"><h2 class="pet">Thor</h2><span class="tutor">Marina Alves</span><span class="state done">Concluído</span></div>
+            <p class="meta">Cão, porte médio · Banho e tosa · <span class="n">1 h 30</span></p>
+          </div>
+        </li>
+        <li class="row done">
+          <div class="time">09:30</div><div class="node"><span class="dot"></span></div>
+          <div class="body">
+            <div class="top"><h2 class="pet">Mel</h2><span class="tutor">João Lima</span><span class="state done">Concluído</span></div>
+            <p class="meta">Gata, porte pequeno · Banho · <span class="n">45 min</span></p>
+          </div>
+        </li>
+        <li class="now" aria-label="Agora são 10:42"><span class="tag">agora</span><span class="bar"></span><span class="lbl">10:42</span></li>
+        <li class="row wait">
+          <div class="time">10:30</div><div class="node"><span class="dot"></span></div>
+          <div class="body">
+            <div class="top"><h2 class="pet">Bidu</h2><span class="tutor">Carla Souza</span><span class="state wait">Chegou há <span class="n">12 min</span></span></div>
+            <p class="meta">Cão, porte grande · Tosa higiênica · <span class="n">1 h</span></p>
+            <div class="acts"><button class="btn gold" type="button">Começar atendimento</button><button class="btn quiet" type="button">Remarcar</button><button class="btn danger" type="button">Cancelar</button></div>
+          </div>
+        </li>
+        <li class="row">
+          <div class="time">11:30</div><div class="node"><span class="dot"></span></div>
+          <div class="body">
+            <div class="top"><h2 class="pet">Nina</h2><span class="tutor">Marina Alves</span><span class="state sched">Agendado</span></div>
+            <p class="meta">Cão, porte pequeno · Banho · <span class="n">45 min</span></p>
+            <div class="acts"><button class="btn primary" type="button">Marcar chegada</button><button class="btn quiet" type="button">Remarcar</button><button class="btn danger" type="button">Cancelar</button></div>
+          </div>
+        </li>
+        <li class="row off">
+          <div class="time">14:00</div><div class="node"><span class="dot"></span></div>
+          <div class="body">
+            <div class="top"><h2 class="pet">Pipoca</h2><span class="tutor">Paulo Reis</span><span class="state off">Cancelado</span></div>
+            <p class="meta">Cão, porte médio · Tosa na tesoura · <span class="n">1 h 30</span> · cancelado pelo tutor</p>
+          </div>
+        </li>
+      </ol>
+    </section>
+
+    <!-- AGENDA, SEMANA -->
+    <section data-view="semana" hidden>
+      <div class="head">
+        <div>
+          <h1>Semana de 16 a 22 de novembro</h1>
+          <p class="date">Estúdio Bem-te-vi · <span class="n">14</span> atendimentos marcados</p>
+        </div>
+        <div class="seg" role="group" aria-label="Visão da agenda">
+          <button type="button" data-go="dia" aria-pressed="false">Dia</button>
+          <button type="button" data-go="semana" aria-pressed="true">Semana</button>
+        </div>
+      </div>
+      <div class="week">
+        <div class="cols">
+          <section class="dcol"><div><h2>Seg</h2><p class="dn">16</p></div>
+            <ul class="slots full">
+              <li class="slot done"><span class="dot done"></span><span class="n">09:00</span><span class="pn">Luna</span><span class="st">Concluído</span></li>
+              <li class="slot done"><span class="dot done"></span><span class="n">10:30</span><span class="pn">Rex</span><span class="st">Concluído</span></li>
+              <li class="slot done"><span class="dot done"></span><span class="n">14:00</span><span class="pn">Mimi</span><span class="st">Concluído</span></li>
+            </ul></section>
+          <section class="dcol"><div><h2>Ter <span class="hoje">hoje</span></h2><p class="dn">17</p></div>
+            <ul class="slots">
+              <li class="slot done"><span class="dot done"></span><span class="n">08:30</span><span class="pn">Thor</span><span class="st">Concluído</span></li>
+              <li class="slot done"><span class="dot done"></span><span class="n">09:30</span><span class="pn">Mel</span><span class="st">Concluído</span></li>
+              <li class="slot wait"><span class="dot wait"></span><span class="n">10:30</span><span class="pn">Bidu</span><span class="st">Chegou</span></li>
+              <li class="slot"><span class="dot"></span><span class="n">11:30</span><span class="pn">Nina</span><span class="st">Agendado</span></li>
+              <li class="slot off"><span class="dot off"></span><span class="n">14:00</span><span class="pn">Pipoca</span><span class="st">Cancelado</span></li>
+            </ul></section>
+          <section class="dcol"><div><h2>Qua</h2><p class="dn">18</p></div>
+            <ul class="slots">
+              <li class="slot"><span class="dot"></span><span class="n">09:00</span><span class="pn">Nina</span><span class="st">Agendado</span></li>
+              <li class="slot"><span class="dot"></span><span class="n">11:00</span><span class="pn">Fofa</span><span class="st">Agendado</span></li>
+              <li class="slot"><span class="dot"></span><span class="n">15:00</span><span class="pn">Zeus</span><span class="st">Agendado</span></li>
+            </ul></section>
+          <section class="dcol"><div><h2>Qui</h2><p class="dn">19</p></div>
+            <ul class="slots">
+              <li class="slot"><span class="dot"></span><span class="n">10:00</span><span class="pn">Mel</span><span class="st">Agendado</span></li>
+              <li class="slot"><span class="dot"></span><span class="n">13:30</span><span class="pn">Thor</span><span class="st">Agendado</span></li>
+            </ul></section>
+          <section class="dcol"><div><h2>Sex</h2><p class="dn">20</p></div>
+            <ul class="slots">
+              <li class="slot"><span class="dot"></span><span class="n">09:30</span><span class="pn">Bidu</span><span class="st">Agendado</span></li>
+              <li class="slot"><span class="dot"></span><span class="n">11:00</span><span class="pn">Luna</span><span class="st">Agendado</span></li>
+              <li class="slot"><span class="dot"></span><span class="n">14:30</span><span class="pn">Rex</span><span class="st">Agendado</span></li>
+              <li class="slot"><span class="dot"></span><span class="n">16:00</span><span class="pn">Mimi</span><span class="st">Agendado</span></li>
+            </ul></section>
+          <section class="dcol"><div><h2>Sáb</h2><p class="dn">21</p></div>
+            <ul class="slots">
+              <li class="slot"><span class="dot"></span><span class="n">09:00</span><span class="pn">Zeus</span><span class="st">Agendado</span></li>
+            </ul></section>
+          <section class="dcol"><div><h2>Dom</h2><p class="dn">22</p></div>
+            <p class="closed">Fechado</p></section>
+        </div>
+      </div>
+    </section>
+
+    <!-- FILA -->
+    <section data-view="fila" hidden>
+      <div class="head"><div><h1>Fila</h1><p class="date">Quem já chegou, na ordem de chegada</p></div></div>
+      <p class="summary"><b>1 em atendimento</b> e <b>2 esperando</b>. A espera mais longa é a da Bidu: <span class="n">12 min</span>.</p>
+      <h2 class="qh">Em atendimento</h2>
+      <ol class="queue" style="margin-bottom:0">
+        <li class="q cur">
+          <div class="pos" aria-hidden="true"><span class="dot wait"></span></div>
+          <div class="body">
+            <div class="top"><h3 class="pet" style="margin:0">Luna</h3><span class="tutor">Ana Prado</span><span class="curtag">na bancada</span></div>
+            <p class="meta">Cão, porte médio · Tosa na máquina · começou às <span class="n">10:05</span></p>
+            <div class="acts"><button class="btn primary" type="button">Concluir atendimento</button></div>
+          </div>
+        </li>
+      </ol>
+      <div class="sep"></div>
+      <h2 class="qh">Esperando</h2>
+      <ol class="queue">
+        <li class="q cur">
+          <div class="pos">1</div>
+          <div class="body">
+            <div class="top"><h3 class="pet" style="margin:0">Bidu</h3><span class="tutor">Carla Souza</span><span class="state wait">Chegou há <span class="n">12 min</span></span></div>
+            <p class="meta">Cão, porte grande · Tosa higiênica · marcado para <span class="n">10:30</span></p>
+            <div class="acts"><button class="btn gold" type="button">Começar atendimento</button><button class="btn quiet" type="button">Remarcar</button></div>
+          </div>
+        </li>
+        <li class="q">
+          <div class="pos">2</div>
+          <div class="body">
+            <div class="top"><h3 class="pet" style="margin:0">Nina</h3><span class="tutor">Marina Alves</span><span class="state wait">Chegou há <span class="n">1 min</span></span></div>
+            <p class="meta">Cão, porte pequeno · Banho · marcado para <span class="n">11:30</span></p>
+            <div class="acts"><button class="btn quiet" type="button">Remarcar</button></div>
+          </div>
+        </li>
+      </ol>
+    </section>
+
+    <!-- FORMULÁRIO -->
+    <section data-view="form" hidden>
+      <div class="head"><div><h1>Novo agendamento</h1><p class="date">Para um tutor que ligou ou chegou no balcão</p></div></div>
+      <form class="form" id="f" novalidate>
+        <div class="fld"><label for="tutor">Tutor</label>
+          <select class="inp" id="tutor"><option>Marina Alves</option><option>João Lima</option><option>Carla Souza</option></select></div>
+        <div class="fld err"><label for="pet">Pet</label>
+          <select class="inp" id="pet" aria-invalid="true" aria-describedby="pet-e"><option value="">Escolha o pet</option><option>Thor, cão médio</option><option>Nina, cão pequeno</option></select>
+          <p class="errm" id="pet-e">Escolha o pet que vai ser atendido.</p></div>
+        <fieldset class="fld"><legend>Serviço</legend>
+          <div class="opts">
+            <label class="opt"><input type="radio" name="s" checked><span>Banho<small><span class="n">45 min</span> · lavar, secar e escovar</small></span></label>
+            <label class="opt"><input type="radio" name="s"><span>Banho e tosa<small><span class="n">1 h 30</span> · inclui tosa na máquina</small></span></label>
+            <label class="opt"><input type="radio" name="s"><span>Tosa higiênica<small><span class="n">1 h</span> · patas, barriga e focinho</small></span></label>
+          </div></fieldset>
+        <div class="fld"><label for="dia">Dia</label><input class="inp" id="dia" type="date" value="2026-11-18"><p class="hint">O estúdio atende de segunda a sábado.</p></div>
+        <fieldset class="fld"><legend>Horário livre</legend>
+          <div class="slotsg" id="slots">
+            <button class="sl" type="button" disabled>09:00</button><button class="sl" type="button" aria-pressed="true">09:45</button><button class="sl" type="button" aria-pressed="false">10:30</button><button class="sl" type="button" disabled>11:00</button><button class="sl" type="button" aria-pressed="false">13:30</button><button class="sl" type="button" aria-pressed="false">14:15</button>
+          </div></fieldset>
+        <div class="fld"><label for="obs">Observações</label><textarea class="inp" id="obs"></textarea><p class="hint">Opcional. Ex.: o pet tem medo do secador.</p></div>
+        <div class="formacts"><button class="btn primary" type="submit">Agendar</button><button class="btn quiet" type="button" data-go="dia">Voltar para a agenda</button></div>
+      </form>
+    </section>
+
+    <p class="foot">Prévia da direção visual com dados fictícios. O fio liga os atendimentos: pontilhado enquanto falta, cheio quando termina. Os três pontos da marca são os três estados: agendado, chegou, concluído. Use o menu para ver Dia, Semana, Fila e o formulário.</p>
+  </main>
+</div>
+
+<dialog class="drawer" id="gaveta" aria-label="Menu">
+  <div class="hd">
+    <div><p class="brand">Pelo <b>&amp;</b> Ponto</p><div class="sig" aria-hidden="true"><i></i><i></i><i></i></div></div>
+    <button class="btn quiet" id="fechar" type="button">Fechar</button>
+  </div>
+  <nav aria-label="Principal (celular)" id="nav2"></nav>
+  <div class="who" style="margin-top:auto"><div><strong>Helena Prado</strong>Estúdio Bem-te-vi</div><button class="btn quiet" data-tema type="button">Tema: sistema</button></div>
+</dialog>
+
+<script>
+(function(){
+  var root=document.documentElement,modos=['sistema','claro','escuro'],i=0;
+  function tema(){var m=modos[i];if(m==='sistema')root.removeAttribute('data-theme');else root.setAttribute('data-theme',m==='claro'?'light':'dark');document.querySelectorAll('[data-tema]').forEach(function(b){b.textContent='Tema: '+m})}
+  document.querySelectorAll('[data-tema]').forEach(function(b){b.addEventListener('click',function(){i=(i+1)%3;tema()})});
+  var g=document.getElementById('gaveta');
+  document.getElementById('nav2').innerHTML=document.getElementById('nav').innerHTML;
+  function ir(v){
+    var alvo=document.querySelector('[data-view="'+v+'"]');if(!alvo)return;
+    document.querySelectorAll('[data-view]').forEach(function(s){s.hidden=s!==alvo});
+    var menu=(v==='semana')?'dia':v;
+    document.querySelectorAll('nav a').forEach(function(a){if(a.dataset.go===menu)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current')});
+    var h=alvo.querySelector('h1');if(h){h.setAttribute('tabindex','-1');h.focus({preventScroll:true})}
+    if(g.open)g.close();window.scrollTo(0,0);
+  }
+  document.addEventListener('click',function(e){var a=e.target.closest('[data-go]');if(a){e.preventDefault();ir(a.dataset.go)}});
+  document.addEventListener('keydown',function(e){if((e.key==='Enter'||e.key===' ')&&e.target.matches('nav a[data-go]')){e.preventDefault();ir(e.target.dataset.go)}});
+  document.querySelectorAll('nav a[data-go]').forEach(function(a){a.setAttribute('tabindex','0');a.setAttribute('role','link')});
+  document.getElementById('abrir').addEventListener('click',function(){g.showModal()});
+  document.getElementById('fechar').addEventListener('click',function(){g.close()});
+  document.querySelectorAll('#slots .sl').forEach(function(b){b.addEventListener('click',function(){if(b.disabled)return;document.querySelectorAll('#slots .sl').forEach(function(x){if(!x.disabled)x.setAttribute('aria-pressed',x===b?'true':'false')})})});
+  document.getElementById('f').addEventListener('submit',function(e){e.preventDefault()});
+})();
+</script>
