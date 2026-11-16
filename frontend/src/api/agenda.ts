@@ -2,6 +2,8 @@ import type { AuthApi } from '../auth/session'
 import type { PetOnAppointment } from './pets'
 
 export interface Workplace {
+  /** Prestador em que a pessoa opera (para consultar horários livres ao remarcar). */
+  providerId: string
   businessName: string
   timeZone: string
 }
@@ -43,6 +45,9 @@ export function agendaApi(request: Request) {
     queue: () => request<QueueItem[]>('/api/agenda/queue'),
     checkIn: (appointmentId: string) => request<unknown>(`/api/appointments/${encodeURIComponent(appointmentId)}/check-in`, { method: 'POST' }),
     complete: (appointmentId: string) => request<unknown>(`/api/appointments/${encodeURIComponent(appointmentId)}/complete`, { method: 'POST' }),
+    /** Remarcar: move o MESMO agendamento para o novo horário LOCAL do negócio (equipe: sem prazo e sem limite). */
+    reschedule: (appointmentId: string, localStart: string) =>
+      request<{ startsAt: string; endsAt: string }>(`/api/appointments/${encodeURIComponent(appointmentId)}/reschedule`, { method: 'POST', body: { localStart } }),
     cancel: (appointmentId: string) => request<unknown>(`/api/appointments/${encodeURIComponent(appointmentId)}/cancel`, { method: 'POST' }),
   }
 }

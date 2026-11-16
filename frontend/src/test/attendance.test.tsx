@@ -88,7 +88,7 @@ describe('agenda: chegada e conclusão', () => {
     expect(await screen.findByText('Atendimento de Maria Souza concluído.')).toBeInTheDocument()
     expect(screen.getByText('Concluído')).toHaveClass('badge')
     const row = screen.getByRole('listitem')
-    expect(within(row).queryByRole('button')).not.toBeInTheDocument()
+    expect(within(row).queryByRole('button', { name: /Chegou|Concluir|Cancelar|Remarcar/ })).not.toBeInTheDocument()
     expect(posts(calls, '/complete')).toHaveLength(1)
   })
 

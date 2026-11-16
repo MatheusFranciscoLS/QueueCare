@@ -168,7 +168,7 @@ class StaffAndAgendaApiIntegrationTest extends AuthIntegrationTestBase {
 					.andExpect(status().isOk()).andExpect(jsonPath("$.businessName").value("Negócio A")).andExpect(jsonPath("$.timeZone").value("America/Sao_Paulo"));
 		}
 		for (String token : List.of(pb, b1)) {
-			mvc.perform(get("/api/agenda/workplace").header(HttpHeaders.AUTHORIZATION, token)).andExpect(status().isOk()).andExpect(jsonPath("$.businessName").value("Negócio B"));
+			mvc.perform(get("/api/agenda/workplace").header(HttpHeaders.AUTHORIZATION, token)).andExpect(status().isOk()).andExpect(jsonPath("$.businessName").value("Negócio B")).andExpect(jsonPath("$.providerId").value(providerB.toString()));
 		}
 		mvc.perform(get("/api/agenda/workplace").header(HttpHeaders.AUTHORIZATION, s)).andExpect(status().isForbidden()); // atendente sem vínculo
 		mvc.perform(get("/api/agenda/workplace").header(HttpHeaders.AUTHORIZATION, c1)).andExpect(status().isForbidden());

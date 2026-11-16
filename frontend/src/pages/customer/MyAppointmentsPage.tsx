@@ -208,7 +208,14 @@ function Row({
       </span>
       {rescheduling && status === 'SCHEDULED' && (
         <div className="row-extra">
-          <RescheduleBox item={item} onRescheduled={rescheduled} onClose={() => setRescheduling(false)} onRefused={refused} />
+          <RescheduleBox
+            item={{ ...item, timeZone: zone }}
+            reschedule={(localStart) => api.reschedule(item.id, localStart)}
+            hint="O agendamento continua o mesmo: só muda o horário. Até 3 remarcações, dentro do prazo do estúdio."
+            onRescheduled={rescheduled}
+            onClose={() => setRescheduling(false)}
+            onRefused={refused}
+          />
         </div>
       )}
       {historyOpen && (

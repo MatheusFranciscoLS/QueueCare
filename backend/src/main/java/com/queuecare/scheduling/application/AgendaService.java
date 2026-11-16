@@ -77,13 +77,13 @@ public class AgendaService {
 	}
 
 	/** Onde a pessoa trabalha: o negócio e o fuso em que os horários da agenda valem (o atendente não tem acesso a /api/provider). */
-	public record Workplace(String businessName, String timeZone) {
+	public record Workplace(UUID providerId, String businessName, String timeZone) {
 	}
 
 	@Transactional(readOnly = true)
 	public Workplace workplace(UUID userId) {
 		Provider provider = resolveProvider(userId);
-		return new Workplace(provider.getBusinessName(), provider.getTimeZone());
+		return new Workplace(provider.getId(), provider.getBusinessName(), provider.getTimeZone());
 	}
 
 	/** O prestador em que o usuário opera, com as MESMAS regras da agenda (perfil, vínculo e dono ativo); nunca vem da requisição. */
