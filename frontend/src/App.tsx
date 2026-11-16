@@ -1,3 +1,4 @@
+import { lazy, Suspense } from 'react'
 import { Route, Routes } from 'react-router-dom'
 import { PublicOnly, RequireAuth } from './auth/guards'
 import { RequireRole } from './auth/RequireRole'
@@ -18,9 +19,22 @@ import { PetsPage } from './pages/customer/PetsPage'
 import { TeamPage } from './pages/provider/TeamPage'
 import { RegisterPage } from './pages/RegisterPage'
 
+// Página de demonstração da fundação visual (ADR 0018, R2): só em desenvolvimento. Em produção o valor é null e o código nem entra no pacote.
+const UiDemoPage = import.meta.env.DEV ? lazy(() => import('./ui/DemoPage')) : null
+
 export function App() {
   return (
     <Routes>
+      {UiDemoPage && (
+        <Route
+          path="/__ui"
+          element={
+            <Suspense fallback={null}>
+              <UiDemoPage />
+            </Suspense>
+          }
+        />
+      )}
       <Route element={<Layout />}>
         <Route element={<PublicOnly />}>
           <Route path="/entrar" element={<LoginPage />} />

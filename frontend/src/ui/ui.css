@@ -1,0 +1,451 @@
+/* Fundação visual do Pelo & Ponto (ADR 0018 v2). Tudo vive sob a classe .pp: as telas atuais não são afetadas até serem migradas (R3 em diante).
+   Todos os pares de cor foram medidos pela fórmula WCAG 2.2 (ver o ADR). O dourado é preenchimento, nunca texto nem contorno sobre claro. */
+@import '@fontsource-variable/bricolage-grotesque/wght.css';
+@import '@fontsource-variable/atkinson-hyperlegible-next/wght.css';
+
+/* Os algarismos de TODA a interface vêm da Bricolage (o zero de Atkinson é cortado por uma barra, estranho em horário):
+   a mesma família, só os dígitos, na frente da pilha de texto. O arquivo é o mesmo da Bricolage: nenhum download a mais. */
+@font-face {
+  font-family: 'Pelo Numerais';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 200 800;
+  src: url('../../node_modules/@fontsource-variable/bricolage-grotesque/files/bricolage-grotesque-latin-wght-normal.woff2') format('woff2-variations');
+  unicode-range: U+0030-0039;
+}
+
+.pp {
+  --pp-bg: #eef2f4;
+  --pp-surface: #ffffff;
+  --pp-text: #14202b;
+  --pp-muted: #46555f;
+  --pp-line: #cbd5db;
+  --pp-field: #6b7b86;
+  --pp-primary: #115e7a;
+  --pp-primary-strong: #0b4a61;
+  --pp-on-primary: #ffffff;
+  --pp-gold: #f2b138;
+  --pp-on-gold: #14202b;
+  --pp-gold-mark: #b97f00;
+  --pp-danger: #a3231a;
+  --pp-focus: #115e7a;
+  --pp-scrim: rgba(20, 32, 43, 0.55);
+  --pp-st-scheduled-fg: #0b4a61;
+  --pp-st-scheduled-bg: #dcebf1;
+  --pp-st-waiting-fg: #5e3f00;
+  --pp-st-waiting-bg: #fce9be;
+  --pp-st-done-fg: #1d5a46;
+  --pp-st-done-bg: #d8eee4;
+  --pp-done: #1d5a46;
+  --pp-st-cancelled-fg: #46555f;
+  --pp-st-cancelled-bg: #e4e8eb;
+  --pp-display: 'Bricolage Grotesque Variable', 'Trebuchet MS', system-ui, sans-serif;
+  --pp-body: 'Pelo Numerais', 'Atkinson Hyperlegible Next Variable', 'Segoe UI', system-ui, sans-serif;
+  --pp-space-1: 0.25rem;
+  --pp-space-2: 0.5rem;
+  --pp-space-3: 0.75rem;
+  --pp-space-4: 1rem;
+  --pp-space-6: 1.5rem;
+  --pp-space-8: 2rem;
+  --pp-space-12: 3rem;
+  background: var(--pp-bg);
+  color: var(--pp-text);
+  font: 400 1rem/1.5 var(--pp-body);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) .pp {
+    --pp-bg: #0e1721;
+    --pp-surface: #16212d;
+    --pp-text: #e8eef3;
+    --pp-muted: #a3b2be;
+    --pp-line: #2b3947;
+    --pp-field: #6f808d;
+    --pp-primary: #7cc4e0;
+    --pp-primary-strong: #a9dbee;
+    --pp-on-primary: #07202b;
+    --pp-gold: #f5be52;
+    --pp-gold-mark: #f5be52;
+    --pp-danger: #ff9c92;
+    --pp-focus: #9adcf2;
+    --pp-scrim: rgba(0, 0, 0, 0.65);
+    --pp-st-scheduled-fg: #a9dbee;
+    --pp-st-scheduled-bg: #173443;
+    --pp-st-waiting-fg: #f8d58a;
+    --pp-st-waiting-bg: #40300c;
+    --pp-st-done-fg: #a5e0c6;
+    --pp-st-done-bg: #143a2d;
+    --pp-done: #a5e0c6;
+    --pp-st-cancelled-fg: #b5c2cc;
+    --pp-st-cancelled-bg: #26323d;
+    color-scheme: dark;
+  }
+}
+:root[data-theme='dark'] .pp {
+  --pp-bg: #0e1721;
+  --pp-surface: #16212d;
+  --pp-text: #e8eef3;
+  --pp-muted: #a3b2be;
+  --pp-line: #2b3947;
+  --pp-field: #6f808d;
+  --pp-primary: #7cc4e0;
+  --pp-primary-strong: #a9dbee;
+  --pp-on-primary: #07202b;
+  --pp-gold: #f5be52;
+  --pp-gold-mark: #f5be52;
+  --pp-danger: #ff9c92;
+  --pp-focus: #9adcf2;
+  --pp-scrim: rgba(0, 0, 0, 0.65);
+  --pp-st-scheduled-fg: #a9dbee;
+  --pp-st-scheduled-bg: #173443;
+  --pp-st-waiting-fg: #f8d58a;
+  --pp-st-waiting-bg: #40300c;
+  --pp-st-done-fg: #a5e0c6;
+  --pp-st-done-bg: #143a2d;
+  --pp-done: #a5e0c6;
+  --pp-st-cancelled-fg: #b5c2cc;
+  --pp-st-cancelled-bg: #26323d;
+  color-scheme: dark;
+}
+
+.pp *,
+.pp *::before,
+.pp *::after {
+  box-sizing: border-box;
+}
+.pp :focus-visible {
+  outline: 3px solid var(--pp-focus);
+  outline-offset: 3px;
+  border-radius: 6px;
+}
+.pp .pp-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* Botão: 44 px de altura e de largura mínimas */
+.pp .pp-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--pp-space-2);
+  min-height: 44px;
+  min-width: 44px;
+  padding: 0 1.125rem;
+  border-radius: 10px;
+  border: 2px solid var(--pp-field);
+  background: transparent;
+  color: inherit;
+  font: 600 1rem/1 var(--pp-body);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.pp .pp-btn:hover {
+  border-color: var(--pp-text);
+}
+.pp .pp-btn[aria-disabled='true'] {
+  cursor: progress;
+  opacity: 0.75;
+}
+.pp .pp-btn--primary {
+  background: var(--pp-primary);
+  border-color: var(--pp-primary);
+  color: var(--pp-on-primary);
+}
+.pp .pp-btn--primary:hover {
+  background: var(--pp-primary-strong);
+  border-color: var(--pp-primary-strong);
+}
+.pp .pp-btn--gold {
+  background: var(--pp-gold);
+  border-color: var(--pp-gold);
+  color: var(--pp-on-gold);
+}
+.pp .pp-btn--quiet {
+  border-color: transparent;
+  color: var(--pp-muted);
+  padding: 0 0.75rem;
+}
+.pp .pp-btn--quiet:hover {
+  color: var(--pp-text);
+  border-color: var(--pp-line);
+}
+.pp .pp-btn--danger {
+  border-color: transparent;
+  color: var(--pp-danger);
+  padding: 0 0.75rem;
+}
+.pp .pp-btn--danger:hover {
+  border-color: var(--pp-danger);
+}
+
+/* Campo */
+.pp .pp-field {
+  display: grid;
+  gap: 0.375rem;
+}
+.pp .pp-label {
+  font-weight: 700;
+}
+.pp .pp-hint {
+  margin: 0;
+  color: var(--pp-muted);
+  font-size: 0.875rem;
+}
+.pp .pp-inp {
+  min-height: 48px;
+  width: 100%;
+  padding: 0 0.875rem;
+  border: 2px solid var(--pp-field);
+  border-radius: 10px;
+  background: var(--pp-surface);
+  color: inherit;
+  font: inherit;
+}
+.pp textarea.pp-inp {
+  min-height: 92px;
+  padding: 0.75rem 0.875rem;
+}
+.pp .pp-field[data-invalid='true'] .pp-inp {
+  border-color: var(--pp-danger);
+}
+.pp .pp-error {
+  display: flex;
+  gap: var(--pp-space-2);
+  align-items: center;
+  margin: 0;
+  color: var(--pp-danger);
+  font-weight: 600;
+  font-size: 0.9375rem;
+}
+.pp .pp-error::before {
+  content: '!';
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--pp-danger);
+  color: var(--pp-bg);
+  font: 700 0.8125rem/1 var(--pp-display);
+}
+
+/* Opção (rádio ou caixa) e horário livre */
+.pp .pp-opt {
+  display: flex;
+  gap: 0.875rem;
+  align-items: center;
+  min-height: 56px;
+  padding: 0.5rem 0.875rem;
+  border: 2px solid var(--pp-field);
+  border-radius: 10px;
+  background: var(--pp-surface);
+  cursor: pointer;
+}
+.pp .pp-opt input {
+  width: 22px;
+  height: 22px;
+  flex: none;
+  accent-color: var(--pp-primary);
+}
+.pp .pp-opt:has(input:checked) {
+  border-color: var(--pp-primary);
+  box-shadow: inset 0 0 0 1px var(--pp-primary);
+}
+.pp .pp-opt > span {
+  display: grid;
+}
+.pp .pp-opt small {
+  color: var(--pp-muted);
+  font-size: 0.875rem;
+}
+.pp .pp-slots {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(88px, 1fr));
+  gap: 0.625rem;
+}
+.pp .pp-slot {
+  min-height: 48px;
+  border: 2px solid var(--pp-field);
+  border-radius: 10px;
+  background: var(--pp-surface);
+  color: inherit;
+  cursor: pointer;
+  font: 600 1.0625rem/1 var(--pp-display);
+  font-variant-numeric: tabular-nums;
+}
+.pp .pp-slot[aria-pressed='true'] {
+  background: var(--pp-primary);
+  border-color: var(--pp-primary);
+  color: var(--pp-on-primary);
+}
+.pp .pp-slot:disabled {
+  color: var(--pp-muted);
+  text-decoration: line-through;
+  border-style: dashed;
+  cursor: not-allowed;
+}
+
+/* Estado: ponto (forma) + rótulo (texto) + cor */
+.pp .pp-dot {
+  position: relative;
+  z-index: 1;
+  flex: none;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 3px solid var(--pp-primary);
+  background: var(--pp-bg);
+}
+.pp .pp-dot[data-state='waiting'] {
+  border-color: var(--pp-gold-mark);
+  background: linear-gradient(90deg, var(--pp-gold-mark) 50%, var(--pp-bg) 50%);
+}
+.pp .pp-dot[data-state='done'] {
+  border-color: var(--pp-done);
+  background: var(--pp-done);
+}
+.pp .pp-dot[data-state='done']::after {
+  content: '';
+  position: absolute;
+  left: 6px;
+  top: 2px;
+  width: 6px;
+  height: 11px;
+  border: solid var(--pp-bg);
+  border-width: 0 3px 3px 0;
+  transform: rotate(40deg);
+}
+.pp .pp-dot[data-state='cancelled'] {
+  border-color: var(--pp-field);
+  background: var(--pp-bg);
+}
+.pp .pp-dot[data-state='cancelled']::after {
+  content: '';
+  position: absolute;
+  left: 3px;
+  top: 8px;
+  width: 12px;
+  border-top: 3px solid var(--pp-field);
+}
+.pp .pp-badge {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 0.875rem;
+  font-weight: 700;
+}
+.pp .pp-badge[data-state='scheduled'] {
+  background: var(--pp-st-scheduled-bg);
+  color: var(--pp-st-scheduled-fg);
+}
+.pp .pp-badge[data-state='waiting'] {
+  background: var(--pp-st-waiting-bg);
+  color: var(--pp-st-waiting-fg);
+}
+.pp .pp-badge[data-state='done'] {
+  background: var(--pp-st-done-bg);
+  color: var(--pp-st-done-fg);
+}
+.pp .pp-badge[data-state='cancelled'] {
+  background: var(--pp-st-cancelled-bg);
+  color: var(--pp-st-cancelled-fg);
+}
+
+/* O fio: pontilhado enquanto falta, cheio quando o atendimento termina. O ponto fica na coluna do meio do item. */
+.pp .pp-fio {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.pp .pp-fio__item {
+  display: grid;
+  grid-template-columns: 72px 24px minmax(0, 1fr);
+  column-gap: 1rem;
+  padding-bottom: 1.875rem;
+  position: relative;
+}
+.pp .pp-fio__item:last-child {
+  padding-bottom: 0;
+}
+.pp .pp-fio__time {
+  padding-top: 2px;
+  text-align: right;
+  font: 600 1.875rem/1 var(--pp-display);
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+.pp .pp-fio__node {
+  position: relative;
+  display: flex;
+  justify-content: center;
+}
+.pp .pp-fio__node .pp-dot {
+  margin-top: 4px;
+}
+.pp .pp-fio__node::after {
+  content: '';
+  position: absolute;
+  top: 30px;
+  bottom: -30px;
+  left: 50%;
+  transform: translateX(-50%);
+  border-left: 3px dotted var(--pp-field);
+}
+.pp .pp-fio__item:last-child .pp-fio__node::after {
+  display: none;
+}
+.pp .pp-fio__item[data-state='done'] .pp-fio__node::after {
+  border-left: 4px solid var(--pp-done);
+}
+.pp .pp-fio__item[data-state='cancelled'] .pp-fio__time {
+  color: var(--pp-muted);
+  text-decoration: line-through;
+  text-decoration-thickness: 2px;
+}
+@media (max-width: 520px) {
+  .pp .pp-fio__item {
+    grid-template-columns: 60px 24px minmax(0, 1fr);
+    column-gap: 0.5rem;
+  }
+  .pp .pp-fio__time {
+    font-size: 1.375rem;
+  }
+}
+
+/* Aviso */
+.pp .pp-notice {
+  display: flex;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  border-radius: 10px;
+  border: 2px solid var(--pp-field);
+  background: var(--pp-surface);
+}
+.pp .pp-notice[data-kind='success'] {
+  border-color: var(--pp-done);
+}
+.pp .pp-notice[data-kind='warning'] {
+  border-color: var(--pp-gold-mark);
+}
+.pp .pp-notice[data-kind='error'] {
+  border-color: var(--pp-danger);
+}
+.pp .pp-notice p {
+  margin: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pp *,
+  .pp *::before,
+  .pp *::after {
+    transition: none !important;
+    animation: none !important;
+  }
+}

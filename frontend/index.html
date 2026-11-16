@@ -3,7 +3,14 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>QueueCare</title>
+    <title>Pelo &amp; Ponto</title>
+    <script>
+      // Tema salvo aplicado ANTES da primeira renderização (sem piscar claro antes do escuro). Sem armazenamento, segue o sistema.
+      try {
+        var t = localStorage.getItem('pp-tema')
+        if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t)
+      } catch (e) {}
+    </script>
   </head>
   <body>
     <div id="root"></div>

@@ -16,6 +16,8 @@
     "e2e:peso": "node e2e/medir-peso.mjs"
   },
   "dependencies": {
+    "@fontsource-variable/atkinson-hyperlegible-next": "^5.3.0",
+    "@fontsource-variable/bricolage-grotesque": "^5.3.0",
     "@fontsource-variable/inter": "^5.3.0",
     "@fontsource-variable/manrope": "^5.3.0",
     "react": "^19.3.1",
