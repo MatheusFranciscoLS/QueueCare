@@ -94,10 +94,11 @@ test.describe('alvos de toque', () => {
          <button id="estreito" style="width:30px;height:60px">x</button>
          <label style="display:flex;align-items:center;gap:8px;min-height:48px;min-width:120px"><input type="checkbox" style="width:18px;height:18px"> rótulo grande</label>
          <div><input type="checkbox" id="solto" aria-label="marcador solto" style="width:18px;height:18px"></div>
-         <input type="radio" name="g" id="radio-solto" aria-label="opção solta" style="width:18px;height:18px">`,
+         <input type="radio" name="g" id="radio-solto" aria-label="opção solta" style="width:18px;height:18px">
+         <p><a href="#x" style="display:inline-block;height:20px">link no texto</a> <a href="#y" style="display:inline-block;width:60px;height:48px">link ok</a></p>`,
       ),
     )
     const pequenos = await alvosPequenos(page)
-    expect(pequenos).toEqual(['button "baixo"', 'button "x"', 'input "marcador solto"', 'input "opção solta"'])
+    expect(pequenos).toEqual(['button "baixo"', 'button "x"', 'input "marcador solto"', 'input "opção solta"', 'a "link no texto"'])
   })
 })

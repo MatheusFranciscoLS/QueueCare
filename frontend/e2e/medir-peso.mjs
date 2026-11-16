@@ -30,7 +30,8 @@ const tipo = (url, contentType) => (/\.(woff2?|ttf)$/.test(url) || /font/.test(c
 async function medir(page, nome, acao) {
   const total = { js: 0, css: 0, fontes: 0, outros: 0 }
   const arquivos = []
-  const aoResponder = async (r) => {
+  const pendentes = [] // o Playwright NÃO espera a promessa de um ouvinte: guardamos todas e esperamos antes de somar
+  const processar = async (r) => {
     try {
       const url = new URL(r.url())
       if (url.pathname.startsWith('/api/')) return
@@ -41,10 +42,12 @@ async function medir(page, nome, acao) {
       arquivos.push({ arquivo: url.pathname, tipo: t, gzipBytes: tam })
     } catch { /* resposta sem corpo (redirecionamento) */ }
   }
+  const aoResponder = (r) => { pendentes.push(processar(r)) }
   page.on('response', aoResponder)
   await acao()
   await page.waitForLoadState('networkidle')
   page.off('response', aoResponder)
+  await Promise.all(pendentes) // leituras de corpo ainda em andamento entram na medição
   return { rota: nome, ...total, totalBytes: total.js + total.css + total.fontes + total.outros, arquivos }
 }
 

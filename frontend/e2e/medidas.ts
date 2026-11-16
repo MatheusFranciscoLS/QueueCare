@@ -159,7 +159,7 @@ export async function checarFoco(page: Page): Promise<{ sem: string[]; total: nu
 export async function alvosPequenos(page: Page): Promise<string[]> {
   return (await page.evaluate(`(() => {
     const descrever = ${descricao}
-    const itens = [...document.querySelectorAll('button, [role=button], input:not([type=hidden]), select, textarea, nav a, a.button')]
+    const itens = [...document.querySelectorAll('button, [role=button], input:not([type=hidden]), select, textarea, a[href], a.button')]
     const medida = (el) => {
       const rects = [el.getBoundingClientRect()]
       if (el instanceof HTMLInputElement && (el.type === 'checkbox' || el.type === 'radio')) for (const l of el.labels ?? []) rects.push(l.getBoundingClientRect())
