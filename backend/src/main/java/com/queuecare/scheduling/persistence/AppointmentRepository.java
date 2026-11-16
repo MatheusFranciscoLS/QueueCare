@@ -8,6 +8,19 @@ import org.springframework.data.repository.query.Param;
 
 public interface AppointmentRepository extends JpaRepository<Appointment, UUID> {
 
+	/**
+	 * Atualiza a cópia dos dados do pet nos agendamentos que AINDA estão SCHEDULED (ADR 0016, item 2); CHECKED_IN, COMPLETED e CANCELLED
+	 * nunca mudam. É uma consulta em massa: não atualiza entidades já carregadas, por isso limpa o contexto de persistência depois de
+	 * gravar o que estava pendente; e SOBE o version, para que um check-in ou cancelamento que tenha lido o agendamento antes da edição
+	 * seja recusado (bloqueio otimista) em vez de gravar por cima. O {@code status} é reavaliado depois de esperar o bloqueio da linha:
+	 * se um check-in vencer a corrida, a cópia fica como estava. Devolve quantos agendamentos mudaram.
+	 */
+	@org.springframework.data.jpa.repository.Modifying(flushAutomatically = true, clearAutomatically = true)
+	@Query("update Appointment a set a.petName = :name, a.petSpecies = :species, a.petBreed = :breed, a.petSize = :size, a.petNotes = :notes, "
+			+ "a.version = a.version + 1 where a.petId = :petId and a.status = com.queuecare.scheduling.persistence.AppointmentStatus.SCHEDULED")
+	int refreshPetSnapshot(@Param("petId") UUID petId, @Param("name") String name, @Param("species") com.queuecare.pets.PetSpecies species,
+			@Param("breed") String breed, @Param("size") com.queuecare.pets.PetSize size, @Param("notes") String notes);
+
 	java.util.List<Appointment> findByCustomerId(UUID customerId, org.springframework.data.domain.Pageable pageable);
 
 	/** Agenda do dia: agendamentos NÃO cancelados do prestador que COMEÇAM em [start, end), por início e depois por id (ordem estável). */

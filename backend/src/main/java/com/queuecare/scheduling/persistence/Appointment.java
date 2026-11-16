@@ -6,6 +6,9 @@ import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import com.queuecare.pets.Pet;
+import com.queuecare.pets.PetSize;
+import com.queuecare.pets.PetSpecies;
 import jakarta.persistence.Version;
 import java.time.Instant;
 import java.util.Objects;
@@ -44,6 +47,31 @@ public class Appointment {
 	@Column(name = "created_at", nullable = false)
 	private Instant createdAt;
 
+	/**
+	 * Pet e CÓPIA (snapshot) dos dados dele no momento da reserva (ADR 0016). Só são gravados na criação (updatable = false): o JPA nunca
+	 * reescreve a cópia ao mudar o estado do agendamento. Quem a atualiza, enquanto SCHEDULED, é a consulta em massa
+	 * {@link AppointmentRepository#refreshPetSnapshot}, que também sobe o version.
+	 */
+	@Column(name = "pet_id", updatable = false)
+	private UUID petId;
+
+	@Column(name = "pet_name", updatable = false)
+	private String petName;
+
+	@Column(name = "pet_species", updatable = false)
+	@Enumerated(EnumType.STRING)
+	private PetSpecies petSpecies;
+
+	@Column(name = "pet_breed", updatable = false)
+	private String petBreed;
+
+	@Column(name = "pet_size", updatable = false)
+	@Enumerated(EnumType.STRING)
+	private PetSize petSize;
+
+	@Column(name = "pet_notes", updatable = false)
+	private String petNotes;
+
 	@Version
 	@Column(nullable = false)
 	private long version;
@@ -60,6 +88,17 @@ public class Appointment {
 		this.endsAt = Objects.requireNonNull(endsAt);
 		this.createdAt = Objects.requireNonNull(createdAt);
 		this.status = AppointmentStatus.SCHEDULED;
+	}
+
+	/** Liga o pet ao agendamento NOVO e copia os dados dele (snapshot). Só na criação, antes de gravar. */
+	public void attachPet(Pet pet) {
+		Objects.requireNonNull(pet);
+		this.petId = pet.getId();
+		this.petName = pet.getName();
+		this.petSpecies = pet.getSpecies();
+		this.petBreed = pet.getBreed();
+		this.petSize = pet.getSize();
+		this.petNotes = pet.getNotes();
 	}
 
 	/** Cancela o agendamento (libera o horário no banco: a restrição de exclusão ignora CANCELLED). */
@@ -107,5 +146,30 @@ public class Appointment {
 
 	public Instant getCreatedAt() {
 		return createdAt;
+	}
+
+	/** Nulo nos agendamentos sem pet (antigos ou feitos sem escolher um). */
+	public UUID getPetId() {
+		return petId;
+	}
+
+	public String getPetName() {
+		return petName;
+	}
+
+	public PetSpecies getPetSpecies() {
+		return petSpecies;
+	}
+
+	public String getPetBreed() {
+		return petBreed;
+	}
+
+	public PetSize getPetSize() {
+		return petSize;
+	}
+
+	public String getPetNotes() {
+		return petNotes;
 	}
 }

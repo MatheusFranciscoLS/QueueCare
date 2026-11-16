@@ -92,4 +92,33 @@ class PetLockTimeoutIntegrationTest extends AuthIntegrationTestBase {
 		send(post("/api/customer/pets"), BODY).andExpect(status().isCreated());
 		assertEquals(1L, count("SELECT count(*) FROM pets WHERE customer_id = ?", owner));
 	}
+
+	@Test
+	void reservaComPetBloqueadoViraConflito409RapidoESoltaDepois() throws Exception {
+		login();
+		UUID providerUser = seedUser("prestador-l@exemplo.test", "PROVIDER", true);
+		UUID provider = jdbc.queryForObject("INSERT INTO providers (user_id, business_name, time_zone, minimum_notice_minutes, cancellation_deadline_minutes) "
+				+ "VALUES (?, 'Estúdio', 'America/Sao_Paulo', 60, 120) RETURNING id", UUID.class, providerUser);
+		UUID service = jdbc.queryForObject("INSERT INTO services (provider_id, name, duration_minutes) VALUES (?, 'Banho', 60) RETURNING id", UUID.class, provider);
+		for (int day = 1; day <= 7; day++) {
+			jdbc.update("INSERT INTO availability_windows (provider_id, day_of_week, start_time, end_time) VALUES (?, ?, '08:00', '12:00')", provider, day);
+		}
+		String pet = JsonPath.read(send(post("/api/customer/pets"), BODY).andExpect(status().isCreated()).andReturn().getResponse().getContentAsString(), "$.id");
+		String when = java.time.LocalDate.now(java.time.ZoneId.of("America/Sao_Paulo")).plusDays(7) + "T09:00:00";
+		String booking = "{\"providerId\":\"" + provider + "\",\"serviceId\":\"" + service + "\",\"localStart\":\"" + when + "\",\"petId\":\"" + pet + "\"}";
+
+		try (Connection holder = dataSource.getConnection()) {
+			holder.setAutoCommit(false);
+			try (var stmt = holder.createStatement()) {
+				stmt.execute("SELECT id FROM pets FOR NO KEY UPDATE"); // por exemplo, o tutor está editando ou arquivando o pet
+			}
+			long start = System.nanoTime();
+			send(post("/api/appointments"), booking).andExpect(status().isConflict()).andExpect(jsonPath("$.reason").value("RESOURCE_BUSY"));
+			assertTrue((System.nanoTime() - start) / 1_000_000 < 5_000, "a espera é limitada (~400 ms)");
+			assertEquals(0L, count("SELECT count(*) FROM appointments"), "nada ficou pela metade");
+			holder.rollback();
+		}
+		send(post("/api/appointments"), booking).andExpect(status().isCreated());
+		assertEquals(1L, count("SELECT count(*) FROM appointments WHERE pet_id = ?::uuid", pet));
+	}
 }

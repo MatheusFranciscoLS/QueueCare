@@ -32,17 +32,29 @@ class AgendaController {
 		this.agendaService = agendaService;
 	}
 
+	/**
+	 * Pet do agendamento (cópia gravada no agendamento). Na agenda do dia e na fila vêm raça e observações; na visão da semana vêm nulas
+	 * (só nome, espécie e porte). Ausente (nulo) em agendamento sem pet.
+	 */
+	record AgendaPetResponse(String name, String species, String breed, String size, String notes) {
+		static AgendaPetResponse from(AgendaService.PetInfo p) {
+			return p == null ? null : new AgendaPetResponse(p.name(), p.species().name(), p.breed(), p.size() == null ? null : p.size().name(), p.notes());
+		}
+	}
+
 	record AgendaResponse(UUID id, Instant startsAt, Instant endsAt, String status, UUID serviceId, String serviceName, UUID customerId,
-			String customerName) {
+			String customerName, AgendaPetResponse pet) {
 		static AgendaResponse from(AgendaItem i) {
-			return new AgendaResponse(i.id(), i.startsAt(), i.endsAt(), i.status().name(), i.serviceId(), i.serviceName(), i.customerId(), i.customerName());
+			return new AgendaResponse(i.id(), i.startsAt(), i.endsAt(), i.status().name(), i.serviceId(), i.serviceName(), i.customerId(), i.customerName(),
+					AgendaPetResponse.from(i.pet()));
 		}
 	}
 
 	record QueueResponse(int position, UUID id, Instant startsAt, Instant endsAt, UUID serviceId, String serviceName, UUID customerId, String customerName,
-			Instant checkedInAt) {
+			Instant checkedInAt, AgendaPetResponse pet) {
 		static QueueResponse from(QueueItem i) {
-			return new QueueResponse(i.position(), i.id(), i.startsAt(), i.endsAt(), i.serviceId(), i.serviceName(), i.customerId(), i.customerName(), i.checkedInAt());
+			return new QueueResponse(i.position(), i.id(), i.startsAt(), i.endsAt(), i.serviceId(), i.serviceName(), i.customerId(), i.customerName(), i.checkedInAt(),
+					AgendaPetResponse.from(i.pet()));
 		}
 	}
 
