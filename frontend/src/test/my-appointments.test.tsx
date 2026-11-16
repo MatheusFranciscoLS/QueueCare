@@ -54,7 +54,7 @@ describe('meus agendamentos: lista', () => {
     expect(rows[0]).toHaveTextContent('quinta-feira, 10 de dezembro de 2026, 10:00–11:00 · Troca de óleo em Oficina Central')
     expect(within(rows[0]).getByText('Agendado')).toBeInTheDocument()
     expect(within(rows[1]).getByText('Cancelado')).toBeInTheDocument()
-    expect(within(rows[1]).queryByRole('button')).not.toBeInTheDocument()
+    expect(within(rows[1]).queryByRole('button', { name: /Cancelar|Remarcar/ })).not.toBeInTheDocument()
   })
 
   it('a data é a do NEGÓCIO: 02:00Z ainda é o dia anterior em São Paulo', async () => {
@@ -131,7 +131,7 @@ describe('meus agendamentos: cancelar', () => {
   })
 
   it.each([
-    ['TOO_LATE', 422, 'Passou do prazo para cancelar.', false],
+    ['TOO_LATE', 422, 'Passou do prazo para cancelar ou remarcar.', false],
     ['ALREADY_CANCELLED', 409, 'Esse agendamento já foi cancelado.', true],
     ['NOT_CANCELLABLE', 409, 'Esse agendamento não pode mais ser cancelado.', true],
     ['CONCURRENT_UPDATE', 409, 'O agendamento acabou de ser alterado por outra pessoa. Atualize a agenda.', true],
@@ -178,7 +178,7 @@ describe('meus agendamentos: foco', () => {
     await goToMine(user)
     await user.click(await screen.findByRole('button', { name: 'Cancelar agendamento' }))
     await user.click(screen.getByRole('button', { name: 'Confirmar cancelamento' }))
-    await screen.findByText('Passou do prazo para cancelar.')
+    await screen.findByText('Passou do prazo para cancelar ou remarcar.')
     expect(screen.getByRole('button', { name: 'Cancelar agendamento' })).toHaveFocus()
 
     await user.click(screen.getByRole('button', { name: 'Cancelar agendamento' }))

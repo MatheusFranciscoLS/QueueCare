@@ -33,6 +33,16 @@ export interface BookedAppointment {
   pet?: { name: string; species: string } | null
 }
 
+/** Uma linha do histórico. `by`: quem agiu, sem nomes de funcionários para o cliente. Horários só nas remarcações. */
+export interface HistoryEntry {
+  type: 'SCHEDULED' | 'RESCHEDULED' | 'CHECKED_IN' | 'COMPLETED' | 'CANCELLED'
+  at: string
+  by: 'CUSTOMER' | 'STAFF' | 'SYSTEM'
+  actorName?: string | null
+  previousStartsAt?: string | null
+  newStartsAt?: string | null
+}
+
 type Request = AuthApi['request']
 
 /** Escolha e reserva pelo cliente. As regras (disponibilidade, antecedência, reserva dupla) são da API; aqui só se monta a requisição. */
@@ -40,8 +50,16 @@ export function bookingApi(request: Request) {
   return {
     providers: (page = 0, size = 50) => request<CatalogProvider[]>(`/api/catalog/providers?page=${page}&size=${size}`),
     services: (providerId: string) => request<CatalogService[]>(`/api/catalog/providers/${encodeURIComponent(providerId)}/services`),
-    slots: (providerId: string, serviceId: string, date: string) =>
-      request<FreeSlot[]>(`/api/providers/${encodeURIComponent(providerId)}/slots?serviceId=${encodeURIComponent(serviceId)}&date=${encodeURIComponent(date)}`),
+    slots: (providerId: string, serviceId: string, date: string, excludeAppointmentId?: string) =>
+      request<FreeSlot[]>(
+        `/api/providers/${encodeURIComponent(providerId)}/slots?serviceId=${encodeURIComponent(serviceId)}&date=${encodeURIComponent(date)}` +
+          (excludeAppointmentId ? `&excludeAppointmentId=${encodeURIComponent(excludeAppointmentId)}` : ''),
+      ),
+    /** Remarcar: move o MESMO agendamento para o novo horário LOCAL do negócio. */
+    reschedule: (appointmentId: string, localStart: string) =>
+      request<BookedAppointment>(`/api/appointments/${encodeURIComponent(appointmentId)}/reschedule`, { method: 'POST', body: { localStart } }),
+    /** Histórico do agendamento (o cliente vê "cliente" ou "equipe", nunca o nome de um funcionário). */
+    history: (appointmentId: string) => request<HistoryEntry[]>(`/api/appointments/${encodeURIComponent(appointmentId)}/events`),
     mine: (page = 0, size = 50) => request<BookedAppointment[]>(`/api/appointments/mine?page=${page}&size=${size}`),
     cancel: (appointmentId: string) => request<BookedAppointment>(`/api/appointments/${encodeURIComponent(appointmentId)}/cancel`, { method: 'POST' }),
     book: (input: { providerId: string; serviceId: string; localStart: string; petId: string }) => request<BookedAppointment>('/api/appointments', { method: 'POST', body: input }),

@@ -844,3 +844,14 @@ textarea {
     opacity: 0.7;
   }
 }
+
+/* Remarcar e histórico dentro da linha do agendamento */
+.row-extra {
+  flex-basis: 100%;
+  min-width: 0;
+}
+
+.history {
+  margin: var(--space-2) 0 0;
+  padding-left: 1.2rem;
+}
