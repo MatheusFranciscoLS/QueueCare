@@ -1,6 +1,6 @@
 # ADR 0018: redesign completo (Pelo & Ponto)
 
-- **Status:** Proposed (aguarda a revisão do ChatGPT e a aprovação do Matheus antes de qualquer código)
+- **Status:** Accepted (ChatGPT: APPROVE no commit 48afaa5, após um REQUEST CHANGES; o Matheus escolheu esta ordem e autorizou seguir para a implementação). Observação do revisor para o R1: registrar também o tamanho real transferido por rota, sem confundir o tamanho total do build com o inicial carregado.
 - **Data:** 16/11/2026
 - **Esforço:** ALTO (muda toda a apresentação, a navegação e a forma de verificar o produto)
 - **Contexto:** o produto funciona e tem a lógica bem protegida (581 testes de backend e 325 de front, com mutação), mas o visual nasceu como "sistema interno": um cabeçalho com menu em linha, cartões iguais, identidade genérica (ADR 0014, verde-petróleo, Inter e Manrope) e **nenhuma tela jamais foi verificada em navegador real** (só jsdom). O dono quer um produto **profissional, moderno e atual** para o nicho aprovado (banho e tosa), no nível do portfólio, sem cara de gerado por IA.
