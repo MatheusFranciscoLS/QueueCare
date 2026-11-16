@@ -57,7 +57,8 @@ class AppointmentController {
 	}
 
 	/** {@code localStart} é o horário LOCAL do prestador, ex.: 2026-11-17T10:00:00. */
-	record CreateAppointmentRequest(@NotNull UUID providerId, @NotNull UUID serviceId, @NotNull LocalDateTime localStart, UUID petId) {
+	record CreateAppointmentRequest(@NotNull UUID providerId, @NotNull UUID serviceId, @NotNull LocalDateTime localStart,
+			@io.swagger.v3.oas.annotations.media.Schema(requiredMode = io.swagger.v3.oas.annotations.media.Schema.RequiredMode.REQUIRED) UUID petId) {
 	}
 
 	/**

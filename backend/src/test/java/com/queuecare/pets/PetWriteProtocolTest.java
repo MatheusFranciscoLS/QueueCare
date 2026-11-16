@@ -56,6 +56,16 @@ class PetWriteProtocolTest {
 		assertEquals(1, occurrences(service, "pet.reactivate("), "um único ponto de reativação (dentro do protocolo)");
 	}
 
+	/**
+	 * PR 49: a exigência de pet vive no serviço de agendamento, então só ele pode criar {@code Appointment}. Quem precisar de um caminho
+	 * novo (remarcar, reserva sem conta) passa por ele e herda PET_REQUIRED, o bloqueio do pet e a cópia dos dados; o banco ainda recusa
+	 * agendamento novo sem pet (V10), mesmo que alguém esqueça.
+	 */
+	@Test
+	void soOServicoDeAgendamentoCriaAppointmentParaQueAExigenciaDePetValhaParaTodoCaminho() throws IOException {
+		assertEquals(List.of("BookingService.java"), filesContaining("new Appointment("), "só o BookingService cria Appointment");
+	}
+
 	@Test
 	void criarEReativarPassamPeloProtocoloUnicoQueBloqueiaOCliente() throws IOException {
 		String service = Files.readString(MAIN.resolve("com/queuecare/pets/PetService.java"));

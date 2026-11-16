@@ -168,10 +168,12 @@ class PetAppointmentApiIntegrationTest extends AuthIntegrationTestBase {
 	}
 
 	@Test
-	void reservaSemPetContinuaFuncionandoAteOPetSerObrigatorio() throws Exception {
-		String body = book(tokenA, slot(7, 9), null).andExpect(status().isCreated()).andExpect(jsonPath("$.pet").doesNotExist()).andReturn().getResponse().getContentAsString();
-		assertNull(row(JsonPath.read(body, "$.id")).get("pet_id"));
-		send(get("/api/appointments/mine"), tokenA, null).andExpect(status().isOk()).andExpect(jsonPath("$[0].pet").doesNotExist());
+	void reservaSemPetRecebe400PetRequiredENadaEGravado() throws Exception {
+		book(tokenA, slot(7, 9), null).andExpect(status().isBadRequest()).andExpect(jsonPath("$.reason").value("PET_REQUIRED"));
+		// petId nulo explícito é o mesmo que ausente
+		send(post("/api/appointments"), tokenA, "{\"providerId\":\"" + providerP + "\",\"serviceId\":\"" + serviceP + "\",\"localStart\":\"" + slot(7, 9) + "\",\"petId\":null}")
+				.andExpect(status().isBadRequest()).andExpect(jsonPath("$.reason").value("PET_REQUIRED"));
+		assertEquals(0L, count("SELECT count(*) FROM appointments"));
 	}
 
 	@Test
@@ -229,7 +231,7 @@ class PetAppointmentApiIntegrationTest extends AuthIntegrationTestBase {
 	void agendaDoDiaMostraOPetCompletoESemanaSoNomeEspecieEPorte() throws Exception {
 		String rex = pet(tokenA, "Rex", "DOG", "Poodle", "MEDIUM", "Tem coceira na pata.");
 		bookOk(tokenA, slot(7, 9), rex);
-		bookOk(tokenA, slot(7, 10), null); // sem pet: o campo vem nulo
+		insertLegacyWithoutPet(day(7) + "T10:00:00"); // agendamento ANTIGO, sem pet: o campo vem nulo
 
 		dayAgenda(tokenP, 7).andExpect(status().isOk()).andExpect(jsonPath("$.length()").value(2)).andExpect(jsonPath("$[0].pet.name").value("Rex"))
 				.andExpect(jsonPath("$[0].pet.species").value("DOG")).andExpect(jsonPath("$[0].pet.breed").value("Poodle")).andExpect(jsonPath("$[0].pet.size").value("MEDIUM"))
@@ -300,6 +302,21 @@ class PetAppointmentApiIntegrationTest extends AuthIntegrationTestBase {
 		return jdbc.queryForObject("INSERT INTO appointments (provider_id, service_id, customer_id, starts_at, ends_at, status, pet_id, pet_name, pet_species, pet_breed, pet_size, pet_notes) "
 				+ "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id", UUID.class, providerP, serviceP, tutorA, java.sql.Timestamp.from(start),
 				java.sql.Timestamp.from(start.plusSeconds(3600)), status, petId, name, species, breed, size, notes);
+	}
+
+	/**
+	 * Linha "antiga" (de antes da V10): sem pet e com a marca legacy_without_pet. Só a migration escreve a marca; o teste desliga o gatilho
+	 * por um instante (o banco de teste é do superusuário) para simular esse dado.
+	 */
+	private void insertLegacyWithoutPet(String localStart) {
+		var start = java.time.LocalDateTime.parse(localStart).atZone(ZONE).toInstant();
+		jdbc.execute("ALTER TABLE appointments DISABLE TRIGGER appointments_legacy_guard");
+		try {
+			jdbc.update("INSERT INTO appointments (provider_id, service_id, customer_id, starts_at, ends_at, status, legacy_without_pet) VALUES (?, ?, ?, ?, ?, 'SCHEDULED', true)",
+					providerP, serviceP, tutorA, java.sql.Timestamp.from(start), java.sql.Timestamp.from(start.plusSeconds(3600)));
+		} finally {
+			jdbc.execute("ALTER TABLE appointments ENABLE TRIGGER appointments_legacy_guard");
+		}
 	}
 
 	private void edit(String petId, String name, String notes) throws Exception {

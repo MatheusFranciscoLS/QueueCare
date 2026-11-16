@@ -111,7 +111,7 @@ class UserActivationIntegrationTest extends AuthIntegrationTestBase {
 		act(admin, prov, "deactivate");
 
 		mvc.perform(post("/api/appointments").header(HttpHeaders.AUTHORIZATION, customer).contentType(MediaType.APPLICATION_JSON)
-				.content("{\"providerId\":\"" + providerId + "\",\"serviceId\":\"" + service + "\",\"localStart\":\"2030-01-07T10:00:00\"}"))
+				.content("{\"providerId\":\"" + providerId + "\",\"serviceId\":\"" + service + "\",\"localStart\":\"2030-01-07T10:00:00\",\"petId\":\"" + petOfToken(customer) + "\"}"))
 				.andExpect(status().isNotFound());
 		assertEquals(0L, count("SELECT count(*) FROM appointments"));
 	}

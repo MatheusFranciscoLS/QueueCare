@@ -84,7 +84,7 @@ class AppointmentApiIntegrationTest extends AuthIntegrationTestBase {
 
 	private ResultActions book(String bearer, UUID provider, String localStart) throws Exception {
 		return mvc.perform(post("/api/appointments").header(HttpHeaders.AUTHORIZATION, bearer).contentType(MediaType.APPLICATION_JSON)
-				.content("{\"providerId\":\"" + provider + "\",\"serviceId\":\"" + serviceId + "\",\"localStart\":\"" + localStart + "\"}"));
+				.content("{\"providerId\":\"" + provider + "\",\"serviceId\":\"" + serviceId + "\",\"localStart\":\"" + localStart + "\",\"petId\":\"" + petOfToken(bearer) + "\"}"));
 	}
 
 	private ResultActions cancel(String bearer, String appointmentId) throws Exception {
@@ -105,7 +105,7 @@ class AppointmentApiIntegrationTest extends AuthIntegrationTestBase {
 		// O corpo tenta se passar pelo cliente 2; o campo extra é ignorado.
 		mvc.perform(post("/api/appointments").header(HttpHeaders.AUTHORIZATION, c1).contentType(MediaType.APPLICATION_JSON)
 				.content("{\"providerId\":\"" + providerId + "\",\"serviceId\":\"" + serviceId + "\",\"localStart\":\"" + slot(7, 10)
-						+ "\",\"customerId\":\"" + customer2 + "\"}"))
+						+ "\",\"customerId\":\"" + customer2 + "\",\"petId\":\"" + petOfToken(c1) + "\"}"))
 				.andExpect(status().isCreated())
 				.andExpect(jsonPath("$.status").value("SCHEDULED"))
 				.andExpect(jsonPath("$.customerId").doesNotExist());
@@ -218,9 +218,9 @@ class AppointmentApiIntegrationTest extends AuthIntegrationTestBase {
 	@Test
 	void foraDoPrazoOClienteNaoCancelaMasOPrestadorDonoPode() throws Exception {
 		// Começa daqui a 30 min: dentro do prazo de 120 min do prestador.
-		UUID id = jdbc.queryForObject("INSERT INTO appointments (provider_id, service_id, customer_id, starts_at, ends_at, status) "
-				+ "VALUES (?, ?, ?, now() + interval '30 minutes', now() + interval '90 minutes', 'SCHEDULED') RETURNING id",
-				UUID.class, providerId, serviceId, customer1);
+		UUID id = jdbc.queryForObject("INSERT INTO appointments (provider_id, service_id, customer_id, starts_at, ends_at, status, pet_id, pet_name, pet_species) "
+				+ "VALUES (?, ?, ?, now() + interval '30 minutes', now() + interval '90 minutes', 'SCHEDULED', ?, 'Pet de Teste', 'DOG') RETURNING id",
+				UUID.class, providerId, serviceId, customer1, petOf(customer1));
 
 		cancel(tokenOf("c1@exemplo.test"), id.toString()).andExpect(status().isUnprocessableEntity()).andExpect(jsonPath("$.reason").value("TOO_LATE"));
 		assertEquals("SCHEDULED", jdbc.queryForObject("SELECT status FROM appointments", String.class));

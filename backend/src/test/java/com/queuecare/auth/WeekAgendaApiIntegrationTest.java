@@ -64,9 +64,9 @@ class WeekAgendaApiIntegrationTest extends AuthIntegrationTestBase {
 	/** Grava um agendamento de 1 hora que começa no horário LOCAL dado (fuso do prestador). */
 	private String appointment(UUID provider, UUID service, String zone, String localDateTime, String statusName) {
 		ZonedDateTime start = java.time.LocalDateTime.parse(localDateTime).atZone(ZoneId.of(zone));
-		return jdbc.queryForObject("INSERT INTO appointments (provider_id, service_id, customer_id, starts_at, ends_at, status) "
-				+ "VALUES (?, ?, ?, ?, ?, ?) RETURNING id::text", String.class, provider, service, customer, java.sql.Timestamp.from(start.toInstant()),
-				java.sql.Timestamp.from(start.plusHours(1).toInstant()), statusName);
+		return jdbc.queryForObject("INSERT INTO appointments (provider_id, service_id, customer_id, starts_at, ends_at, status, pet_id, pet_name, pet_species) "
+				+ "VALUES (?, ?, ?, ?, ?, ?, ?, 'Pet de Teste', 'DOG') RETURNING id::text", String.class, provider, service, customer, java.sql.Timestamp.from(start.toInstant()),
+				java.sql.Timestamp.from(start.plusHours(1).toInstant()), statusName, petOf(customer));
 	}
 
 	private ResultActions week(String bearer, String start) throws Exception {

@@ -100,6 +100,23 @@ abstract class AuthIntegrationTestBase {
 				UUID.class, email, passwordEncoder.encode(PASSWORD), role, active, mustChangePassword);
 	}
 
+	/** Pet de teste do cliente, para fixtures gravadas direto no banco: todo agendamento novo tem pet (ADR 0016, PR 49). */
+	UUID petOf(UUID customerId) {
+		return jdbc.queryForObject("INSERT INTO pets (customer_id, name, species) VALUES (?, 'Pet de Teste', 'DOG') RETURNING id", UUID.class, customerId);
+	}
+
+	/** Pet de teste do dono do token (reaproveita o primeiro que existir; cria um se não houver), para os testes que agendam pela API. */
+	String petOfToken(String bearer) {
+		String payload = new String(Base64.getUrlDecoder().decode(bearer.substring("Bearer ".length()).split("\\.")[1]), StandardCharsets.UTF_8);
+		java.util.regex.Matcher m = java.util.regex.Pattern.compile("\"sub\":\"([^\"]+)\"").matcher(payload);
+		if (!m.find()) {
+			throw new IllegalStateException("token sem sub");
+		}
+		UUID customerId = UUID.fromString(m.group(1));
+		List<UUID> existing = jdbc.queryForList("SELECT id FROM pets WHERE customer_id = ? ORDER BY created_at LIMIT 1", UUID.class, customerId);
+		return (existing.isEmpty() ? petOf(customerId) : existing.get(0)).toString();
+	}
+
 	long count(String sql, Object... args) {
 		return jdbc.queryForObject(sql, Long.class, args);
 	}

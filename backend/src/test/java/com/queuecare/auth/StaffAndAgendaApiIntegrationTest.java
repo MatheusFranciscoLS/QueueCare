@@ -109,7 +109,7 @@ class StaffAndAgendaApiIntegrationTest extends AuthIntegrationTestBase {
 
 	private String book(String customerToken, UUID provider, UUID service, String localStart) throws Exception {
 		String body = send(post("/api/appointments"), customerToken,
-				"{\"providerId\":\"" + provider + "\",\"serviceId\":\"" + service + "\",\"localStart\":\"" + localStart + "\"}")
+				"{\"providerId\":\"" + provider + "\",\"serviceId\":\"" + service + "\",\"localStart\":\"" + localStart + "\",\"petId\":\"" + petOfToken(customerToken) + "\"}")
 				.andExpect(status().isCreated()).andReturn().getResponse().getContentAsString();
 		return JsonPath.read(body, "$.id");
 	}
@@ -262,8 +262,8 @@ class StaffAndAgendaApiIntegrationTest extends AuthIntegrationTestBase {
 	@Test
 	void equipeCancelaSemPrazoMasOClienteNao() throws Exception {
 		// Agendamento do A que começa daqui a 30 min (dentro do prazo de 120 min), criado direto no banco.
-		UUID near = jdbc.queryForObject("INSERT INTO appointments (provider_id, service_id, customer_id, starts_at, ends_at, status) "
-				+ "VALUES (?, ?, ?, now() + interval '30 minutes', now() + interval '90 minutes', 'SCHEDULED') RETURNING id", UUID.class, providerA, serviceA, userC1);
+		UUID near = jdbc.queryForObject("INSERT INTO appointments (provider_id, service_id, customer_id, starts_at, ends_at, status, pet_id, pet_name, pet_species) "
+				+ "VALUES (?, ?, ?, now() + interval '30 minutes', now() + interval '90 minutes', 'SCHEDULED', ?, 'Pet de Teste', 'DOG') RETURNING id", UUID.class, providerA, serviceA, userC1, petOf(userC1));
 
 		cancel(c1, near.toString()).andExpect(status().isUnprocessableEntity()).andExpect(jsonPath("$.reason").value("TOO_LATE"));
 		cancel(a1, near.toString()).andExpect(status().isOk());
@@ -506,8 +506,8 @@ class StaffAndAgendaApiIntegrationTest extends AuthIntegrationTestBase {
 	// ---------- agenda em dias de horário de verão ----------
 
 	private void insertAppointment(UUID provider, UUID service, String startsAtUtc) {
-		jdbc.update("INSERT INTO appointments (provider_id, service_id, customer_id, starts_at, ends_at, status) VALUES (?, ?, ?, ?::timestamptz, ?::timestamptz + interval '1 minute', 'SCHEDULED')",
-				provider, service, userC1, startsAtUtc, startsAtUtc);
+		jdbc.update("INSERT INTO appointments (provider_id, service_id, customer_id, starts_at, ends_at, status, pet_id, pet_name, pet_species) VALUES (?, ?, ?, ?::timestamptz, ?::timestamptz + interval '1 minute', 'SCHEDULED', ?, 'Pet de Teste', 'DOG')",
+				provider, service, userC1, startsAtUtc, startsAtUtc, petOf(userC1));
 	}
 
 	@Test
