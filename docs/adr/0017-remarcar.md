@@ -16,7 +16,7 @@ Não troca prestador, serviço nem pet (isso continua sendo cancelar e agendar d
 
 ### 3. Quem pode, e quando
 - **CUSTOMER dono:** só enquanto o agendamento **atual** começar com pelo menos `cancellationDeadlineMinutes` de antecedência (a mesma política do cancelamento: remarcar em cima da hora seria cancelar disfarçado) → `422 TOO_LATE`. Limite de **3 remarcações por agendamento** (anti-abuso: segurar vaga mudando sem parar) → `422 RESCHEDULE_LIMIT`.
-- **PROVIDER e ATTENDANT** do prestador: sem prazo e sem limite (são quem opera; o pedido costuma chegar por telefone). O atendente sem vínculo recebe 403 antes de qualquer consulta, como no cancelamento.
+- **PROVIDER e ATTENDANT** do prestador: sem prazo e **sem limite**. **Decisão confirmada pelo Matheus (delegou ao melhor argumento verificado com o ChatGPT):** o limite de 3 é controle de abuso contra um ator externo (segurar vaga mudando sem parar); a equipe é autenticada, vinculada ao estúdio e **auditada**, e remarca por telefone em dia de imprevisto. Para ator confiável a salvaguarda certa é a **rastreabilidade, não a cota**: toda remarcação grava quem fez, quando e de qual horário para qual, e esse histórico é **consultável** (item 9). Descartados: limite alto (regra arbitrária, sem justificativa de domínio), teto técnico de sanidade (desnecessário no MVP) e confirmação extra na tela (ajuda a UX, mas não é controle de domínio). Se a operação real mostrar abuso, um controle pode ser acrescentado com dados. O atendente sem vínculo recebe 403 antes de qualquer consulta, como no cancelamento.
 - **ADMIN:** sem acesso. Agendamento de outra pessoa ou inexistente: a **mesma resposta 404 `APPOINTMENT_NOT_FOUND`**.
 - Só agendamento `SCHEDULED`: cancelado → `409 ALREADY_CANCELLED`; chegou ou concluído → `409 NOT_RESCHEDULABLE`.
 
@@ -46,11 +46,19 @@ O limite de 3 remarcações do cliente é contado por esses eventos, dentro da t
 ### 8. Horários livres que ignoram o próprio agendamento
 Hoje `GET /api/providers/{id}/slots` esconde o intervalo do próprio agendamento (ele conta como ocupado), então a tela não ofereceria deslocar de 10:00 para 10:30 num serviço de 60 minutos. Proposta: parâmetro opcional `excludeAppointmentId`, **ignorado** se o agendamento não for do chamador (cliente dono, ou equipe do prestador): não revela nada. Entra no PR de backend, pequeno.
 
+### 9. Histórico consultável, não só gravado
+`GET /api/appointments/{id}/events` (somente leitura): lista os eventos do agendamento em ordem, com tipo, instante e, nas remarcações, o horário anterior e o novo. Quem pode: a **equipe** do prestador (com o nome de quem agiu) e o **cliente dono** (só se a ação foi "você" ou "equipe", sem nome de funcionário). Agendamento de outra pessoa ou inexistente: a mesma 404. Fica no PR de backend, pequeno.
+
+## Testes que provam a diferença entre os papéis (obrigatórios no PR de backend)
+- Cliente: a 4ª remarcação do mesmo agendamento recebe 422 `RESCHEDULE_LIMIT`; as 3 primeiras passam.
+- Equipe: a 5ª, a 10ª e a 20ª remarcações do mesmo agendamento são aceitas (respeitando as demais regras de horário).
+- Cada remarcação gera **exatamente um** evento `RESCHEDULED`, com o ator, `previous_starts_at` e `new_starts_at` corretos e o instante da operação.
+
 ## Plano (PRs pequenos e revisados)
 1. ADR (este) aprovado.
-2. **PR de backend, ALTO:** V11, extração das regras de horário, serviço de remarcação, endpoint, parâmetro de horários livres, OpenAPI, testes de acesso, concorrência (versão, horário disputado, troca de horários, limite de 3 sob corrida), atomicidade e migration sobre dados.
+2. **PR de backend, ALTO:** V11, extração das regras de horário, serviço de remarcação, endpoint, parâmetro de horários livres, histórico consultável, OpenAPI, testes de acesso, concorrência (versão, horário disputado, troca de horários, limite de 3 sob corrida), atomicidade e migration sobre dados.
 3. **PR de tela do cliente, MÉDIO:** "Remarcar" em Meus agendamentos (escolha de dia e horário reutilizando os passos de agendar; limites e prazo explicados).
 4. **PR de tela da equipe, MÉDIO:** "Remarcar" na agenda do dia.
 
 ## Riscos a atacar na revisão
-Extração das regras sem mudar a reserva (os testes do `BookingService` e da concorrência da reserva precisam continuar iguais); a migration da V6 (índice único parcial) sobre banco com dados; remarcar x check-in x cancelar x edição de pet (todos mexem no mesmo `version`); troca de horários e impasse; limite de 3 sob corrida; o parâmetro `excludeAppointmentId` não vazar existência de agendamento alheio; equipe sem limite (decisão de produto a confirmar); histórico legível para o prestador (`previous_starts_at`, `new_starts_at`).
+Extração das regras sem mudar a reserva (os testes do `BookingService` e da concorrência da reserva precisam continuar iguais); a migration da V6 (índice único parcial) sobre banco com dados; remarcar x check-in x cancelar x edição de pet (todos mexem no mesmo `version`); troca de horários e impasse; limite de 3 sob corrida; o parâmetro `excludeAppointmentId` não vazar existência de agendamento alheio; histórico legível para o prestador (`previous_starts_at`, `new_starts_at`).
