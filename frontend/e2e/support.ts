@@ -83,6 +83,16 @@ export async function irPara(page: Page, path: string): Promise<void> {
   }, path)
 }
 
+/** Vai a uma tela pelo menu: barra lateral no computador, gaveta no celular (até 900 px). */
+export async function irPeloMenu(page: Page, nome: string, largura: number): Promise<void> {
+  if (largura <= 900) {
+    await page.getByRole('button', { name: 'Menu' }).click()
+    await page.getByRole('dialog', { name: 'Menu' }).getByRole('link', { name: nome, exact: true }).click()
+  } else {
+    await page.getByRole('navigation').getByRole('link', { name: nome, exact: true }).first().click()
+  }
+}
+
 /** Abre a tela como o perfil dela (entra se preciso), com tema e tamanho de janela, e espera o conteúdo aparecer. */
 export async function abrirTela(page: Page, tela: Tela, tema: Tema, viewport: { width: number; height: number }): Promise<void> {
   await page.setViewportSize(viewport)
@@ -91,7 +101,7 @@ export async function abrirTela(page: Page, tela: Tela, tema: Tema, viewport: { 
     await page.goto(tela.path)
   } else {
     await entrar(page, tela.perfil)
-    if (tela.menu) await page.getByRole('navigation').getByRole('link', { name: tela.menu, exact: true }).first().click()
+    if (tela.menu) await irPeloMenu(page, tela.menu, viewport.width)
     else if (tela.path !== '/') await irPara(page, tela.path)
   }
   await page.getByRole('heading', { level: 1, name: tela.pronto, exact: typeof tela.pronto === 'string' }).first().waitFor({ timeout: 30_000 })

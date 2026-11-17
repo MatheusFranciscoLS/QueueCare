@@ -1,8 +1,5 @@
 /* QueueCare: fundação visual. Tokens (cor, tipo, espaço, raio) com tema claro e escuro que segue o sistema.
    Identidade: verde-petróleo (calma e confiança), âmbar para "esperando", e a Linha de Atendimento como assinatura. */
-@import '@fontsource-variable/inter';
-@import '@fontsource-variable/manrope';
-
 :root {
   /* cor */
   --bg: #f2f6f5;
@@ -30,8 +27,8 @@
   --st-cancelled: #6b4a48;
   --st-cancelled-bg: #f1e7e6;
   /* tipo */
-  --font-body: 'Inter Variable', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-  --font-heading: 'Manrope Variable', 'Inter Variable', system-ui, sans-serif;
+  --font-body: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-heading: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   /* espaço e forma */
   --space-1: 0.25rem;
   --space-2: 0.5rem;
@@ -92,62 +89,6 @@ body {
   min-height: 100vh;
 }
 
-.topbar {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-3);
-  padding: var(--space-3) var(--space-4);
-  background: var(--surface);
-  border-bottom: 1px solid var(--line);
-}
-
-.brand {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-2);
-  font-family: var(--font-heading);
-  font-weight: 800;
-  font-size: 1.2rem;
-  letter-spacing: -0.01em;
-  color: var(--text);
-  text-decoration: none;
-}
-
-/* marca: a fila em três pontos, o primeiro já em atendimento */
-.brand-mark {
-  display: inline-flex;
-  align-items: center;
-  gap: 3px;
-}
-
-.brand-mark i {
-  display: block;
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: var(--line);
-}
-
-.brand-mark i:first-child {
-  width: 11px;
-  height: 11px;
-  background: var(--accent);
-}
-
-.brand-mark i:nth-child(2) {
-  background: var(--st-waiting);
-  opacity: 0.8;
-}
-
-.who {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--space-3);
-}
-
 .badge {
   display: inline-block;
   padding: 0.05rem 0.55rem;
@@ -181,12 +122,6 @@ body {
 .badge[data-status='CANCELLED'] {
   color: var(--st-cancelled);
   background: var(--st-cancelled-bg);
-}
-
-.content {
-  max-width: 48rem;
-  margin: 0 auto;
-  padding: var(--space-6) var(--space-4) 3rem;
 }
 
 .card {
@@ -341,43 +276,6 @@ a {
 .aside {
   margin: var(--space-4) 0 0;
   color: var(--muted);
-}
-
-.menu {
-  display: flex;
-  gap: var(--space-1);
-  padding: 0 var(--space-4);
-  background: var(--surface);
-  border-bottom: 1px solid var(--line);
-  overflow-x: auto;
-  scrollbar-width: thin;
-}
-
-.menu a {
-  flex: none;
-  display: inline-flex;
-  align-items: center;
-  min-height: var(--target);
-  padding: 0 var(--space-3);
-  color: var(--muted);
-  font-weight: 500;
-  text-decoration: none;
-  border-bottom: 3px solid transparent;
-}
-
-/* dentro do menu rolável o contorno interno não é recortado pelas bordas */
-.menu a:focus-visible {
-  outline-offset: -3px;
-}
-
-.menu a:hover {
-  color: var(--text);
-}
-
-.menu a.active {
-  color: var(--text);
-  font-weight: 700;
-  border-bottom-color: var(--accent);
 }
 
 .rows {

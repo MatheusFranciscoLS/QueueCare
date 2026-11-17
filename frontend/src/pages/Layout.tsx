@@ -1,70 +1,140 @@
+import { useEffect, useRef, useState } from 'react'
 import { Link, NavLink, Outlet } from 'react-router-dom'
 import { ROLE_LABEL } from '../auth/roles'
-import { useAuth } from '../auth/session'
+import { useAuth, type User } from '../auth/session'
+import { Button } from '../ui/components'
+import { ThemeToggle } from '../ui/ThemeToggle'
+import '../ui/shell.css'
+import { navigationFor } from './navigation'
+import { useRouteFocus } from './useRouteFocus'
 import { WakingBanner } from './WakingBanner'
 
-export function Layout() {
-  const { user, logout } = useAuth()
+function Brand({ onNavigate }: { onNavigate?: () => void }) {
   return (
-    <div className="shell">
-      <header className="topbar">
-        <Link to="/" className="brand">
-          <span className="brand-mark" aria-hidden="true">
-            <i />
-            <i />
-            <i />
-          </span>
-          QueueCare
+    <Link to="/" className="pp-brand" onClick={onNavigate}>
+      <span>
+        Pelo <b>&amp;</b> Ponto
+      </span>
+      <span className="pp-sig" aria-hidden="true">
+        <i />
+        <i />
+        <i />
+      </span>
+    </Link>
+  )
+}
+
+function Menu({ user, label, onNavigate }: { user: User; label: string; onNavigate?: () => void }) {
+  const nav = navigationFor(user.role)
+  return (
+    <nav aria-label={label === '' ? nav.label : `${nav.label}${label}`} className="pp-nav">
+      {nav.items.map((item) => (
+        <NavLink key={item.to} to={item.to} end={item.end} onClick={onNavigate}>
+          {item.label}
+        </NavLink>
+      ))}
+    </nav>
+  )
+}
+
+function Account({ user, onNavigate }: { user: User; onNavigate?: () => void }) {
+  const { logout } = useAuth()
+  return (
+    <div className="pp-who">
+      <div>
+        <strong>{user.name}</strong>
+        <span>{ROLE_LABEL[user.role]}</span>
+      </div>
+      {!user.mustChangePassword && (
+        <Link to="/trocar-senha" className="pp-who__link" onClick={onNavigate}>
+          Trocar senha
         </Link>
-        {user && (
-          <div className="who">
-            <span className="who-name">
-              <span className="who-text">{user.name}</span> <span className="badge">{ROLE_LABEL[user.role]}</span>
-            </span>
-            {!user.mustChangePassword && (
-              <Link to="/trocar-senha" className="link">
-                Trocar senha
-              </Link>
-            )}
-            <button type="button" className="button secondary" onClick={logout}>
-              Sair
+      )}
+      <ThemeToggle />
+      <Button variant="quiet" onClick={logout}>
+        Sair
+      </Button>
+    </div>
+  )
+}
+
+/** Casca do produto (ADR 0018 v2): barra lateral só de texto no computador e gaveta (dialog nativo) no celular, com atalho para o conteúdo. */
+export function Layout() {
+  const { user } = useAuth()
+  const showNav = user !== null && !user.mustChangePassword
+  const mainRef = useRef<HTMLElement>(null)
+  const drawerRef = useRef<HTMLDialogElement>(null)
+  const [drawerOpen, setDrawerOpen] = useState(false)
+  useRouteFocus(mainRef)
+
+  // A gaveta é um <dialog> modal: foco inicial e contido nela, fundo inerte e Esc de graça; ao fechar, o foco volta ao botão "Menu".
+  useEffect(() => {
+    const dialog = drawerRef.current
+    if (!dialog) return
+    if (drawerOpen && !dialog.open) {
+      if (typeof dialog.showModal === 'function') dialog.showModal()
+      else dialog.setAttribute('open', '')
+    }
+    if (!drawerOpen && dialog.open) {
+      if (typeof dialog.close === 'function') dialog.close()
+      else dialog.removeAttribute('open')
+    }
+  }, [drawerOpen])
+
+  // Janela alargada com a gaveta aberta: a barra lateral reaparece, então a gaveta fecha.
+  useEffect(() => {
+    if (!drawerOpen || typeof window.matchMedia !== 'function') return
+    const query = window.matchMedia('(min-width: 901px)')
+    const close = () => query.matches && setDrawerOpen(false)
+    query.addEventListener('change', close)
+    return () => query.removeEventListener('change', close)
+  }, [drawerOpen])
+
+  return (
+    <div className="pp pp-app">
+      <a className="pp-skip" href="#conteudo">
+        Pular para o conteúdo
+      </a>
+      <div className={showNav ? 'pp-frame' : 'pp-frame pp-frame--public'}>
+        <header className="pp-rail">
+          <Brand />
+          {showNav && (
+            <button type="button" className="pp-btn pp-menubtn" aria-haspopup="dialog" onClick={() => setDrawerOpen(true)}>
+              Menu
             </button>
+          )}
+          {showNav && <Menu user={user} label="" />}
+          {user && <Account user={user} />}
+        </header>
+        <main id="conteudo" ref={mainRef} tabIndex={-1} className="pp-main">
+          <WakingBanner />
+          <div className="pp-content">
+            <Outlet />
           </div>
+        </main>
+      </div>
+      <dialog
+        ref={drawerRef}
+        className="pp-drawer"
+        aria-label="Menu"
+        onClose={() => setDrawerOpen(false)}
+        onClick={(e) => {
+          if (e.target === e.currentTarget) setDrawerOpen(false)
+        }}
+      >
+        {drawerOpen && user && (
+          <>
+            <div className="pp-drawer__head">
+              <Brand onNavigate={() => setDrawerOpen(false)} />
+              <Button variant="quiet" onClick={() => setDrawerOpen(false)}>
+                Fechar
+              </Button>
+            </div>
+            <Menu user={user} label=" (celular)" onNavigate={() => setDrawerOpen(false)} />
+            <Account user={user} onNavigate={() => setDrawerOpen(false)} />
+          </>
         )}
-      </header>
-      {user && !user.mustChangePassword && user.role === 'PROVIDER' && (
-        <nav className="menu" aria-label="Menu do prestador">
-          <NavLink to="/meu-negocio">Meu negócio</NavLink>
-          <NavLink to="/servicos">Serviços</NavLink>
-          <NavLink to="/expediente">Expediente</NavLink>
-          <NavLink to="/equipe">Equipe</NavLink>
-          <NavLink to="/agenda">Agenda</NavLink>
-          <NavLink to="/fila">Fila</NavLink>
-        </nav>
-      )}
-      {user && !user.mustChangePassword && user.role === 'ADMIN' && (
-        <nav className="menu" aria-label="Menu do administrador">
-          <NavLink to="/admin/contas">Contas</NavLink>
-          <NavLink to="/admin/prestadores/novo">Novo prestador</NavLink>
-        </nav>
-      )}
-      {user && !user.mustChangePassword && user.role === 'CUSTOMER' && (
-        <nav className="menu" aria-label="Menu do cliente">
-          <NavLink to="/agendar">Agendar</NavLink>
-          <NavLink to="/meus-agendamentos">Meus agendamentos</NavLink>
-          <NavLink to="/pets">Meus pets</NavLink>
-        </nav>
-      )}
-      {user && !user.mustChangePassword && user.role === 'ATTENDANT' && (
-        <nav className="menu" aria-label="Menu do atendente">
-          <NavLink to="/agenda">Agenda</NavLink>
-          <NavLink to="/fila">Fila</NavLink>
-        </nav>
-      )}
-      <main className="content">
-        <WakingBanner />
-        <Outlet />
-      </main>
+      </dialog>
     </div>
   )
 }

@@ -1,0 +1,251 @@
+/* Casca do produto (ADR 0018 v2, R3): barra lateral, gaveta, atalho para o conteúdo.
+   Também faz a PONTE entre as variáveis antigas das telas (--bg, --accent, --st-*...) e os tokens novos (--pp-*): as telas ainda não migradas
+   passam a usar as cores, as fontes e o tema (claro, escuro, sistema) novos sem mudar uma linha delas. A ponte sai à medida que cada tela migra. */
+.pp-app {
+  --bg: var(--pp-bg);
+  --surface: var(--pp-surface);
+  --surface-2: var(--pp-bg);
+  --text: var(--pp-text);
+  --muted: var(--pp-muted);
+  --line: var(--pp-line);
+  --field-line: var(--pp-field);
+  --on-danger: var(--pp-bg);
+  --accent: var(--pp-primary);
+  --accent-strong: var(--pp-primary-strong);
+  --accent-text: var(--pp-on-primary);
+  --accent-soft: var(--pp-st-scheduled-bg);
+  --notice-bg: var(--pp-st-scheduled-bg);
+  --danger: var(--pp-danger);
+  --danger-soft: color-mix(in srgb, var(--pp-danger) 12%, var(--pp-surface));
+  --st-scheduled: var(--pp-st-scheduled-fg);
+  --st-scheduled-bg: var(--pp-st-scheduled-bg);
+  --st-waiting: var(--pp-st-waiting-fg);
+  --st-waiting-bg: var(--pp-st-waiting-bg);
+  --st-done: var(--pp-st-done-fg);
+  --st-done-bg: var(--pp-st-done-bg);
+  --st-cancelled: var(--pp-st-cancelled-fg);
+  --st-cancelled-bg: var(--pp-st-cancelled-bg);
+  --font-body: var(--pp-body);
+  --font-heading: var(--pp-display);
+  --shadow-card: none;
+  min-height: 100vh;
+}
+
+.pp-skip {
+  position: absolute;
+  left: 8px;
+  top: -64px;
+  z-index: 30;
+  padding: 0.75rem 1rem;
+  border-radius: 10px;
+  background: var(--pp-text);
+  color: var(--pp-bg);
+  font-weight: 700;
+  text-decoration: none;
+}
+.pp-skip:focus {
+  top: 8px;
+}
+
+.pp-frame {
+  display: grid;
+  grid-template-columns: 232px minmax(0, 1fr);
+  gap: 48px;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.pp-frame--public {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0;
+}
+
+/* barra lateral */
+.pp-rail {
+  position: sticky;
+  top: 0;
+  align-self: start;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+  padding: 28px 0;
+  overflow-y: auto;
+}
+.pp-frame--public .pp-rail {
+  position: static;
+  height: auto;
+  padding: 20px 0 0;
+}
+.pp-brand {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 10px;
+  align-self: flex-start;
+  color: var(--pp-text);
+  font: 700 1.625rem/1 var(--pp-display);
+  letter-spacing: -0.02em;
+  text-decoration: none;
+}
+.pp-brand b {
+  color: var(--pp-gold-mark);
+  font-weight: 700;
+}
+.pp-sig {
+  display: flex;
+  gap: 6px;
+}
+.pp-sig i {
+  display: block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 2px solid var(--pp-primary);
+}
+.pp-sig i:nth-child(2) {
+  border-color: var(--pp-gold-mark);
+  background: linear-gradient(90deg, var(--pp-gold-mark) 50%, transparent 50%);
+}
+.pp-sig i:nth-child(3) {
+  border-color: var(--pp-done);
+  background: var(--pp-done);
+}
+
+/* navegação só de texto: o item ativo ganha um trecho de fio cheio, os outros um pontilhado */
+.pp-nav {
+  display: grid;
+  gap: 2px;
+}
+.pp-nav a {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 44px;
+  padding: 0 12px 0 0;
+  color: var(--pp-muted);
+  font-weight: 500;
+  text-decoration: none;
+}
+.pp-nav a::before {
+  content: '';
+  width: 14px;
+  border-top: 2px dotted var(--pp-field);
+}
+.pp-nav a:hover {
+  color: var(--pp-text);
+}
+.pp-nav a[aria-current='page'] {
+  color: var(--pp-text);
+  font-weight: 700;
+}
+.pp-nav a[aria-current='page']::before {
+  width: 22px;
+  margin-right: -8px;
+  border-top: 3px solid var(--pp-primary);
+}
+
+.pp-who {
+  margin-top: auto;
+  display: grid;
+  gap: 4px;
+  justify-items: start;
+  color: var(--pp-muted);
+  font-size: 0.875rem;
+}
+.pp-who strong {
+  display: block;
+  color: var(--pp-text);
+}
+.pp-who__link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  color: var(--pp-muted);
+  font-weight: 600;
+}
+.pp-who .pp-btn--quiet {
+  padding-left: 0;
+}
+.pp .pp-menubtn {
+  display: none;
+}
+
+.pp-main {
+  min-width: 0;
+  padding: 36px 0 64px;
+}
+.pp-main:focus {
+  outline: none;
+}
+.pp-content {
+  max-width: 48rem;
+}
+.pp-content h1 {
+  font-family: var(--pp-display);
+  letter-spacing: -0.02em;
+}
+
+/* gaveta do celular: <dialog> nativo (foco preso, fundo inerte, Esc fecha) */
+.pp-drawer {
+  margin: 0;
+  inset: 0 auto 0 0;
+  width: min(320px, 88vw);
+  height: 100%;
+  max-height: none;
+  border: 0;
+  padding: 24px max(20px, env(safe-area-inset-left, 0px));
+  background: var(--pp-bg);
+  color: var(--pp-text);
+  font-family: var(--pp-body);
+  flex-direction: column;
+  gap: 24px;
+  overflow-y: auto;
+  box-shadow: 0 0 32px rgb(0 0 0 / 30%);
+}
+.pp-drawer[open] {
+  display: flex;
+}
+.pp-drawer::backdrop {
+  background: var(--pp-scrim, rgb(20 32 43 / 55%));
+}
+.pp-drawer__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+@media (max-width: 900px) {
+  .pp-frame {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0;
+  }
+  .pp-rail {
+    position: static;
+    height: auto;
+    padding: 14px 0 6px;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    overflow: visible;
+  }
+  .pp-brand {
+    flex-direction: column;
+  }
+  .pp-rail > .pp-nav,
+  .pp-rail > .pp-who {
+    display: none;
+  }
+  .pp .pp-menubtn {
+    display: inline-flex;
+  }
+  .pp-main {
+    padding-top: 20px;
+  }
+}
+@media (min-width: 901px) {
+  .pp-drawer {
+    display: none !important;
+  }
+}
