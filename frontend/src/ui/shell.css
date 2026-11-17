@@ -250,17 +250,30 @@
 
 /* o painel é claro e aquático nos dois temas (a água do banho): cores próprias, não dependem do tema */
 .pp-auth__hero {
+  --ill-foam: #f4fafc;
+  --ill-foam-shade: #bcd9e4;
+  --ill-foam-light: #dcecf2;
+  --ill-bubble: #ffffff;
+  --ill-drop: #5fb3d4;
+  --ill-metal: #7fa7b8;
+  --ill-metal-light: #b4d0db;
+  --ill-metal-shade: #96b8c6;
+  --ill-tub: #fbfdfe;
+  --ill-tub-shade: #c4dde7;
+  --ill-rim: #eef6f9;
+  --ill-rim-shade: #b4d1dd;
   --pp-text: #14202b;
   --pp-muted: #35505e;
   --pp-gold-mark: #8a5f00;
   --pp-focus: #0b4a61;
+  --pp-tile: #c5e2ec;
   position: relative;
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
   padding: 3rem clamp(1.5rem, 5vw, 4.5rem) 0;
   background-color: #d3ebf3;
-  background-image: linear-gradient(#c5e2ec 2px, transparent 2px), linear-gradient(90deg, #c5e2ec 2px, transparent 2px);
+  background-image: linear-gradient(var(--pp-tile) 2px, transparent 2px), linear-gradient(90deg, var(--pp-tile) 2px, transparent 2px);
   background-size: 64px 64px;
   background-position: -1px -1px;
   color: #14202b;
@@ -287,6 +300,58 @@
   width: min(100%, 30rem);
   height: auto;
   margin: auto auto 0;
+}
+
+/* tema ESCURO: o painel vira azul-petróleo profundo (variante própria, não uma inversão): azulejo de baixo contraste, espuma sem branco estourado */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) .pp-auth__hero {
+    --ill-foam: #dcebf1;
+    --ill-foam-shade: #7ea4b6;
+    --ill-foam-light: #b4cfdb;
+    --ill-bubble: #8fb9cb;
+    --ill-drop: #7cc4e0;
+    --ill-metal: #6f98aa;
+    --ill-metal-light: #9cbccb;
+    --ill-metal-shade: #567f91;
+    --ill-tub: #c3d8e1;
+    --ill-tub-shade: #8fb0c0;
+    --ill-rim: #d5e5ec;
+    --ill-rim-shade: #7ea1b3;
+    --pp-text: #e8eef3;
+    --pp-muted: #a9c3d0;
+    --pp-gold-mark: #f5be52;
+    --pp-focus: #9adcf2;
+    --pp-tile: #124058;
+    background-color: #0c2f42;
+    color: #e8eef3;
+  }
+  :root:not([data-theme='light']) .pp-auth__lead {
+    color: #a9c3d0;
+  }
+}
+:root[data-theme='dark'] .pp-auth__hero {
+  --ill-foam: #dcebf1;
+  --ill-foam-shade: #7ea4b6;
+  --ill-foam-light: #b4cfdb;
+  --ill-bubble: #8fb9cb;
+  --ill-drop: #7cc4e0;
+  --ill-metal: #6f98aa;
+  --ill-metal-light: #9cbccb;
+  --ill-metal-shade: #567f91;
+  --ill-tub: #c3d8e1;
+  --ill-tub-shade: #8fb0c0;
+  --ill-rim: #d5e5ec;
+  --ill-rim-shade: #7ea1b3;
+  --pp-text: #e8eef3;
+  --pp-muted: #a9c3d0;
+  --pp-gold-mark: #f5be52;
+  --pp-focus: #9adcf2;
+  --pp-tile: #124058;
+  background-color: #0c2f42;
+  color: #e8eef3;
+}
+:root[data-theme='dark'] .pp-auth__lead {
+  color: #a9c3d0;
 }
 
 .pp-auth__panel {
