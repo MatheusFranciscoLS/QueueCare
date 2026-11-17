@@ -7,6 +7,7 @@ import { isNotConfigured } from '../../api/errors'
 import { describeError } from '../../api/messages'
 import { petDescription } from '../../api/pets'
 import { useAuth } from '../../auth/session'
+import { Summary } from '../../ui/components'
 import { RefreshWarning } from '../RefreshWarning'
 import { useLoad } from '../useLoad'
 import { useSingleFlight } from '../useSingleFlight'
@@ -129,6 +130,7 @@ function DayList({ date, timeZone, workplace }: { date: string; timeZone: string
         {problem}
       </p>
       {visible && visible.length === 0 && <p className="notice">Nenhum agendamento neste dia.</p>}
+      {visible && visible.length > 0 && <DaySummary counts={countByStatus(visible.map((item) => laterOf(item.status, statuses.get(item.id))))} />}
       <ul className="rows timeline">
         {visible?.map((item) => (
           <AppointmentRow
@@ -155,6 +157,26 @@ function DayList({ date, timeZone, workplace }: { date: string; timeZone: string
         ))}
       </ul>
     </>
+  )
+}
+
+/** O resumo do dia em frase (ADR 0018 v2): concluídos, esperando (chegaram) e por vir. */
+function countByStatus(statuses: string[]) {
+  return {
+    done: statuses.filter((s) => s === 'COMPLETED').length,
+    waiting: statuses.filter((s) => s === 'CHECKED_IN').length,
+    upcoming: statuses.filter((s) => s === 'SCHEDULED').length,
+  }
+}
+
+function DaySummary({ counts }: { counts: { done: number; waiting: number; upcoming: number } }) {
+  return (
+    <Summary>
+      <strong>
+        {counts.done} {counts.done === 1 ? 'concluído' : 'concluídos'}
+      </strong>
+      , <strong>{counts.waiting} esperando</strong> e <strong>{counts.upcoming} por vir</strong>.
+    </Summary>
   )
 }
 

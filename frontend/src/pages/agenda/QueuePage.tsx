@@ -88,7 +88,7 @@ function Queue({ workplace }: { workplace: Workplace }) {
         {problem}
       </p>
       {visible && visible.length === 0 && <p className="notice">Ninguém na fila agora.</p>}
-      <ol className="rows timeline">
+      <ol className="rows queue-list">
         {visible?.map((item, index) => (
           <QueueRow
             key={item.id}

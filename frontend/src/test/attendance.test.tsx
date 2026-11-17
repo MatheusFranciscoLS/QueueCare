@@ -364,3 +364,29 @@ describe('fila', () => {
     expect(calls.some((c) => c.path.startsWith('/api/agenda'))).toBe(false)
   })
 })
+
+const daySummary = () => screen.getByText((_, el) => el?.tagName === 'P' && /por vir[.]/.test(el.textContent ?? ''))
+
+describe('agenda: resumo do dia em frase (ADR 0018 v2)', () => {
+  it('conta concluídos, esperando e por vir, no singular e no plural, e acompanha a chegada registrada', async () => {
+    const { user } = await loginAs('ATTENDANT', {
+      [`GET /api/agenda?date=${today}`]: () =>
+        json(200, [item('a-1', 'COMPLETED', today, 'Ana'), item('a-2', 'CHECKED_IN', today, 'Bia'), item('a-3', 'SCHEDULED', today, 'Caio'), item('a-4', 'SCHEDULED', today, 'Duda')]),
+      'POST /api/appointments/a-3/check-in': () => json(200, { id: 'a-3', status: 'CHECKED_IN' }),
+    })
+    await user.click(menu('Agenda'))
+    await screen.findByText("Caio")
+    expect(daySummary()).toHaveTextContent("1 concluído, 1 esperando e 2 por vir.")
+
+    const row = screen.getByText('Caio').closest('li')!
+    await user.click(within(row).getByRole('button', { name: 'Chegou' }))
+    await waitFor(() => expect(daySummary()).toHaveTextContent('1 concluído, 2 esperando e 1 por vir.'))
+  })
+
+  it('sem agendamentos não mostra resumo, só o aviso do dia vazio', async () => {
+    const { user } = await loginAs('ATTENDANT', { [`GET /api/agenda?date=${today}`]: () => json(200, []) })
+    await user.click(menu('Agenda'))
+    expect(await screen.findByText('Nenhum agendamento neste dia.')).toBeInTheDocument()
+    expect(screen.queryByText((_, el) => el?.tagName === 'P' && /por vir[.]/.test(el.textContent ?? ''))).not.toBeInTheDocument()
+  })
+})

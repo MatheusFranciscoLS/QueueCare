@@ -362,6 +362,9 @@ a {
 
 .slot label,
 .daybar label {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2); /* folga entre o texto e o campo: o anel de foco do campo não se mistura com o texto */
   margin: 0;
   font-weight: 400;
 }
@@ -522,78 +525,143 @@ input[type='date'] {
   }
 }
 
-/* Linha de Atendimento: traço vertical com um ponto por atendimento, na cor do estado.
-   O ponto fica ao lado da PRIMEIRA linha da informação (.appt-info), e não no meio da <li>, para não se deslocar quando
-   as ações quebram de linha ou a confirmação de cancelamento abre. --dot-y = padding da linha + meia linha de texto. */
+/* O FIO DO DIA (ADR 0018 v2): a hora grande, o ponto do estado e o conteúdo, ligados por um fio que é pontilhado enquanto falta e cheio
+   quando o atendimento termina. A marcação não mudou: o .appt-info vira "display: contents" e seus filhos entram direto na grade da linha. */
 .timeline {
-  --dot-y: 1.45rem;
+  --time-col: 9.5rem;
+  margin: 0;
 }
 
 .timeline .row {
   position: relative;
-  padding-left: 1.6rem;
+  display: grid;
+  grid-template-columns: var(--time-col) 24px minmax(0, 1fr);
+  column-gap: 1rem;
+  align-items: start;
+  justify-content: stretch;
+  padding: 0 0 1.875rem;
+  border-bottom: 0;
+  gap: 0.5rem 1rem;
 }
 
+.timeline .row:last-child {
+  padding-bottom: 0;
+}
+
+.timeline .appt-info {
+  display: contents;
+}
+
+.timeline .appt-time {
+  grid-column: 1;
+  grid-row: 1;
+  min-width: 0;
+  padding-top: 2px;
+  text-align: right;
+  font: 600 1.375rem/1.2 var(--font-heading);
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+/* o ponto do estado (forma + cor; o texto do estado está no rótulo ao lado): anel, meio, cheio */
 .timeline .row::before {
   content: '';
-  position: absolute;
-  left: 0.4rem;
-  top: 0;
-  bottom: 0;
-  width: 2px;
-  background: var(--line);
-}
-
-.timeline .row:first-child::before {
-  top: var(--dot-y);
-}
-
-.timeline .row:last-child::before {
-  bottom: auto;
-  height: var(--dot-y);
-}
-
-.timeline .row:first-child:last-child::before {
-  display: none;
-}
-
-.timeline .appt-info::before {
-  content: '';
-  position: absolute;
-  left: -1.48rem;
-  top: 0.44rem;
-  width: 0.62rem;
-  height: 0.62rem;
+  grid-column: 2;
+  grid-row: 1;
+  width: 24px;
+  height: 24px;
+  margin-top: 4px;
   border-radius: 50%;
-  background: var(--muted);
-  box-shadow: 0 0 0 3px var(--surface);
+  border: 3px solid var(--st-scheduled);
+  background: var(--bg);
 }
 
-.timeline .row[data-status='SCHEDULED'] .appt-info::before {
-  background: var(--st-scheduled);
+.timeline .row[data-status='CHECKED_IN']::before {
+  border-color: var(--pp-gold-mark);
+  background: linear-gradient(90deg, var(--pp-gold-mark) 50%, var(--bg) 50%);
 }
 
-.timeline .row[data-status='CHECKED_IN'] .appt-info::before {
-  background: var(--st-waiting);
-}
-
-.timeline .row[data-status='COMPLETED'] .appt-info::before {
+.timeline .row[data-status='COMPLETED']::before {
+  border-color: var(--st-done);
   background: var(--st-done);
 }
 
-.appt-info {
-  position: relative;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 0 var(--space-3);
+/* o fio: da base do ponto até o ponto seguinte */
+.timeline .row::after {
+  content: '';
+  position: absolute;
+  top: 32px;
+  bottom: 0;
+  left: calc(var(--time-col) + 1rem + 12px);
+  border-left: 3px dotted var(--field-line);
+  transform: translateX(-50%);
+}
+
+.timeline .row:last-child::after {
+  display: none;
+}
+
+.timeline .row[data-status='COMPLETED']::after {
+  border-left: 4px solid var(--st-done);
+}
+
+/* o conteúdo, na terceira coluna: pet em destaque, tutor, serviço, observações, estado, ações */
+.timeline .appt-pet,
+.timeline .appt-who,
+.timeline .appt-service,
+.timeline .appt-notes,
+.timeline .badge,
+.timeline .actions,
+.timeline .row-extra {
+  grid-column: 3;
   min-width: 0;
+}
+
+.timeline .appt-pet {
+  order: 1;
+  font: 700 1.375rem/1.15 var(--font-heading);
+  letter-spacing: -0.01em;
+}
+
+.timeline .appt-who {
+  order: 2;
+  font-weight: 400;
+  color: var(--muted);
+}
+
+.timeline .appt-service {
+  order: 3;
+  color: var(--muted);
+}
+
+.timeline .appt-notes {
+  order: 4;
+}
+
+.timeline .badge {
+  order: 5;
+  justify-self: start;
+  font-weight: 700;
+}
+
+.timeline .actions {
+  order: 6;
+}
+
+.timeline .row-extra {
+  order: 7;
+}
+
+/* sem pet gravado (agendamentos antigos), o tutor passa a ser o destaque */
+.timeline .row:not(:has(.appt-pet)) .appt-who {
+  order: 1;
+  font: 700 1.375rem/1.15 var(--font-heading);
+  color: var(--text);
 }
 
 .appt-time {
   font-family: var(--font-heading);
   font-variant-numeric: tabular-nums;
-  min-width: 5.5rem;
 }
 
 .appt-who {
@@ -604,18 +672,129 @@ input[type='date'] {
   color: var(--muted);
 }
 
-/* o pet do agendamento (cópia gravada nele) e as observações do tutor, em uma linha própria */
 .appt-pet {
   font-weight: 600;
 }
 
 .appt-notes,
 .pet-notes {
-  flex-basis: 100%;
   margin-top: var(--space-1);
   color: var(--muted);
   white-space: pre-line;
   overflow-wrap: anywhere;
+}
+
+/* A FILA não usa o fio (é ordem de chegada, não sequência de horários): a posição é o número grande, sem ponto e sem linha */
+.pp .pp-summary + .timeline,
+.pp .pp-summary + .queue-list {
+  margin-top: var(--space-6);
+}
+
+.queue-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.queue-list .row {
+  display: grid;
+  grid-template-columns: 4.5rem minmax(0, 1fr);
+  column-gap: 1rem;
+  align-items: start;
+  justify-content: stretch;
+  padding: 0 0 1.875rem;
+  border-bottom: 0;
+  gap: 0.5rem 1rem;
+}
+
+.queue-list .appt-info {
+  display: contents;
+}
+
+.queue-list .appt-time {
+  grid-column: 1;
+  grid-row: 1 / span 5;
+  text-align: right;
+  font: 700 2.75rem/1 var(--font-heading);
+  letter-spacing: -0.03em;
+  color: var(--muted);
+}
+
+.queue-list .row:first-child .appt-time {
+  color: var(--text);
+}
+
+.queue-list .sep {
+  display: none;
+}
+
+.queue-list .appt-pet,
+.queue-list .appt-who,
+.queue-list .appt-service,
+.queue-list .appt-notes,
+.queue-list .badge,
+.queue-list .actions {
+  grid-column: 2;
+  min-width: 0;
+}
+
+.queue-list .appt-pet {
+  order: 1;
+  font: 700 1.375rem/1.15 var(--font-heading);
+}
+
+.queue-list .appt-who {
+  order: 2;
+  font-weight: 400;
+  color: var(--muted);
+}
+
+.queue-list .appt-service {
+  order: 3;
+  color: var(--muted);
+}
+
+.queue-list .appt-notes {
+  order: 4;
+}
+
+.queue-list .badge {
+  order: 5;
+  justify-self: start;
+  font-weight: 700;
+}
+
+.queue-list .actions {
+  order: 6;
+}
+
+.queue-list .row:not(:has(.appt-pet)) .appt-who {
+  order: 1;
+  font: 700 1.375rem/1.15 var(--font-heading);
+  color: var(--text);
+}
+
+@media (max-width: 520px) {
+  .timeline {
+    --time-col: 6.25rem;
+  }
+
+  .timeline .row {
+    column-gap: 0.5rem;
+  }
+
+  .timeline .appt-time {
+    font-size: 1rem;
+  }
+
+  .queue-list .row {
+    grid-template-columns: 3rem minmax(0, 1fr);
+    column-gap: 0.75rem;
+  }
+
+  .queue-list .appt-time {
+    font-size: 2rem;
+  }
 }
 
 .pet-info {
