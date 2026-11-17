@@ -7,6 +7,7 @@ import { waitLabel } from '../../api/wait'
 import { isNotConfigured } from '../../api/errors'
 import { describeError } from '../../api/messages'
 import { petDescription } from '../../api/pets'
+import { PetAvatar } from '../../ui/components'
 import { useAuth } from '../../auth/session'
 import { RefreshWarning } from '../RefreshWarning'
 import { useLoad } from '../useLoad'
@@ -172,7 +173,14 @@ function QueueRow({
     <li className="row appt" data-status="CHECKED_IN">
       <span className="appt-info">
         <strong className="appt-time">{position}º</strong>
-        {item.pet && <span className="appt-pet">{item.pet.name} · {petDescription(item.pet)}</span>}
+        {item.pet && <PetAvatar species={item.pet.species} />}
+        {item.pet && (
+          <span className="appt-pet">
+            <strong className="appt-pet__name">{item.pet.name}</strong>
+            <span className="sep" aria-hidden="true"> · </span>
+            <span className="appt-pet__desc">{petDescription(item.pet)}</span>
+          </span>
+        )}
         <span className="sep" aria-hidden="true"> · </span>
         <span className="appt-who">{customer}</span>
         <span className="sep" aria-hidden="true"> · </span>

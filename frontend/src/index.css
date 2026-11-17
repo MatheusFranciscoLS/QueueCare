@@ -529,30 +529,40 @@ input[type='date'] {
   }
 }
 
-/* O FIO DO DIA (ADR 0018 v2): a hora grande, o ponto do estado e o conteúdo, ligados por um fio que é pontilhado enquanto falta e cheio
-   quando o atendimento termina. A marcação não mudou: o .appt-info vira "display: contents" e seus filhos entram direto na grade da linha. */
-.timeline {
-  --time-col: 9.5rem;
+/* O DIA e a FILA (ADR 0018 v2): linhas limpas dentro de uma folha, com a hora, o avatar do pet, o pet em destaque e as ações. A marcação das
+   linhas não mudou: o .appt-info vira "display: contents" e seus filhos entram direto na grade da linha. */
+.timeline,
+.queue-list {
   margin: 0;
+  padding: 4px 28px;
+  list-style: none;
+  background: var(--surface);
+  border: 2px solid var(--line);
+  border-radius: 18px;
+  max-width: 62rem;
 }
 
-.timeline .row {
+.timeline .row,
+.queue-list .row {
   position: relative;
   display: grid;
-  grid-template-columns: var(--time-col) 24px minmax(0, 1fr);
-  column-gap: 1rem;
+  grid-template-columns: 8.5rem 44px minmax(0, 1fr);
+  column-gap: 1.125rem;
   align-items: start;
   justify-content: stretch;
-  padding: 0 0 1.875rem;
+  padding: 1.25rem 0;
   border-bottom: 0;
-  gap: 0.5rem 1rem;
+  border-top: 1px solid var(--line);
+  gap: 0.375rem 1.125rem;
 }
 
-.timeline .row:last-child {
-  padding-bottom: 0;
+.timeline .row:first-child,
+.queue-list .row:first-child {
+  border-top: 0;
 }
 
-.timeline .appt-info {
+.timeline .appt-info,
+.queue-list .appt-info {
   display: contents;
 }
 
@@ -560,157 +570,91 @@ input[type='date'] {
   grid-column: 1;
   grid-row: 1;
   min-width: 0;
-  padding-top: 2px;
+  padding-top: 0.5rem;
   text-align: right;
-  font: 600 1.375rem/1.2 var(--font-heading);
-  letter-spacing: -0.02em;
+  font: 600 1.0625rem/1.2 var(--font-heading);
+  letter-spacing: -0.01em;
   font-variant-numeric: tabular-nums;
 }
 
-/* o ponto do estado (forma + cor; o texto do estado está no rótulo ao lado): anel, meio, cheio */
-.timeline .row::before {
-  content: '';
+.timeline .pp-avatar,
+.queue-list .pp-avatar {
   grid-column: 2;
-  grid-row: 1;
-  width: 24px;
-  height: 24px;
-  margin-top: 4px;
-  border-radius: 50%;
-  border: 3px solid var(--st-scheduled);
-  background: var(--bg);
+  grid-row: 1 / span 3;
+  align-self: start;
 }
 
-.timeline .row[data-status='CHECKED_IN']::before {
-  border-color: var(--pp-gold-mark);
-  background: linear-gradient(90deg, var(--pp-gold-mark) 50%, var(--bg) 50%);
-}
-
-.timeline .row[data-status='COMPLETED']::before {
-  border-color: var(--st-done);
-  background: var(--st-done);
-}
-
-/* a marca de verificação do concluído, sobre o ponto cheio (a hora é a única peça não posicionada: o ::after é posicionado em relação à linha) */
-.timeline .row[data-status='COMPLETED'] .appt-time::after {
-  content: '';
-  position: absolute;
-  left: calc(var(--time-col) + 1rem + 7px);
-  top: 9px;
-  width: 6px;
-  height: 11px;
-  border: solid var(--bg);
-  border-width: 0 3px 3px 0;
-  transform: rotate(40deg);
-}
-
-/* "agora": etiqueta dourada sobre uma linha dourada, entre o último atendimento que já começou e o próximo */
-.timeline .now-marker {
-  position: absolute;
-  top: -1.6rem;
-  left: 0;
-  right: 0;
-  display: grid;
-  grid-template-columns: var(--time-col) minmax(0, 1fr);
-  column-gap: 1rem;
-  align-items: center;
-  pointer-events: none;
-}
-
-.timeline .now-tag {
-  justify-self: end;
-  padding: 5px 8px;
-  border-radius: 6px;
-  background: var(--pp-gold);
-  color: var(--pp-on-gold);
-  font: 700 0.875rem/1 var(--font-heading);
-  font-variant-numeric: tabular-nums;
-}
-
-.timeline .now-line {
-  height: 3px;
-  background: var(--pp-gold-mark);
-}
-
-/* o fio: da base do ponto até o ponto seguinte */
-.timeline .row::after {
-  content: '';
-  position: absolute;
-  top: 32px;
-  bottom: 0;
-  left: calc(var(--time-col) + 1rem + 12px);
-  border-left: 3px dotted var(--field-line);
-  transform: translateX(-50%);
-}
-
-.timeline .row:last-child::after {
-  display: none;
-}
-
-.timeline .row[data-status='COMPLETED']::after {
-  border-left: 4px solid var(--st-done);
-}
-
-/* o conteúdo, na terceira coluna: pet em destaque, tutor, serviço, observações, estado, ações */
 .timeline .appt-pet,
 .timeline .appt-who,
 .timeline .appt-service,
 .timeline .appt-notes,
 .timeline .badge,
-.timeline .actions,
-.timeline .row-extra {
+.timeline .row-extra,
+.queue-list .appt-pet,
+.queue-list .appt-who,
+.queue-list .appt-service,
+.queue-list .appt-notes,
+.queue-list .badge,
+.queue-list .appt-meta {
   grid-column: 3;
   min-width: 0;
 }
 
-.timeline .appt-pet {
-  font: 700 1.375rem/1.15 var(--font-heading);
-  letter-spacing: -0.01em;
-}
-
-.timeline .appt-who {
-  font-weight: 400;
-  color: var(--muted);
-}
-
-.timeline .appt-service {
-  color: var(--muted);
-}
-
-.timeline .appt-notes {
-}
-
-.timeline .badge {
-  justify-self: start;
-  font-weight: 700;
-}
-
 .timeline .actions {
+  grid-column: 3;
+  margin-top: 0.5rem;
+}
+
+.queue-list .actions {
+  grid-column: 4;
+  grid-row: 1;
+  align-self: start;
+  justify-content: flex-end;
 }
 
 .timeline .row-extra {
+  grid-column: 3 / -1;
+  margin-top: 0.5rem;
+}
+
+.timeline .appt-pet,
+.queue-list .appt-pet {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 0.75rem;
+}
+
+.appt-pet__name {
+  font: 700 1.375rem/1.15 var(--font-heading);
+  letter-spacing: -0.015em;
+}
+
+.appt-pet__desc {
+  color: var(--muted);
+  font-size: 0.9375rem;
+  font-weight: 400;
+}
+
+.timeline .appt-pet .sep,
+.queue-list .appt-pet .sep {
+  display: none;
+}
+
+.timeline .appt-who,
+.queue-list .appt-who,
+.timeline .appt-service,
+.queue-list .appt-service,
+.queue-list .appt-meta {
+  color: var(--muted);
+  font-weight: 400;
 }
 
 /* sem pet gravado (agendamentos antigos), o tutor passa a ser o destaque */
-.timeline .row:not(:has(.appt-pet)) .appt-who {
+.timeline .row:not(:has(.appt-pet)) .appt-who,
+.queue-list .row:not(:has(.appt-pet)) .appt-who {
   font: 700 1.375rem/1.15 var(--font-heading);
   color: var(--text);
-}
-
-.appt-time {
-  font-family: var(--font-heading);
-  font-variant-numeric: tabular-nums;
-}
-
-.appt-who {
-  font-weight: 600;
-}
-
-.appt-service {
-  color: var(--muted);
-}
-
-.appt-pet {
-  font-weight: 600;
 }
 
 .appt-notes,
@@ -721,40 +665,80 @@ input[type='date'] {
   overflow-wrap: anywhere;
 }
 
-/* A FILA não usa o fio (é ordem de chegada, não sequência de horários): a posição é o número grande, sem ponto e sem linha */
-.pp .pp-summary + .timeline,
-.pp .pp-summary + .queue-list {
-  margin-top: var(--space-6);
+/* o estado: pílula com a forma (anel, meio, cheio) e o texto */
+.timeline .badge,
+.queue-list .badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  justify-self: start;
+  padding: 3px 10px 3px 8px;
+  border-radius: 999px;
+  border: 0;
+  font-size: 0.875rem;
+  font-weight: 700;
 }
 
-.queue-list {
-  margin: 0;
-  padding: 0;
-  list-style: none;
+.timeline .badge::before,
+.queue-list .badge::before {
+  content: '';
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 2.5px solid currentColor;
 }
 
-.queue-list .row {
+.timeline .badge[data-status='CHECKED_IN']::before,
+.queue-list .badge[data-status='CHECKED_IN']::before {
+  background: linear-gradient(90deg, currentColor 50%, transparent 50%);
+}
+
+.timeline .badge[data-status='COMPLETED']::before {
+  background: currentColor;
+}
+
+/* "agora": etiqueta dourada e linha dourada sobre a divisória, antes do próximo atendimento */
+.timeline .now-marker {
+  position: absolute;
+  top: -1px;
+  left: -28px;
+  right: -28px;
   display: grid;
-  grid-template-columns: 4.5rem minmax(0, 1fr);
-  column-gap: 1rem;
-  align-items: start;
-  justify-content: stretch;
-  padding: 0 0 1.875rem;
-  border-bottom: 0;
-  gap: 0.5rem 1rem;
+  grid-template-columns: calc(8.5rem + 28px) minmax(0, 1fr);
+  column-gap: 0.5rem;
+  align-items: center;
+  pointer-events: none;
 }
 
-.queue-list .appt-info {
-  display: contents;
+.timeline .now-tag {
+  justify-self: end;
+  transform: translateY(-50%);
+  padding: 5px 8px;
+  border-radius: 6px;
+  background: var(--pp-gold);
+  color: var(--pp-on-gold);
+  font: 700 0.8125rem/1 var(--font-heading);
+  font-variant-numeric: tabular-nums;
 }
 
+.timeline .now-line {
+  height: 3px;
+  margin-top: -1.5px;
+  background: var(--pp-gold-mark);
+}
+
+/* A FILA: a posição é o número grande */
 .queue-list .appt-time {
   grid-column: 1;
-  grid-row: 1 / span 5;
+  grid-row: 1;
   text-align: right;
   font: 700 2.75rem/1 var(--font-heading);
   letter-spacing: -0.03em;
   color: var(--muted);
+}
+
+.queue-list .row {
+  grid-template-columns: 4.5rem 44px minmax(0, 1fr) auto;
 }
 
 .queue-list .row:first-child .appt-time {
@@ -765,70 +749,37 @@ input[type='date'] {
   display: none;
 }
 
-.queue-list .appt-pet,
-.queue-list .appt-who,
-.queue-list .appt-service,
-.queue-list .appt-notes,
-.queue-list .badge,
-.queue-list .appt-meta,
-.queue-list .actions {
-  grid-column: 2;
-  min-width: 0;
-}
-
-.queue-list .appt-meta {
-  color: var(--muted);
-}
-
-.queue-list .appt-pet {
-  font: 700 1.375rem/1.15 var(--font-heading);
-}
-
-.queue-list .appt-who {
-  font-weight: 400;
-  color: var(--muted);
-}
-
-.queue-list .appt-service {
-  color: var(--muted);
-}
-
-.queue-list .appt-notes {
-}
-
-.queue-list .badge {
-  justify-self: start;
-  font-weight: 700;
-}
-
-.queue-list .actions {
-}
-
-.queue-list .row:not(:has(.appt-pet)) .appt-who {
-  font: 700 1.375rem/1.15 var(--font-heading);
-  color: var(--text);
-}
-
-@media (max-width: 520px) {
-  .timeline {
-    --time-col: 6.25rem;
+@media (max-width: 720px) {
+  .timeline,
+  .queue-list {
+    padding: 0 16px;
   }
 
-  .timeline .row {
-    column-gap: 0.5rem;
+  .timeline .row,
+  .queue-list .row {
+    grid-template-columns: 5.25rem 44px minmax(0, 1fr);
+    column-gap: 0.75rem;
   }
 
   .timeline .appt-time {
-    font-size: 1rem;
-  }
-
-  .queue-list .row {
-    grid-template-columns: 3rem minmax(0, 1fr);
-    column-gap: 0.75rem;
+    font-size: 0.9375rem;
   }
 
   .queue-list .appt-time {
     font-size: 2rem;
+  }
+
+  .timeline .actions,
+  .queue-list .actions {
+    grid-column: 3;
+    grid-row: auto;
+    justify-content: flex-start;
+  }
+
+  .timeline .now-marker {
+    left: -16px;
+    right: -16px;
+    grid-template-columns: calc(5.25rem + 16px) minmax(0, 1fr);
   }
 }
 
@@ -956,21 +907,53 @@ textarea {
   padding-left: 1.2rem;
 }
 
-/* A SEMANA (ADR 0018 v2): sete colunas quando a ÁREA DE CONTEÚDO tem 880 px ou mais (consulta de contêiner, não a largura da janela),
-   um fio por coluna; abaixo disso, uma seção por dia, empilhada, e o fio continua. */
+/* A SEMANA (ADR 0018 v2): GRADE DE HORÁRIOS quando a ÁREA DE CONTEÚDO tem 880 px ou mais (consulta de contêiner, não a largura da janela);
+   abaixo disso, uma seção por dia, empilhada, com os mesmos dados. */
 .pp-content:has(.week) {
   max-width: none;
 }
 
 .week {
   container-type: inline-size;
+  --h: 68px;
   margin-top: var(--space-4);
 }
 
 .week-cols {
   display: grid;
-  grid-template-columns: repeat(7, minmax(0, 1fr));
-  gap: 0 18px;
+  grid-template-columns: 56px repeat(7, minmax(0, 1fr));
+  background: var(--surface);
+  border: 2px solid var(--line);
+  border-radius: 18px;
+  overflow: hidden;
+}
+
+.week-hours__spacer {
+  display: block;
+  height: 60px;
+  border-bottom: 2px solid var(--line);
+}
+
+.week-hours__axis {
+  display: grid;
+  grid-template-rows: repeat(var(--rows), var(--h));
+}
+
+.week-hours__axis span {
+  padding-right: 8px;
+  color: var(--muted);
+  font-size: 0.75rem;
+  text-align: right;
+  transform: translateY(-0.5rem);
+}
+
+.week-hours__axis span:first-child {
+  visibility: hidden;
+}
+
+.week-day {
+  min-width: 0;
+  border-left: 1px solid var(--line);
 }
 
 .week-day-title {
@@ -978,24 +961,25 @@ textarea {
   flex-wrap: wrap;
   align-items: center;
   gap: 4px 8px;
+  height: 60px;
   margin: 0;
-  font-size: 1.125rem;
+  padding: 0 8px;
+  border-bottom: 2px solid var(--line);
+  font-size: 1rem;
 }
 
 .week-day-open {
   display: inline-flex;
-  align-items: baseline;
+  align-items: center;
   gap: 0.375rem;
   min-height: 44px;
   min-width: 44px;
-  padding: 0 4px;
-  margin-left: -4px;
+  padding: 0 2px;
   border: 0;
   background: transparent;
   color: var(--text);
-  font: 700 1.125rem/1 var(--font-heading);
+  font: 700 1rem/1 var(--font-heading);
   cursor: pointer;
-  align-items: center;
 }
 
 .week-day-open:hover {
@@ -1007,123 +991,286 @@ textarea {
   font-weight: 500;
 }
 
+.week-day[data-today='true'] .week-day-number {
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--text);
+  color: var(--bg);
+  font-weight: 700;
+}
+
 .week-today {
   padding: 4px 6px;
   border-radius: 5px;
   background: var(--pp-gold);
   color: var(--pp-on-gold);
-  font: 700 0.75rem/1 var(--font-heading);
+  font: 700 0.6875rem/1 var(--font-heading);
 }
 
 .week-empty {
-  margin: var(--space-2) 0 0;
-  color: var(--muted);
-  font-size: 0.9375rem;
+  position: absolute;
+  margin: 0;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
 }
 
 .week-slots {
-  list-style: none;
-  margin: var(--space-3) 0 0;
-  padding: 0;
-}
-
-.week-slot {
   position: relative;
-  display: grid;
-  grid-template-columns: 20px minmax(0, 1fr);
-  column-gap: 0.75rem;
-  align-items: baseline;
-  padding: 0 0 1rem;
-  font-size: 0.9375rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  height: calc(var(--rows) * var(--h));
+  background: repeating-linear-gradient(to bottom, transparent 0, transparent calc(var(--h) - 1px), var(--line) calc(var(--h) - 1px), var(--line) var(--h));
 }
 
-.week-slot:last-child {
-  padding-bottom: 0;
-}
-
-.week-slot .pp-dot {
-  grid-row: 1 / span 4;
-  width: 20px;
-  height: 20px;
-  margin-top: 2px;
-  align-self: start;
-}
-
-.week-slot .pp-dot[data-state='done']::after {
-  left: 4px;
-  top: 1px;
-  width: 5px;
-  height: 9px;
-}
-
-.week-slot .pp-dot[data-state='cancelled']::after {
-  left: 2px;
-  top: 6px;
-  width: 10px;
-}
-
-/* o fio da coluna: do ponto até o seguinte; cheio quando o atendimento terminou */
-.week-slot::after {
-  content: '';
+.week-block {
   position: absolute;
-  top: 26px;
-  bottom: 0;
-  left: 10px;
-  border-left: 3px dotted var(--field-line);
-  transform: translateX(-50%);
+  left: 5px;
+  right: 5px;
+  top: calc(var(--start) * var(--h) / 60);
+  height: calc(var(--dur) * var(--h) / 60 - 3px);
 }
 
-.week-slot:last-child::after {
+.week-block__open {
+  display: block;
+  width: 100%;
+  height: 100%;
+  padding: 6px 8px;
+  overflow: hidden;
+  border: 1.5px solid var(--st-scheduled);
+  border-radius: 9px;
+  background: var(--st-scheduled-bg);
+  color: var(--st-scheduled);
+  font: inherit;
+  font-size: 0.78125rem;
+  line-height: 1.25;
+  text-align: left;
+  cursor: pointer;
+}
+
+.week-block[data-state='waiting'] .week-block__open {
+  border-color: var(--pp-gold-mark);
+  background: var(--st-waiting-bg);
+  color: var(--st-waiting);
+}
+
+.week-block[data-state='done'] .week-block__open {
+  border-color: var(--st-done);
+  background: var(--st-done-bg);
+  color: var(--st-done);
+}
+
+.week-block:focus-within {
+  z-index: 4;
+}
+
+.week-block__open:hover {
+  filter: brightness(0.97);
+}
+
+.pp .week-block__open .pp-avatar,
+.week-block__meta {
   display: none;
 }
 
-.week-slot[data-state='done']::after {
-  border-left: 4px solid var(--st-done);
+.week-block__time {
+  display: block;
+  font-size: 0.71875rem;
+  font-weight: 600;
+  opacity: 0.85;
 }
 
-.week-slot > :not(.pp-dot) {
-  grid-column: 2;
-  min-width: 0;
+.week-block__name {
+  display: block;
+  overflow: hidden;
+  font: 700 0.9375rem/1.15 var(--font-heading);
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.week-time {
-  font: 600 1.125rem/1.2 var(--font-heading);
-  font-variant-numeric: tabular-nums;
+.week-block__service {
+  display: block;
+  overflow: hidden;
+  opacity: 0.85;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.week-who {
-  font-weight: 700;
-  overflow-wrap: anywhere;
+/* o estado nos blocos da grade: a forma pequena no canto (o texto fica para leitores de tela) */
+.week-block__state {
+  position: absolute;
+  top: 7px;
+  right: 7px;
+  display: flex;
 }
 
-.week-meta,
-.week-state {
-  color: var(--muted);
-  font-size: 0.8125rem;
+.pp .week-block__state .pp-dot {
+  width: 12px;
+  height: 12px;
+  border-width: 2.5px;
+  background: transparent;
 }
 
+.pp .week-block__state .pp-dot[data-state='waiting'] {
+  background: linear-gradient(90deg, var(--pp-gold-mark) 50%, transparent 50%);
+}
+
+.pp .week-block__state .pp-dot[data-state='done'] {
+  background: var(--pp-done);
+}
+
+.pp .week-block__state .pp-dot[data-state='done']::after {
+  display: none;
+}
+
+.week-block__state-text {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+
+/* um bloco curto (45 min) mostra só o horário e o nome; o serviço some */
+.week-block[style*='--dur: 45'] .week-block__service,
+.week-block[style*='--dur: 30'] .week-block__service,
+.week-block[style*='--dur: 15'] .week-block__service {
+  display: none;
+}
+
+.week-now {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(var(--start) * var(--h) / 60);
+  z-index: 3;
+  border-top: 3px solid var(--pp-gold-mark);
+  pointer-events: none;
+}
+
+.week-day[data-today='true'] {
+  background: color-mix(in srgb, var(--pp-gold) 7%, var(--surface));
+}
+
+/* abaixo de 880 px de área: uma seção por dia, com os mesmos dados em lista */
 @container (max-width: 879px) {
   .week-cols {
-    grid-template-columns: minmax(0, 1fr);
-    gap: 1.75rem 0;
+    display: block;
+    border-radius: 18px;
+  }
+
+  .week-hours {
+    display: none;
   }
 
   .week-day {
     display: grid;
-    grid-template-columns: 9rem minmax(0, 1fr);
-    column-gap: 1.5rem;
-    align-items: start;
+    grid-template-columns: 8rem minmax(0, 1fr);
+    column-gap: 1rem;
+    padding: 1rem 1.25rem;
+    border-left: 0;
+    border-top: 1px solid var(--line);
   }
 
-  .week-day > .week-empty,
-  .week-day > .week-slots {
-    grid-column: 2;
-    margin-top: 0;
+  .week-day:first-of-type {
+    border-top: 0;
   }
 
   .week-day-title {
     grid-column: 1;
     align-items: flex-start;
+    height: auto;
+    padding: 0;
+    border-bottom: 0;
+  }
+
+  .week-slots {
+    grid-column: 2;
+    height: auto;
+    background: none;
+    display: grid;
+    gap: 0.625rem;
+  }
+
+  .week-empty {
+    position: static;
+    grid-column: 2;
+    width: auto;
+    height: auto;
+    overflow: visible;
+    clip-path: none;
+    color: var(--muted);
+  }
+
+  .week-now {
+    display: none;
+  }
+
+  .week-block {
+    position: static;
+    height: auto;
+  }
+
+  .week-block__open {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    column-gap: 0.75rem;
+    align-items: center;
+    height: auto;
+    padding: 0.625rem 0.875rem;
+    font-size: 0.875rem;
+  }
+
+  .pp .week-block__open .pp-avatar {
+    display: grid;
+    grid-row: 1 / span 3;
+    background: var(--surface);
+  }
+
+  .week-block__time {
+    grid-column: 2;
+  }
+
+  .week-block__name {
+    grid-column: 2;
+    font-size: 1.0625rem;
+  }
+
+  .week-block__service,
+  .week-block__meta {
+    display: block;
+    grid-column: 2;
+  }
+
+  .week-block[style*='--dur: 45'] .week-block__service {
+    display: block;
+  }
+
+  .week-block__state {
+    position: static;
+    grid-column: 3;
+    grid-row: 1 / span 3;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    font-weight: 700;
+  }
+
+  .week-block__state-text {
+    position: static;
+    width: auto;
+    height: auto;
+    overflow: visible;
+    clip-path: none;
+  }
+}
+
+@container (max-width: 879px) {
+  .pp .week-block__state .pp-dot {
+    width: 18px;
+    height: 18px;
   }
 }
 
@@ -1132,9 +1279,22 @@ textarea {
     grid-template-columns: minmax(0, 1fr);
   }
 
-  .week-day > .week-empty,
-  .week-day > .week-slots {
+  .week-slots,
+  .week-empty {
     grid-column: 1;
-    margin-top: var(--space-2);
+    margin-top: 0.5rem;
   }
+}
+
+/* barra de ferramentas da agenda: visão, navegação e data em uma faixa só */
+.agenda-tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-4);
+  margin: var(--space-3) 0 var(--space-2);
+}
+
+.agenda-tools .daybar {
+  margin-bottom: 0;
 }

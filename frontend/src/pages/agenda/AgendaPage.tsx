@@ -7,7 +7,7 @@ import { isNotConfigured } from '../../api/errors'
 import { describeError } from '../../api/messages'
 import { petDescription } from '../../api/pets'
 import { useAuth } from '../../auth/session'
-import { Segmented, Summary } from '../../ui/components'
+import { PetAvatar, Segmented, Summary } from '../../ui/components'
 import { RefreshWarning } from '../RefreshWarning'
 import { useLoad } from '../useLoad'
 import { useSingleFlight } from '../useSingleFlight'
@@ -61,6 +61,7 @@ function Day({ workplace }: { workplace: Workplace }) {
       <p className="hint">
         {workplace.businessName} · horários no fuso {workplace.timeZone}
       </p>
+      <div className="agenda-tools">
       <Segmented label="Visão da agenda" value={view} options={[{ value: 'day', label: 'Dia' }, { value: 'week', label: 'Semana' }]} onChange={setView} />
       <div className="daybar">
         <button type="button" className="button secondary" onClick={() => setDate((d) => addDays(d, -step))}>
@@ -82,6 +83,7 @@ function Day({ workplace }: { workplace: Workplace }) {
             }}
           />
         </label>
+      </div>
       </div>
       {week ? (
         <>
@@ -367,7 +369,14 @@ function AppointmentRow({
         <strong className="appt-time">
           {timeIn(item.startsAt, timeZone)}–{timeIn(item.endsAt, timeZone)}
         </strong>
-        {item.pet && <span className="appt-pet">{item.pet.name} · {petDescription(item.pet)}</span>}
+        {item.pet && <PetAvatar species={item.pet.species} />}
+        {item.pet && (
+          <span className="appt-pet">
+            <strong className="appt-pet__name">{item.pet.name}</strong>
+            <span className="sep" aria-hidden="true"> · </span>
+            <span className="appt-pet__desc">{petDescription(item.pet)}</span>
+          </span>
+        )}
         <span className="appt-who">{customer}</span>
         <span className="appt-service">{item.serviceName ?? 'Serviço'}</span>
         {item.pet?.notes && <span className="appt-notes">Observações do tutor: {item.pet.notes}</span>}

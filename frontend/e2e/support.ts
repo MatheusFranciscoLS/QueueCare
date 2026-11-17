@@ -22,6 +22,8 @@ export interface Tela {
   menu?: string
   /** Link da conta (fora do menu), como "Trocar senha": barra lateral no computador, gaveta no celular. */
   link?: string
+  /** Botões a apertar depois de chegar na tela (ex.: "Semana" na agenda). */
+  depois?: string[]
   /** Título (h1) da tela: só existe quando ela terminou de carregar (evita fotografar o "Carregando…" ou a tela anterior). */
   pronto: string | RegExp
 }
@@ -39,6 +41,7 @@ export const TELAS: Tela[] = [
   { id: 'cliente-novo-pets-vazio', perfil: 'clienteNovo', path: '/pets', menu: 'Meus pets', pronto: 'Meus pets' },
   { id: 'prestador-inicio', perfil: 'prestador', path: '/', pronto: /Olá, Helena/ },
   { id: 'prestador-agenda', perfil: 'prestador', path: '/agenda', menu: 'Agenda', pronto: 'Agenda' },
+  { id: 'prestador-semana', perfil: 'prestador', path: '/agenda', menu: 'Agenda', depois: ['Semana'], pronto: 'Agenda' },
   { id: 'prestador-fila', perfil: 'prestador', path: '/fila', menu: 'Fila', pronto: 'Fila' },
   { id: 'prestador-servicos', perfil: 'prestador', path: '/servicos', menu: 'Serviços', pronto: 'Serviços' },
   { id: 'prestador-expediente', perfil: 'prestador', path: '/expediente', menu: 'Expediente', pronto: 'Expediente' },
@@ -118,6 +121,7 @@ export async function abrirTela(page: Page, tela: Tela, tema: Tema, viewport: { 
     if (tela.menu) await irPeloMenu(page, tela.menu, viewport.width)
     else if (tela.link) await irPeloLink(page, tela.link, viewport.width)
     else if (tela.path !== '/') await irPara(page, tela.path)
+    for (const botao of tela.depois ?? []) await page.getByRole('button', { name: botao, exact: true }).click()
   }
   await page.getByRole('heading', { level: 1, name: tela.pronto, exact: typeof tela.pronto === 'string' }).first().waitFor({ timeout: 30_000 })
   // O conteúdo carregado depois do título (listas, horários) também precisa ter chegado: espera o fim das requisições.
