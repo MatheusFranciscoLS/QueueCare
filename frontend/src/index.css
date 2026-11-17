@@ -693,54 +693,6 @@ textarea {
   margin-top: 0;
 }
 
-.stats {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2) var(--space-8);
-  margin: var(--space-3) 0;
-}
-
-.stats div {
-  display: grid;
-  grid-template-columns: auto auto;
-  align-items: center;
-  column-gap: var(--space-3);
-}
-
-.stats div::before {
-  content: '';
-  grid-row: 1 / span 2;
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  border: 3px solid var(--st-scheduled);
-  background: var(--bg);
-}
-
-.stats [data-status='CHECKED_IN']::before {
-  border-color: var(--pp-gold-mark);
-  background: linear-gradient(90deg, var(--pp-gold-mark) 50%, var(--bg) 50%);
-}
-
-.stats [data-status='COMPLETED']::before {
-  border-color: var(--st-done);
-  background: var(--st-done);
-}
-
-.stats dt {
-  font-size: 0.875rem;
-  color: var(--muted);
-}
-
-.stats dd {
-  margin: 0;
-  font-family: var(--font-heading);
-  font-size: 2rem;
-  font-weight: 700;
-  line-height: 1.1;
-  font-variant-numeric: tabular-nums;
-}
-
 .next {
   margin: 0;
 }

@@ -6,6 +6,7 @@ import { summarize } from '../api/summary'
 import { isNotConfigured } from '../api/errors'
 import { ApiError } from '../api/client'
 import { useAuth } from '../auth/session'
+import { Summary } from '../ui/components'
 import { Loading } from './Loading'
 import { useLoad } from './useLoad'
 
@@ -65,20 +66,16 @@ export function TodaySummary() {
     <section className="today" aria-labelledby="today-title">
       <h2 id="today-title">Hoje, {longDate(data.date)}</h2>
       <p className="hint">{data.businessName}</p>
-      <dl className="stats">
-        <div data-status="SCHEDULED">
-          <dt>Agendados</dt>
-          <dd>{scheduled}</dd>
-        </div>
-        <div data-status="CHECKED_IN">
-          <dt>Na fila</dt>
-          <dd>{data.queue.length}</dd>
-        </div>
-        <div data-status="COMPLETED">
-          <dt>Concluídos</dt>
-          <dd>{completed}</dd>
-        </div>
-      </dl>
+      <Summary>
+        <strong>
+          {scheduled} {scheduled === 1 ? 'agendado' : 'agendados'}
+        </strong>
+        , <strong>{data.queue.length} na fila</strong> e{' '}
+        <strong>
+          {completed} {completed === 1 ? 'concluído' : 'concluídos'}
+        </strong>
+        .
+      </Summary>
       <p className="next">
         {next ? (
           <>
