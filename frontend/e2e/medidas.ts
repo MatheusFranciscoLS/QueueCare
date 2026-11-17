@@ -125,6 +125,12 @@ export async function checarFoco(page: Page): Promise<{ sem: string[]; total: nu
     const com = (await page.screenshot({ clip, animations: 'disabled' })).toString('base64')
     await page.evaluate(() => document.getElementById('__sorvedouro')?.focus())
     await page.waitForTimeout(120)
+    // Elemento que SÓ APARECE ao receber o foco (atalho para o conteúdo): fora da janela sem foco e dentro dela com foco. O aparecimento é o indicador.
+    const apareceAoFoco = await page.evaluate(`(() => { const r = window.__alvoFoco.getBoundingClientRect(); return r.bottom <= 0 || r.right <= 0 || r.top >= innerHeight || r.left >= innerWidth })()`)
+    if (apareceAoFoco) {
+      await page.evaluate(() => (window as unknown as { __alvoFoco?: HTMLElement }).__alvoFoco?.focus())
+      continue
+    }
     const sem64 = (await page.screenshot({ clip, animations: 'disabled' })).toString('base64')
     const medido = {
       top: caixa.y - MARGEM_FOCO >= 0,
