@@ -125,34 +125,36 @@ body {
 }
 
 .card {
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: var(--radius-md);
-  --card-pad: var(--space-6);
-  padding: var(--card-pad);
-  box-shadow: var(--shadow-card);
+  background: transparent;
+  border: 0;
+  padding: 0;
+  box-shadow: none;
 }
 
 .card.narrow {
   max-width: 26rem;
-  margin: var(--space-6) auto 0;
+  margin: 0;
 }
 
 h1,
 h2 {
   font-family: var(--font-heading);
-  letter-spacing: -0.015em;
+  letter-spacing: -0.02em;
 }
 
 h1 {
   margin: 0 0 var(--space-4);
-  font-size: 1.65rem;
-  line-height: 1.2;
+  font-size: clamp(1.9rem, 5vw, 2.75rem);
+  font-weight: 700;
+  line-height: 1.05;
+  text-wrap: balance;
 }
 
 h2 {
-  font-size: 1.1rem;
-  margin: 1.25rem 0 var(--space-2);
+  font-size: 1.375rem;
+  font-weight: 700;
+  line-height: 1.15;
+  margin: 1.75rem 0 var(--space-3);
 }
 
 .field {
@@ -169,13 +171,13 @@ input,
 select,
 textarea {
   width: 100%;
-  min-height: var(--target);
-  padding: 0.6rem 0.75rem;
+  min-height: 48px;
+  padding: 0.6rem 0.875rem;
   font: inherit;
   color: var(--text);
-  background: var(--surface-2);
-  border: 1px solid var(--field-line);
-  border-radius: var(--radius-sm);
+  background: var(--surface);
+  border: 2px solid var(--field-line);
+  border-radius: 10px;
 }
 
 /* caixas e opções de marcar mantêm o desenho nativo (só ganham a cor de destaque) */
@@ -209,36 +211,58 @@ textarea[aria-invalid='true'] {
 
 .error {
   margin: var(--space-1) 0 var(--space-3);
-  font-size: 0.9rem;
+  font-size: 0.9375rem;
+  font-weight: 600;
   color: var(--danger);
+}
+
+.error:not([hidden]) {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+}
+
+.error:not([hidden])::before {
+  content: '!';
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--danger);
+  color: var(--bg);
+  font: 700 0.8125rem/1 var(--font-heading);
 }
 
 .notice {
   margin: 0 0 var(--space-4);
-  padding: 0.65rem 0.85rem;
-  background: var(--notice-bg);
-  border-radius: var(--radius-sm);
+  padding: 0.75rem 1rem;
+  background: var(--surface);
+  border: 2px solid var(--field-line);
+  border-radius: 10px;
 }
 
 .notice.warning {
-  background: var(--danger-soft);
-  border: 1px solid var(--danger);
+  background: var(--surface);
+  border-color: var(--pp-gold-mark);
 }
 
 .button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: var(--target);
-  padding: 0.55rem 1.1rem;
+  min-height: 44px;
+  min-width: 44px;
+  padding: 0 1.125rem;
   font: inherit;
   font-weight: 600;
+  line-height: 1;
   color: var(--accent-text);
   background: var(--accent);
-  border: 1px solid var(--accent);
-  border-radius: var(--radius-sm);
+  border: 2px solid var(--accent);
+  border-radius: 10px;
   cursor: pointer;
-  transition: background-color 0.12s, border-color 0.12s;
 }
 
 .button:hover:not(:disabled) {
@@ -249,12 +273,12 @@ textarea[aria-invalid='true'] {
 .button.secondary {
   color: var(--text);
   background: transparent;
-  border-color: var(--line);
+  border-color: var(--field-line);
 }
 
 .button.secondary:hover:not(:disabled) {
-  background: var(--surface-2);
-  border-color: var(--muted);
+  background: transparent;
+  border-color: var(--text);
 }
 
 .button.danger {
@@ -276,6 +300,16 @@ a {
 .aside {
   margin: var(--space-4) 0 0;
   color: var(--muted);
+}
+
+/* links de texto soltos (fora do menu): área de toque de 44 px */
+.aside a,
+.next a,
+.shortcuts a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  min-width: 44px;
 }
 
 .rows {
@@ -644,11 +678,7 @@ textarea {
   }
 }
 
-/* entrada (login e cadastro) */
-.card.narrow {
-  border-top: 4px solid var(--accent);
-}
-
+/* entrada (login e cadastro): sem moldura, coluna estreita */
 .lead {
   margin: calc(var(--space-2) * -1) 0 var(--space-4);
   color: var(--muted);
@@ -663,75 +693,33 @@ textarea {
   margin-top: 0;
 }
 
-.stats {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: var(--space-3);
-  margin: var(--space-3) 0;
-}
-
-.stats div {
-  padding: var(--space-3) var(--space-4);
-  background: var(--surface-2);
-  border: 1px solid var(--line);
-  border-left: 4px solid var(--muted);
-  border-radius: var(--radius-sm);
-}
-
-.stats dt {
-  font-size: 0.85rem;
-  color: var(--muted);
-}
-
-.stats dd {
-  margin: 0;
-  font-family: var(--font-heading);
-  font-size: 1.75rem;
-  font-weight: 800;
-  line-height: 1.2;
-  font-variant-numeric: tabular-nums;
-}
-
-.stats [data-status='SCHEDULED'] {
-  border-left-color: var(--st-scheduled);
-}
-
-.stats [data-status='CHECKED_IN'] {
-  border-left-color: var(--st-waiting);
-}
-
-.stats [data-status='COMPLETED'] {
-  border-left-color: var(--st-done);
-}
-
 .next {
   margin: 0;
 }
 
 .shortcuts {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
-  gap: var(--space-3);
+  gap: 0;
   padding: 0;
   margin: 0 0 var(--space-4);
+  max-width: 38rem;
   list-style: none;
 }
 
 .shortcuts li {
-  padding: var(--space-3) var(--space-4);
-  background: var(--surface-2);
-  border: 1px solid var(--line);
-  border-radius: var(--radius-sm);
+  padding: var(--space-3) 0;
+  border-top: 3px dotted var(--field-line);
 }
 
 .shortcuts a {
+  font-family: var(--font-heading);
+  font-size: 1.125rem;
   font-weight: 700;
 }
 
 .shortcuts span {
   display: block;
   color: var(--muted);
-  font-size: 0.9rem;
 }
 
 /* Movimento reduzido: fica no FIM do arquivo para vencer as regras acima. Os pontos de carregamento ficam parados

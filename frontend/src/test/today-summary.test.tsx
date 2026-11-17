@@ -63,9 +63,7 @@ describe('resumo do dia na tela inicial', () => {
       'GET /api/agenda/queue': () => json(200, [{ position: 1, id: 'q-1', startsAt: '', endsAt: '', serviceId: 's', serviceName: 'x', customerId: 'c', customerName: 'Y', checkedInAt: '2026-11-14T12:00:00Z' }]),
     })
     const summary = await screen.findByRole('region', { name: /Hoje,/ })
-    expect(within(summary).getByText('Agendados').nextSibling).toHaveTextContent('1')
-    expect(within(summary).getByText('Na fila').nextSibling).toHaveTextContent('1')
-    expect(within(summary).getByText('Concluídos').nextSibling).toHaveTextContent('1')
+    expect(summary).toHaveTextContent('1 agendado, 1 na fila e 1 concluído.')
     expect(summary).toHaveTextContent('Próximo:')
     expect(summary).toHaveTextContent('João Pereira')
   })
@@ -106,7 +104,7 @@ describe('resumo do dia na tela inicial', () => {
       'GET /api/agenda/queue': () => json(200, []),
     })
     const summary = await screen.findByRole('region', { name: /Hoje,/ })
-    expect(within(summary).getByText('Agendados').nextSibling).toHaveTextContent('1')
+    expect(summary).toHaveTextContent('1 agendado, 0 na fila e 0 concluídos.')
   })
 
   it('com a tela aberta, quando o dia do negócio vira (fuso do negócio, não do aparelho) o resumo é refeito para o dia novo', async () => {

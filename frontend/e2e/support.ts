@@ -20,6 +20,8 @@ export interface Tela {
   path: string
   /** Nome do item do menu que leva à tela (a navegação é pelo menu: recarregar a página perderia o token, que fica só em memória). */
   menu?: string
+  /** Link da conta (fora do menu), como "Trocar senha": barra lateral no computador, gaveta no celular. */
+  link?: string
   /** Título (h1) da tela: só existe quando ela terminou de carregar (evita fotografar o "Carregando…" ou a tela anterior). */
   pronto: string | RegExp
 }
@@ -27,8 +29,10 @@ export interface Tela {
 export const TELAS: Tela[] = [
   { id: 'ui-demo', perfil: 'publica', path: '/__ui', pronto: 'Fundação visual' },
   { id: 'entrar', perfil: 'publica', path: '/entrar', pronto: 'Entrar' },
+  { id: 'nao-encontrada', perfil: 'publica', path: '/nao-existe', pronto: 'Página não encontrada' },
   { id: 'cadastro', perfil: 'publica', path: '/cadastro', pronto: 'Criar conta de cliente' },
   { id: 'cliente-inicio', perfil: 'cliente', path: '/', pronto: /Olá, Marina/ },
+  { id: 'trocar-senha', perfil: 'cliente', path: '/trocar-senha', link: 'Trocar senha', pronto: 'Trocar senha' },
   { id: 'cliente-agendar', perfil: 'cliente', path: '/agendar', menu: 'Agendar', pronto: 'Agendar' },
   { id: 'cliente-meus-agendamentos', perfil: 'cliente', path: '/meus-agendamentos', menu: 'Meus agendamentos', pronto: 'Meus agendamentos' },
   { id: 'cliente-pets', perfil: 'cliente', path: '/pets', menu: 'Meus pets', pronto: 'Meus pets' },
@@ -93,6 +97,16 @@ export async function irPeloMenu(page: Page, nome: string, largura: number): Pro
   }
 }
 
+/** Vai a um link da conta (fora do menu): barra lateral no computador, gaveta no celular. */
+export async function irPeloLink(page: Page, nome: string, largura: number): Promise<void> {
+  if (largura <= 900) {
+    await page.getByRole('button', { name: 'Menu' }).click()
+    await page.getByRole('dialog', { name: 'Menu' }).getByRole('link', { name: nome, exact: true }).click()
+  } else {
+    await page.getByRole('link', { name: nome, exact: true }).first().click()
+  }
+}
+
 /** Abre a tela como o perfil dela (entra se preciso), com tema e tamanho de janela, e espera o conteúdo aparecer. */
 export async function abrirTela(page: Page, tela: Tela, tema: Tema, viewport: { width: number; height: number }): Promise<void> {
   await page.setViewportSize(viewport)
@@ -102,6 +116,7 @@ export async function abrirTela(page: Page, tela: Tela, tema: Tema, viewport: { 
   } else {
     await entrar(page, tela.perfil)
     if (tela.menu) await irPeloMenu(page, tela.menu, viewport.width)
+    else if (tela.link) await irPeloLink(page, tela.link, viewport.width)
     else if (tela.path !== '/') await irPara(page, tela.path)
   }
   await page.getByRole('heading', { level: 1, name: tela.pronto, exact: typeof tela.pronto === 'string' }).first().waitFor({ timeout: 30_000 })

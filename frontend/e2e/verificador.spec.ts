@@ -68,6 +68,19 @@ test.describe('foco visível, medido pelos pixels', () => {
     expect(r.sem[0]).toContain('de 4 lados')
   })
 
+  test('elemento que só aparece ao receber o foco (atalho) aprova', async ({ page }) => {
+    await page.setContent(
+      base(
+        `<a id="atalho" href="#fim" style="position:absolute;left:8px;top:-80px;padding:12px 16px;background:#14202b;color:#fff">Pular para o conteúdo</a>
+         <button id="depois" style="margin-top:200px">Botão comum</button>`,
+        `a:focus{top:8px!important} button{padding:10px 16px;border:1px solid #888;background:#eee} button:focus{outline:3px solid #0b57d0;outline-offset:2px}`,
+      ),
+    )
+    const r = await checarFoco(page)
+    expect(r.total).toBe(2)
+    expect(r.sem).toEqual([])
+  })
+
   test('campo de data: anel aprova, ausência reprova, e todos os pedaços do campo contam como um só elemento', async ({ page }) => {
     await page.setContent(
       base(

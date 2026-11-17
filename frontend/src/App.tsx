@@ -1,5 +1,5 @@
 import { lazy, Suspense } from 'react'
-import { Route, Routes } from 'react-router-dom'
+import { Link, Route, Routes } from 'react-router-dom'
 import { PublicOnly, RequireAuth } from './auth/guards'
 import { RequireRole } from './auth/RequireRole'
 import { ChangePasswordPage } from './pages/ChangePasswordPage'
@@ -73,6 +73,10 @@ function NotFound() {
   return (
     <section className="card narrow">
       <h1>Página não encontrada</h1>
+      <p className="lead">O endereço não existe ou foi movido.</p>
+      <Link to="/" className="button">
+        Ir para o início
+      </Link>
     </section>
   )
 }
