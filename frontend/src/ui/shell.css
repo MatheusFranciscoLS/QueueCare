@@ -175,8 +175,11 @@
   min-width: 0;
   padding: 36px 0 64px;
 }
-.pp-main:focus {
-  outline: none;
+/* destino do atalho "Pular para o conteúdo": o foco precisa ser visível (anel por dentro da área) */
+.pp-main:focus-visible {
+  outline: 3px solid var(--pp-focus);
+  outline-offset: -3px;
+  border-radius: 6px;
 }
 .pp-content {
   max-width: 48rem;

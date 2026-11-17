@@ -10,13 +10,14 @@ export const SITE_NAME = 'Pelo & Ponto'
  */
 export function useRouteFocus(main: RefObject<HTMLElement | null>): void {
   const { pathname } = useLocation()
-  const firstRun = useRef(true)
+  // Endereço da última execução: uma troca REAL de rota muda o endereço; o ciclo extra do StrictMode repete o mesmo e não conta.
+  const lastPath = useRef<string | null>(null)
 
   useEffect(() => {
     const area = main.current
     if (!area) return
-    const moveFocus = !firstRun.current
-    firstRun.current = false
+    const moveFocus = lastPath.current !== null && lastPath.current !== pathname
+    lastPath.current = pathname
 
     const apply = (): boolean => {
       const heading = area.querySelector('h1')

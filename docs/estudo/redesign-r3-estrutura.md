@@ -17,3 +17,8 @@ Parte do ADR 0018 v2. A partir deste PR o produto **muda de cara**: a casca de t
 
 ## Limite honesto
 No celular o foco da gaveta é "contido" no sentido do documento (dentro dela ou fora, na barra do navegador): o navegador leva o Tab seguinte à barra de endereço e de volta, nunca ao conteúdo por trás.
+
+## Revisão do ChatGPT (2 MEDIUM, 1 LOW) e o que mudou
+1. **Foco na primeira carga em StrictMode:** o `useRouteFocus` usava um booleano que o ciclo extra do StrictMode invertia. Agora compara o **endereço da última execução**: só uma troca real de rota move o foco. Teste em StrictMode: na primeira carga o título "Entrar" não recebe o foco; ao entrar, o título da tela nova recebe. Mutante (sempre mover) é morto.
+2. **Tema com estados divergentes entre a barra lateral e a gaveta:** a fonte da verdade passou a ser o atributo `data-theme` do `<html>`; todos os botões leem dele (`useSyncExternalStore` + `MutationObserver`). Teste: mudar na gaveta atualiza a barra e o inverso. O `main.tsx` também aplica a preferência salva antes de renderizar (caso o script em linha falhe). Mutante (botão com estado local) é morto.
+3. **Destino do atalho sem indicador de foco (LOW):** o `main` agora mostra anel de 3 px por dentro quando recebe o foco (`:focus-visible`).

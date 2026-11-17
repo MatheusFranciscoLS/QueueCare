@@ -1,6 +1,10 @@
-import { act, screen, waitFor, within } from '@testing-library/react'
+import { act, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { StrictMode } from 'react'
+import { MemoryRouter } from 'react-router-dom'
 import { beforeAll, describe, expect, it } from 'vitest'
+import { App } from '../App'
+import { AuthProvider } from '../auth/session'
 import { navigationFor } from '../pages/navigation'
 import { json, mockApi, PASSWORD, renderWithHarness, token, USER } from './helpers'
 
@@ -71,6 +75,56 @@ describe('casca: atalho, marcos, título e foco por rota', () => {
     expect(screen.queryByRole('button', { name: 'Menu' })).not.toBeInTheDocument()
     expect(screen.queryByRole('link', { name: 'Trocar senha' })).not.toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Sair' })).toBeInTheDocument()
+  })
+})
+
+describe('foco por rota em StrictMode (o React repete o efeito em desenvolvimento)', () => {
+  it('na primeira carga o foco NÃO vai para o título; ao entrar (troca real de rota), vai', async () => {
+    mockApi({ 'POST /api/auth/login': () => token(), 'GET /api/me': () => json(200, { ...USER, role: 'CUSTOMER', name: 'Maria Souza' }) })
+    const user = userEvent.setup()
+    render(
+      <StrictMode>
+        <MemoryRouter initialEntries={['/entrar']}>
+          <AuthProvider>
+            <App />
+          </AuthProvider>
+        </MemoryRouter>
+      </StrictMode>,
+    )
+    const entrar = await screen.findByRole('heading', { name: 'Entrar' })
+    expect(document.title).toBe('Entrar · Pelo & Ponto')
+    expect(entrar).not.toHaveFocus()
+    expect(document.body).toHaveFocus()
+
+    await user.type(screen.getByLabelText('E-mail'), 'x@exemplo.test')
+    await user.type(screen.getByLabelText('Senha'), PASSWORD)
+    await user.click(screen.getByRole('button', { name: 'Entrar' }))
+    const inicio = await screen.findByRole('heading', { name: 'Olá, Maria Souza' })
+    await waitFor(() => expect(inicio).toHaveFocus())
+  })
+})
+
+describe('tema compartilhado entre a barra lateral e a gaveta', () => {
+  it('mudar o tema na gaveta atualiza também o botão da barra lateral, e o contrário', async () => {
+    const { user } = await loginAs('CUSTOMER')
+    await screen.findByRole('heading', { name: 'Olá, Maria Souza' })
+    const lateral = () => screen.getAllByRole('button', { name: /^Tema:/ })[0]
+    expect(lateral()).toHaveTextContent('Tema: sistema')
+
+    await user.click(screen.getByRole('button', { name: 'Menu' }))
+    const gaveta = screen.getByRole('dialog', { name: 'Menu' })
+    await user.click(within(gaveta).getByRole('button', { name: 'Tema: sistema' }))
+    await waitFor(() => expect(lateral()).toHaveTextContent('Tema: claro'))
+    expect(within(gaveta).getByRole('button', { name: 'Tema: claro' })).toBeInTheDocument()
+    expect(document.documentElement).toHaveAttribute('data-theme', 'light')
+
+    await user.click(within(gaveta).getByRole('button', { name: 'Fechar' }))
+    await user.click(lateral())
+    await waitFor(() => expect(lateral()).toHaveTextContent('Tema: escuro'))
+    await user.click(screen.getByRole('button', { name: 'Menu' }))
+    expect(within(screen.getByRole('dialog', { name: 'Menu' })).getByRole('button', { name: 'Tema: escuro' })).toBeInTheDocument()
+    document.documentElement.removeAttribute('data-theme')
+    window.localStorage.clear()
   })
 })
 
