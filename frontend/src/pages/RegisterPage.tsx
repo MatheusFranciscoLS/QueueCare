@@ -4,6 +4,7 @@ import { ApiError } from '../api/client'
 import { describeError } from '../api/messages'
 import { validateNewPassword } from '../auth/passwordPolicy'
 import { useAuth } from '../auth/session'
+import { AuthLayout } from './AuthLayout'
 import { Field } from './Field'
 import { useSingleFlight } from './useSingleFlight'
 import { useFocusFirstInvalid } from './useFocusFirstInvalid'
@@ -48,6 +49,7 @@ export function RegisterPage() {
   }
 
   return (
+    <AuthLayout>
     <section className="card narrow">
       <h1>Criar conta de cliente</h1>
       <p className="lead">Escolha o serviço e o horário e acompanhe os seus agendamentos.</p>
@@ -58,6 +60,7 @@ export function RegisterPage() {
           label="Senha"
           name="password"
           type="password"
+          reveal
           autoComplete="new-password"
           hint="Pelo menos 10 caracteres."
           value={password}
@@ -78,5 +81,6 @@ export function RegisterPage() {
         Já tem conta? <Link to="/entrar">Entrar</Link>
       </p>
     </section>
+    </AuthLayout>
   )
 }

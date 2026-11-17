@@ -15,11 +15,6 @@ function Brand({ onNavigate }: { onNavigate?: () => void }) {
       <span>
         Pelo <b>&amp;</b> Ponto
       </span>
-      <span className="pp-sig" aria-hidden="true">
-        <i />
-        <i />
-        <i />
-      </span>
     </Link>
   )
 }
@@ -90,12 +85,26 @@ export function Layout() {
     return () => query.removeEventListener('change', close)
   }, [drawerOpen])
 
+  if (!user) {
+    return (
+      <div className="pp pp-app">
+        <a className="pp-skip" href="#conteudo">
+          Pular para o conteúdo
+        </a>
+        <main id="conteudo" ref={mainRef} tabIndex={-1} className="pp-main pp-main--public">
+          <WakingBanner />
+          <Outlet />
+        </main>
+      </div>
+    )
+  }
+
   return (
     <div className="pp pp-app">
       <a className="pp-skip" href="#conteudo">
         Pular para o conteúdo
       </a>
-      <div className={showNav ? 'pp-frame' : 'pp-frame pp-frame--public'}>
+      <div className="pp-frame">
         <header className="pp-rail">
           <Brand />
           {showNav && (

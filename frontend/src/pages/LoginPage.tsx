@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { describeError } from '../api/messages'
 import { safeDestination } from '../auth/destinations'
 import { useAuth } from '../auth/session'
+import { AuthLayout } from './AuthLayout'
 import { Field } from './Field'
 import { useSingleFlight } from './useSingleFlight'
 
@@ -32,9 +33,10 @@ export function LoginPage() {
   }
 
   return (
+    <AuthLayout>
     <section className="card narrow">
       <h1>Entrar</h1>
-      <p className="lead">A agenda e a fila do seu atendimento, em um só lugar.</p>
+      <p className="lead">Entre para ver a agenda e a fila de hoje.</p>
       {expired && (
         <p role="status" className="notice">
           Sua sessão terminou. Entre novamente para continuar.
@@ -42,7 +44,7 @@ export function LoginPage() {
       )}
       <form onSubmit={submit} noValidate>
         <Field label="E-mail" name="email" type="email" autoComplete="username" required value={email} onChange={(e) => setEmail(e.target.value)} />
-        <Field label="Senha" name="password" type="password" autoComplete="current-password" required value={password} onChange={(e) => setPassword(e.target.value)} />
+        <Field label="Senha" name="password" type="password" reveal autoComplete="current-password" required value={password} onChange={(e) => setPassword(e.target.value)} />
         <p role="alert" className="error" hidden={!error}>
           {error}
         </p>
@@ -54,5 +56,6 @@ export function LoginPage() {
         Ainda não tem conta? <Link to="/cadastro">Cadastre-se como cliente</Link>
       </p>
     </section>
+    </AuthLayout>
   )
 }

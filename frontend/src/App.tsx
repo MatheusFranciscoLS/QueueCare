@@ -1,5 +1,7 @@
 import { lazy, Suspense } from 'react'
 import { Link, Route, Routes } from 'react-router-dom'
+import { useAuth } from './auth/session'
+import { AuthLayout } from './pages/AuthLayout'
 import { PublicOnly, RequireAuth } from './auth/guards'
 import { RequireRole } from './auth/RequireRole'
 import { ChangePasswordPage } from './pages/ChangePasswordPage'
@@ -70,7 +72,8 @@ export function App() {
 }
 
 function NotFound() {
-  return (
+  const { user } = useAuth()
+  const content = (
     <section className="card narrow">
       <h1>Página não encontrada</h1>
       <p className="lead">O endereço não existe ou foi movido.</p>
@@ -79,4 +82,5 @@ function NotFound() {
       </Link>
     </section>
   )
+  return user ? content : <AuthLayout>{content}</AuthLayout>
 }

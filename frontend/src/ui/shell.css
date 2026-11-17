@@ -82,6 +82,7 @@
   overflow: visible;
 }
 .pp-brand {
+  min-height: 44px;
   display: inline-flex;
   flex-direction: column;
   gap: 10px;
@@ -95,26 +96,6 @@
   color: var(--pp-gold-mark);
   font-weight: 700;
 }
-.pp-sig {
-  display: flex;
-  gap: 6px;
-}
-.pp-sig i {
-  display: block;
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  border: 2px solid var(--pp-primary);
-}
-.pp-sig i:nth-child(2) {
-  border-color: var(--pp-gold-mark);
-  background: linear-gradient(90deg, var(--pp-gold-mark) 50%, transparent 50%);
-}
-.pp-sig i:nth-child(3) {
-  border-color: var(--pp-done);
-  background: var(--pp-done);
-}
-
 /* navegação só de texto: o item ativo ganha um trecho de fio cheio, os outros um pontilhado */
 .pp-nav {
   display: grid;
@@ -253,5 +234,128 @@
 @media (min-width: 901px) {
   .pp-drawer {
     display: none !important;
+  }
+}
+
+/* ENTRADA (Entrar, Cadastrar, não encontrada para quem não entrou): painel de marca + formulário */
+.pp-main--public {
+  padding: 0;
+}
+
+.pp-auth {
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
+  min-height: 100vh;
+}
+
+/* o painel é claro e aquático nos dois temas (a água do banho): cores próprias, não dependem do tema */
+.pp-auth__hero {
+  --pp-text: #14202b;
+  --pp-muted: #35505e;
+  --pp-gold-mark: #8a5f00;
+  --pp-focus: #0b4a61;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  padding: 3rem clamp(1.5rem, 5vw, 4.5rem) 0;
+  background: #d3ebf3;
+  color: #14202b;
+  overflow: hidden;
+}
+
+.pp-auth__headline {
+  margin: 3rem 0 0;
+  max-width: 12ch;
+  font: 700 clamp(2.25rem, 4vw, 3.5rem) / 1.03 var(--pp-display);
+  letter-spacing: -0.03em;
+  text-wrap: balance;
+}
+
+.pp-auth__lead {
+  margin: 0;
+  max-width: 34ch;
+  color: #35505e;
+  font-size: 1.125rem;
+}
+
+.pp-auth__art {
+  display: block;
+  width: min(100%, 26rem);
+  height: auto;
+  margin: auto auto 0;
+}
+
+.pp-auth__panel {
+  display: grid;
+  place-items: center;
+  padding: 2rem 1.5rem;
+  background: var(--pp-bg);
+}
+
+.pp-auth__card {
+  width: 100%;
+  max-width: 28rem;
+  padding: clamp(1.5rem, 4vw, 2.25rem);
+  border: 2px solid var(--pp-line);
+  border-radius: 16px;
+  background: var(--pp-surface);
+}
+
+.pp-auth__card .card.narrow {
+  max-width: none;
+}
+
+/* campo de senha com o botão "Mostrar" por dentro */
+.field-reveal {
+  position: relative;
+}
+
+.field-reveal input {
+  padding-right: 5.5rem;
+}
+
+.field-reveal__button {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0 0.875rem;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--pp-primary);
+  font: 700 0.9375rem/1 var(--pp-body);
+  cursor: pointer;
+}
+
+@media (max-width: 900px) {
+  .pp-auth {
+    grid-template-columns: minmax(0, 1fr);
+    min-height: 0;
+  }
+
+  .pp-auth__hero {
+    gap: 0.75rem;
+    padding: 1.25rem 1.5rem 1.5rem;
+  }
+
+  .pp-auth__headline {
+    margin: 1rem 0 0;
+    font-size: 1.875rem;
+  }
+
+  .pp-auth__lead {
+    font-size: 1rem;
+  }
+
+  .pp-auth__demo {
+    display: none;
+  }
+
+  .pp-auth__panel {
+    align-items: start;
+    padding: 1.5rem 1rem 2.5rem;
   }
 }

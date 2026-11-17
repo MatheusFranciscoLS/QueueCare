@@ -298,6 +298,10 @@ a {
 }
 
 .aside {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0 var(--space-2); /* folga entre o texto e o link: o anel de foco do link não se mistura com o texto */
   margin: var(--space-4) 0 0;
   color: var(--muted);
 }
