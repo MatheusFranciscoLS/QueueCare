@@ -749,6 +749,8 @@ input[type='date'] {
   display: none;
 }
 
+/* CELULAR: a hora em uma linha própria, o avatar e o nome do pet na primeira linha, os dados do atendimento logo abaixo, e as ações em uma região
+   própria que quebra de linha (botão principal na largura toda, os outros dois lado a lado) */
 @media (max-width: 720px) {
   .timeline,
   .queue-list {
@@ -757,29 +759,102 @@ input[type='date'] {
 
   .timeline .row,
   .queue-list .row {
-    grid-template-columns: 5.25rem 44px minmax(0, 1fr);
+    grid-template-columns: 44px minmax(0, 1fr);
     column-gap: 0.75rem;
+    gap: 0.125rem 0.75rem;
+    padding: 1rem 0;
   }
 
   .timeline .appt-time {
+    grid-column: 1 / -1;
+    grid-row: auto;
+    padding: 0;
+    text-align: left;
     font-size: 0.9375rem;
+    color: var(--muted);
+  }
+
+  .timeline .pp-avatar {
+    grid-column: 1;
+    grid-row: 2 / span 2;
+  }
+
+  .timeline .appt-pet,
+  .timeline .appt-who,
+  .timeline .appt-service,
+  .timeline .appt-notes,
+  .timeline .badge,
+  .timeline .row-extra {
+    grid-column: 2;
+  }
+
+  .timeline .appt-pet__name {
+    font-size: 1.25rem;
+  }
+
+  .timeline .row:not(:has(.pp-avatar)) .appt-pet,
+  .timeline .row:not(:has(.pp-avatar)) .appt-who,
+  .timeline .row:not(:has(.pp-avatar)) .appt-service,
+  .timeline .row:not(:has(.pp-avatar)) .appt-notes,
+  .timeline .row:not(:has(.pp-avatar)) .badge,
+  .timeline .row:not(:has(.pp-avatar)) .row-extra {
+    grid-column: 1 / -1;
+  }
+
+  .timeline .actions {
+    grid-column: 1 / -1;
+    margin-top: 0.5rem;
+    justify-content: stretch;
+    gap: 0.5rem;
+  }
+
+  .timeline .actions .button {
+    flex: 1 1 calc(50% - 0.5rem);
+  }
+
+  .timeline .actions .button:first-child {
+    flex-basis: 100%;
+  }
+
+  .timeline .row-extra {
+    grid-column: 1 / -1;
+    margin-top: 0.25rem;
   }
 
   .queue-list .appt-time {
-    font-size: 2rem;
+    grid-column: 1 / -1;
+    text-align: left;
+    font-size: 1.5rem;
   }
 
-  .timeline .actions,
+  .queue-list .pp-avatar {
+    grid-column: 1;
+    grid-row: 2 / span 2;
+  }
+
+  .queue-list .appt-pet,
+  .queue-list .appt-who,
+  .queue-list .appt-service,
+  .queue-list .appt-notes,
+  .queue-list .badge,
+  .queue-list .appt-meta {
+    grid-column: 2;
+  }
+
   .queue-list .actions {
-    grid-column: 3;
+    grid-column: 1 / -1;
     grid-row: auto;
-    justify-content: flex-start;
+    margin-top: 0.5rem;
+  }
+
+  .queue-list .actions .button {
+    flex: 1 1 100%;
   }
 
   .timeline .now-marker {
     left: -16px;
     right: -16px;
-    grid-template-columns: calc(5.25rem + 16px) minmax(0, 1fr);
+    grid-template-columns: 5rem minmax(0, 1fr);
   }
 }
 
