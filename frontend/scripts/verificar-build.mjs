@@ -1,11 +1,11 @@
-// Garante que o build de PRODUÇÃO não carrega a página de demonstração da fundação visual (ADR 0018, R2) nem as fontes novas antes de
-// as telas migrarem: procura, em TODOS os arquivos de dist/, o conteúdo e os nomes que só existem na demonstração e nas fontes novas.
+// Garante que o build de PRODUÇÃO não carrega a página de demonstração da fundação visual (ADR 0018, R2). (As fontes novas entraram na
+// produção no R3, com a casca nova; só a demonstração continua proibida.) Procura, em TODOS os arquivos de dist/, o conteúdo e os nomes que só existem na demonstração.
 // Uso: `npm run build && npm run check:build` (roda na CI depois do build).
 import { readdirSync, readFileSync, statSync } from 'node:fs'
 import { join, resolve } from 'node:path'
 
 const dist = resolve(import.meta.dirname, '..', 'dist')
-const PROIBIDOS = ['/__ui', 'Fundação visual', 'Pelo Numerais', 'pp-fio', 'DemoPage', 'bricolage', 'atkinson']
+const PROIBIDOS = ['/__ui', 'Fundação visual', 'DemoPage']
 
 function arquivos(dir) {
   return readdirSync(dir).flatMap((nome) => {
@@ -26,4 +26,4 @@ if (achados.length > 0) {
   console.error('O build de produção contém o que só deveria existir em desenvolvimento:\n' + achados.join('\n'))
   process.exit(1)
 }
-console.log(`build de produção limpo: nenhum dos ${PROIBIDOS.length} marcadores da demonstração e das fontes novas em ${arquivos(dist).length} arquivos`)
+console.log(`build de produção limpo: nenhum dos ${PROIBIDOS.length} marcadores da demonstração em ${arquivos(dist).length} arquivos`)

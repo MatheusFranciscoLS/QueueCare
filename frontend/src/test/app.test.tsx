@@ -91,7 +91,7 @@ describe('troca de senha obrigatória', () => {
     await screen.findByRole('heading', { name: 'Defina a sua senha' })
 
     // o link da marca aponta para "/", rota protegida: o guarda devolve para a troca
-    await user.click(screen.getByRole('link', { name: 'QueueCare' }))
+    await user.click(screen.getByRole('link', { name: 'Pelo & Ponto' }))
 
     expect(await screen.findByRole('heading', { name: 'Defina a sua senha' })).toBeInTheDocument()
     expect(screen.queryByRole('heading', { name: /Olá/ })).not.toBeInTheDocument()

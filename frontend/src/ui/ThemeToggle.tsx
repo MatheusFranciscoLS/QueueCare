@@ -1,20 +1,12 @@
-import { useState } from 'react'
+import { useSyncExternalStore } from 'react'
 import { Button } from './components'
-import { applyTheme, NEXT_THEME, readThemePreference, saveThemePreference, THEME_LABEL, type ThemePreference } from './theme'
+import { currentThemePreference, NEXT_THEME, setThemePreference, subscribeTheme, THEME_LABEL } from './theme'
 
-/** Alterna sistema, claro e escuro e guarda a escolha (com try/catch: sem armazenamento, vale só nesta página). */
+/** Alterna sistema, claro e escuro. Vários botões (barra lateral e gaveta) mostram sempre o mesmo estado: todos leem o atributo do <html>. */
 export function ThemeToggle() {
-  const [preference, setPreference] = useState<ThemePreference>(readThemePreference)
+  const preference = useSyncExternalStore(subscribeTheme, currentThemePreference)
   return (
-    <Button
-      variant="quiet"
-      onClick={() => {
-        const next = NEXT_THEME[preference]
-        setPreference(next)
-        applyTheme(next)
-        saveThemePreference(next)
-      }}
-    >
+    <Button variant="quiet" onClick={() => setThemePreference(NEXT_THEME[preference])}>
       {THEME_LABEL[preference]}
     </Button>
   )
