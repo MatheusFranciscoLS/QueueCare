@@ -7,6 +7,7 @@ import { isNotConfigured } from '../../api/errors'
 import { describeError } from '../../api/messages'
 import { petDescription } from '../../api/pets'
 import { useAuth } from '../../auth/session'
+import { Summary } from '../../ui/components'
 import { RefreshWarning } from '../RefreshWarning'
 import { useLoad } from '../useLoad'
 import { useSingleFlight } from '../useSingleFlight'
@@ -114,11 +115,27 @@ function DayList({ date, timeZone, workplace }: { date: string; timeZone: string
     })
   }, [])
 
+  // O relógio anda com a tela aberta (a cada minuto e ao voltar à aba): o marcador "agora" acompanha, no fuso do negócio.
+  const [now, setNow] = useState(() => new Date())
+  useEffect(() => {
+    const tick = () => setNow(new Date())
+    const onVisible = () => document.visibilityState === 'visible' && tick()
+    const id = setInterval(tick, 60_000)
+    document.addEventListener('visibilitychange', onVisible)
+    return () => {
+      clearInterval(id)
+      document.removeEventListener('visibilitychange', onVisible)
+    }
+  }, [])
+
   if (loading && !data) return <Loading />
   if (error && !data) return <p role="alert" className="error">{describeError(error)}</p>
   const visible = data?.filter((item) => !cancelled.has(item.id))
   // Só no dia de HOJE (do negócio) a chegada pode ser registrada; a API também confere (WRONG_DAY).
   const isToday = date === todayIn(timeZone)
+  // "Agora" fica entre o último atendimento que já começou e o próximo: só hoje, e só quando há um atendimento antes dele. Compara instantes (não depende do fuso do navegador); o rótulo é a hora no fuso do negócio.
+  const nextIndex = isToday && visible ? visible.findIndex((item) => Date.parse(item.startsAt) > now.getTime()) : -1
+  const nowLabel = nextIndex > 0 ? timeIn(now.toISOString(), timeZone) : undefined
   return (
     <>
       {error !== undefined && data && <RefreshWarning onRetry={reload} />}
@@ -129,14 +146,16 @@ function DayList({ date, timeZone, workplace }: { date: string; timeZone: string
         {problem}
       </p>
       {visible && visible.length === 0 && <p className="notice">Nenhum agendamento neste dia.</p>}
+      {visible && visible.length > 0 && <DaySummary counts={countByStatus(visible.map((item) => laterOf(item.status, statuses.get(item.id))))} />}
       <ul className="rows timeline">
-        {visible?.map((item) => (
+        {visible?.map((item, index) => (
           <AppointmentRow
             key={item.id}
             item={item}
             status={laterOf(item.status, statuses.get(item.id))}
             timeZone={timeZone}
             canCheckIn={isToday}
+            nowLabel={index === nextIndex ? nowLabel : undefined}
             workplace={workplace}
             onChanged={reload}
             onRescheduled={(updated) => {
@@ -155,6 +174,26 @@ function DayList({ date, timeZone, workplace }: { date: string; timeZone: string
         ))}
       </ul>
     </>
+  )
+}
+
+/** O resumo do dia em frase (ADR 0018 v2): concluídos, esperando (chegaram) e por vir. */
+function countByStatus(statuses: string[]) {
+  return {
+    done: statuses.filter((s) => s === 'COMPLETED').length,
+    waiting: statuses.filter((s) => s === 'CHECKED_IN').length,
+    upcoming: statuses.filter((s) => s === 'SCHEDULED').length,
+  }
+}
+
+function DaySummary({ counts }: { counts: { done: number; waiting: number; upcoming: number } }) {
+  return (
+    <Summary>
+      <strong>
+        {counts.done} {counts.done === 1 ? 'concluído' : 'concluídos'}
+      </strong>
+      , <strong>{counts.waiting} esperando</strong> e <strong>{counts.upcoming} por vir</strong>.
+    </Summary>
   )
 }
 
@@ -177,6 +216,7 @@ function AppointmentRow({
   status,
   timeZone,
   canCheckIn,
+  nowLabel,
   workplace,
   onChanged,
   onRescheduled,
@@ -189,6 +229,8 @@ function AppointmentRow({
   status: string
   timeZone: string
   canCheckIn: boolean
+  /** Hora de agora no fuso do negócio, quando o marcador "agora" fica antes desta linha (entre o último atendimento passado e este). */
+  nowLabel?: string
   workplace: Workplace
   onChanged: () => Promise<void>
   onRescheduled: (updated: { startsAt: string; endsAt: string }) => void
@@ -290,13 +332,19 @@ function AppointmentRow({
 
   return (
     <li className="row appt" data-status={status} ref={rowRef} tabIndex={-1}>
+      {nowLabel && (
+        <span className="now-marker">
+          <span className="now-tag">agora {nowLabel}</span>
+          <span className="now-line" aria-hidden="true" />
+        </span>
+      )}
       <span className="appt-info">
         <strong className="appt-time">
           {timeIn(item.startsAt, timeZone)}–{timeIn(item.endsAt, timeZone)}
         </strong>
+        {item.pet && <span className="appt-pet">{item.pet.name} · {petDescription(item.pet)}</span>}
         <span className="appt-who">{customer}</span>
         <span className="appt-service">{item.serviceName ?? 'Serviço'}</span>
-        {item.pet && <span className="appt-pet">{item.pet.name} · {petDescription(item.pet)}</span>}
         {item.pet?.notes && <span className="appt-notes">Observações do tutor: {item.pet.notes}</span>}
         <span className="badge" data-status={status}>{STATUS_LABEL[status] ?? status}</span>
       </span>

@@ -364,3 +364,90 @@ describe('fila', () => {
     expect(calls.some((c) => c.path.startsWith('/api/agenda'))).toBe(false)
   })
 })
+
+const daySummary = () => screen.getByText((_, el) => el?.tagName === 'P' && /por vir[.]/.test(el.textContent ?? ''))
+
+describe('agenda: resumo do dia em frase (ADR 0018 v2)', () => {
+  it('conta concluídos, esperando e por vir, no singular e no plural, e acompanha a chegada registrada', async () => {
+    const { user } = await loginAs('ATTENDANT', {
+      [`GET /api/agenda?date=${today}`]: () =>
+        json(200, [item('a-1', 'COMPLETED', today, 'Ana'), item('a-2', 'CHECKED_IN', today, 'Bia'), item('a-3', 'SCHEDULED', today, 'Caio'), item('a-4', 'SCHEDULED', today, 'Duda')]),
+      'POST /api/appointments/a-3/check-in': () => json(200, { id: 'a-3', status: 'CHECKED_IN' }),
+    })
+    await user.click(menu('Agenda'))
+    await screen.findByText("Caio")
+    expect(daySummary()).toHaveTextContent("1 concluído, 1 esperando e 2 por vir.")
+
+    const row = screen.getByText('Caio').closest('li')!
+    await user.click(within(row).getByRole('button', { name: 'Chegou' }))
+    await waitFor(() => expect(daySummary()).toHaveTextContent('1 concluído, 2 esperando e 1 por vir.'))
+  })
+
+  it('sem agendamentos não mostra resumo, só o aviso do dia vazio', async () => {
+    const { user } = await loginAs('ATTENDANT', { [`GET /api/agenda?date=${today}`]: () => json(200, []) })
+    await user.click(menu('Agenda'))
+    expect(await screen.findByText('Nenhum agendamento neste dia.')).toBeInTheDocument()
+    expect(screen.queryByText((_, el) => el?.tagName === 'P' && /por vir[.]/.test(el.textContent ?? ''))).not.toBeInTheDocument()
+  })
+})
+
+describe('agenda: ordem de leitura, marcador "agora" e fila com espera', () => {
+  const comPet = { ...item('p-1', 'SCHEDULED'), pet: { id: 'pet-1', name: 'Mel', species: 'CAT', breed: 'Siamês', size: 'SMALL', notes: null } }
+  const antes = (a: Node, b: Node) => Boolean(a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING)
+
+  it('a ordem do DOM é a ordem visual: hora, pet, tutor, serviço, estado, ações (leitor de tela lê o pet primeiro)', async () => {
+    const { user } = await loginAs('PROVIDER', { [`GET /api/agenda?date=${today}`]: () => json(200, [comPet]) })
+    await user.click(menu('Agenda'))
+    const row = (await screen.findByText('Maria Souza')).closest('li')!
+    const parts = [/12:00–13:00/, /Mel/, /Maria Souza/, /Troca de óleo/, /Agendado/].map((re) => within(row).getByText(re))
+    for (let i = 0; i < parts.length - 1; i++) expect(antes(parts[i], parts[i + 1]), `item ${i} antes de ${i + 1}`).toBe(true)
+    expect(antes(parts[4], within(row).getByRole('button', { name: 'Chegou' }))).toBe(true)
+  })
+
+  it('"agora" fica antes do próximo atendimento, com a hora do fuso do negócio; some quando passou de todos ou em outro dia', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    try {
+      vi.setSystemTime(new Date(`${today}T13:42:00Z`)) // 10:42 em São Paulo
+      const { user } = await loginAs('PROVIDER', {
+        [`GET /api/agenda?date=${today}`]: () =>
+          json(200, [
+            { ...item('a-1', 'COMPLETED', today, 'Ana'), startsAt: `${today}T12:00:00Z`, endsAt: `${today}T13:00:00Z` },
+            { ...item('a-2', 'SCHEDULED', today, 'Beto'), startsAt: `${today}T15:00:00Z`, endsAt: `${today}T16:00:00Z` },
+          ]),
+      })
+      await user.click(menu('Agenda'))
+      const segunda = (await screen.findByText('Beto')).closest('li')!
+      expect(within(segunda).getByText('agora 10:42')).toBeInTheDocument()
+      expect(within(screen.getByText('Ana').closest('li')!).queryByText(/agora/)).not.toBeInTheDocument()
+      expect(screen.getAllByText(/^agora /)).toHaveLength(1)
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('sem atendimento antes dele, ou depois de todos, não há marcador "agora"', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    try {
+      vi.setSystemTime(new Date(`${today}T20:00:00Z`)) // depois de todos
+      const { user } = await loginAs('PROVIDER', { [`GET /api/agenda?date=${today}`]: () => json(200, [item('a-1', 'COMPLETED')]) })
+      await user.click(menu('Agenda'))
+      await screen.findByText('Maria Souza')
+      expect(screen.queryByText(/^agora /)).not.toBeInTheDocument()
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('a fila mostra o horário marcado e o tempo de espera', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    try {
+      vi.setSystemTime(new Date(`${today}T12:42:00Z`))
+      const { user } = await loginAs('ATTENDANT', { 'GET /api/agenda/queue': () => json(200, [queueItem('q-1', 1, 'Joana Lima', `${today}T12:30:00Z`)]) })
+      await user.click(menu('Fila'))
+      const row = (await screen.findByText('Joana Lima')).closest('li')!
+      expect(row).toHaveTextContent('marcado para 12:00 · espera de 12 min')
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+})
