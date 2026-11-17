@@ -586,6 +586,47 @@ input[type='date'] {
   background: var(--st-done);
 }
 
+/* a marca de verificação do concluído, sobre o ponto cheio (a hora é a única peça não posicionada: o ::after é posicionado em relação à linha) */
+.timeline .row[data-status='COMPLETED'] .appt-time::after {
+  content: '';
+  position: absolute;
+  left: calc(var(--time-col) + 1rem + 7px);
+  top: 9px;
+  width: 6px;
+  height: 11px;
+  border: solid var(--bg);
+  border-width: 0 3px 3px 0;
+  transform: rotate(40deg);
+}
+
+/* "agora": etiqueta dourada sobre uma linha dourada, entre o último atendimento que já começou e o próximo */
+.timeline .now-marker {
+  position: absolute;
+  top: -1.6rem;
+  left: 0;
+  right: 0;
+  display: grid;
+  grid-template-columns: var(--time-col) minmax(0, 1fr);
+  column-gap: 1rem;
+  align-items: center;
+  pointer-events: none;
+}
+
+.timeline .now-tag {
+  justify-self: end;
+  padding: 5px 8px;
+  border-radius: 6px;
+  background: var(--pp-gold);
+  color: var(--pp-on-gold);
+  font: 700 0.875rem/1 var(--font-heading);
+  font-variant-numeric: tabular-nums;
+}
+
+.timeline .now-line {
+  height: 3px;
+  background: var(--pp-gold-mark);
+}
+
 /* o fio: da base do ponto até o ponto seguinte */
 .timeline .row::after {
   content: '';
@@ -618,43 +659,35 @@ input[type='date'] {
 }
 
 .timeline .appt-pet {
-  order: 1;
   font: 700 1.375rem/1.15 var(--font-heading);
   letter-spacing: -0.01em;
 }
 
 .timeline .appt-who {
-  order: 2;
   font-weight: 400;
   color: var(--muted);
 }
 
 .timeline .appt-service {
-  order: 3;
   color: var(--muted);
 }
 
 .timeline .appt-notes {
-  order: 4;
 }
 
 .timeline .badge {
-  order: 5;
   justify-self: start;
   font-weight: 700;
 }
 
 .timeline .actions {
-  order: 6;
 }
 
 .timeline .row-extra {
-  order: 7;
 }
 
 /* sem pet gravado (agendamentos antigos), o tutor passa a ser o destaque */
 .timeline .row:not(:has(.appt-pet)) .appt-who {
-  order: 1;
   font: 700 1.375rem/1.15 var(--font-heading);
   color: var(--text);
 }
@@ -733,43 +766,41 @@ input[type='date'] {
 .queue-list .appt-service,
 .queue-list .appt-notes,
 .queue-list .badge,
+.queue-list .appt-meta,
 .queue-list .actions {
   grid-column: 2;
   min-width: 0;
 }
 
+.queue-list .appt-meta {
+  color: var(--muted);
+}
+
 .queue-list .appt-pet {
-  order: 1;
   font: 700 1.375rem/1.15 var(--font-heading);
 }
 
 .queue-list .appt-who {
-  order: 2;
   font-weight: 400;
   color: var(--muted);
 }
 
 .queue-list .appt-service {
-  order: 3;
   color: var(--muted);
 }
 
 .queue-list .appt-notes {
-  order: 4;
 }
 
 .queue-list .badge {
-  order: 5;
   justify-self: start;
   font-weight: 700;
 }
 
 .queue-list .actions {
-  order: 6;
 }
 
 .queue-list .row:not(:has(.appt-pet)) .appt-who {
-  order: 1;
   font: 700 1.375rem/1.15 var(--font-heading);
   color: var(--text);
 }

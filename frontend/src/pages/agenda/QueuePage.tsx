@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { agendaApi, type QueueItem, type Workplace } from '../../api/agenda'
 import { ApiError } from '../../api/client'
 import { timeIn } from '../../api/dates'
+import { waitLabel } from '../../api/wait'
 import { isNotConfigured } from '../../api/errors'
 import { describeError } from '../../api/messages'
 import { petDescription } from '../../api/pets'
@@ -66,6 +67,19 @@ function Queue({ workplace }: { workplace: Workplace }) {
   // Concluídos com SUCESSO nesta tela: saem da fila na hora, mesmo que o GET seguinte falhe ou traga uma fila de antes da conclusão.
   const [done, setDone] = useState<ReadonlySet<string>>(new Set())
 
+  // O tempo de espera anda com a tela aberta: a cada minuto e ao voltar à aba.
+  const [now, setNow] = useState(() => new Date())
+  useEffect(() => {
+    const tick = () => setNow(new Date())
+    const onVisible = () => document.visibilityState === 'visible' && tick()
+    const id = setInterval(tick, 60_000)
+    document.addEventListener('visibilitychange', onVisible)
+    return () => {
+      clearInterval(id)
+      document.removeEventListener('visibilitychange', onVisible)
+    }
+  }, [])
+
   if (loading && !data) return <Loading />
   if (error && !data) return <p role="alert" className="error">{describeError(error)}</p>
   const visible = data?.filter((item) => !done.has(item.id))
@@ -95,6 +109,7 @@ function Queue({ workplace }: { workplace: Workplace }) {
             item={item}
             position={index + 1}
             timeZone={workplace.timeZone}
+            now={now}
             onDone={() => {
               focusNotice.current = true
               setDone((current) => new Set(current).add(item.id))
@@ -113,6 +128,7 @@ function QueueRow({
   item,
   position,
   timeZone,
+  now,
   onDone,
   onChanged,
   setNotice,
@@ -121,6 +137,7 @@ function QueueRow({
   item: QueueItem
   position: number
   timeZone: string
+  now: Date
   onDone: () => void
   onChanged: () => Promise<void>
   setNotice: (message: string | null) => void
@@ -155,14 +172,17 @@ function QueueRow({
     <li className="row appt" data-status="CHECKED_IN">
       <span className="appt-info">
         <strong className="appt-time">{position}º</strong>
+        {item.pet && <span className="appt-pet">{item.pet.name} · {petDescription(item.pet)}</span>}
         <span className="sep" aria-hidden="true"> · </span>
         <span className="appt-who">{customer}</span>
         <span className="sep" aria-hidden="true"> · </span>
         <span className="appt-service">{item.serviceName ?? 'Serviço'}</span>
-        {item.pet && <span className="appt-pet">{item.pet.name} · {petDescription(item.pet)}</span>}
         {item.pet?.notes && <span className="appt-notes">Observações do tutor: {item.pet.notes}</span>}
         <span className="sep" aria-hidden="true"> · </span>
         <span className="badge" data-status="CHECKED_IN">chegou às {timeIn(item.checkedInAt, timeZone)}</span>
+        <span className="appt-meta">
+          marcado para {timeIn(item.startsAt, timeZone)} · {waitLabel(item.checkedInAt, now)}
+        </span>
       </span>
       <span className="actions">
         <button type="button" className="button" disabled={busy} onClick={complete}>
