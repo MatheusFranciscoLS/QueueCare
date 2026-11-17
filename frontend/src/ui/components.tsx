@@ -182,3 +182,24 @@ export function FioItem({ time, state, children }: FioItemProps) {
 export function Summary({ children }: { children: ReactNode }) {
   return <p className="pp-summary">{children}</p>
 }
+
+// ---------- Controle segmentado (Dia / Semana) ----------
+interface SegmentedProps<T extends string> {
+  label: string
+  value: T
+  options: { value: T; label: string }[]
+  onChange: (value: T) => void
+}
+
+/** Escolha de uma opção entre poucas (ex.: Dia e Semana). Cada botão diz se está selecionado (aria-pressed) e tem 44 px de altura. */
+export function Segmented<T extends string>({ label, value, options, onChange }: SegmentedProps<T>) {
+  return (
+    <div className="pp-seg" role="group" aria-label={label}>
+      {options.map((option) => (
+        <button key={option.value} type="button" aria-pressed={option.value === value} onClick={() => onChange(option.value)}>
+          {option.label}
+        </button>
+      ))}
+    </div>
+  )
+}

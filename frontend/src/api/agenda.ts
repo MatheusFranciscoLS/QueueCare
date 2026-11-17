@@ -42,6 +42,8 @@ export function agendaApi(request: Request) {
   return {
     workplace: () => request<Workplace>('/api/agenda/workplace'),
     day: (date: string) => request<AgendaItem[]>(`/api/agenda?date=${encodeURIComponent(date)}`),
+    /** Os 7 dias a partir de `start` (data local do negócio), mesma resposta da agenda do dia. */
+    week: (start: string) => request<AgendaItem[]>(`/api/agenda/week?start=${encodeURIComponent(start)}`),
     queue: () => request<QueueItem[]>('/api/agenda/queue'),
     checkIn: (appointmentId: string) => request<unknown>(`/api/appointments/${encodeURIComponent(appointmentId)}/check-in`, { method: 'POST' }),
     complete: (appointmentId: string) => request<unknown>(`/api/appointments/${encodeURIComponent(appointmentId)}/complete`, { method: 'POST' }),

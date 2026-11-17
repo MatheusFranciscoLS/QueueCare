@@ -510,6 +510,31 @@
   font-weight: 700;
 }
 
+/* Controle segmentado */
+.pp .pp-seg {
+  display: inline-flex;
+  border: 2px solid var(--pp-field);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.pp .pp-seg button {
+  min-height: 44px;
+  min-width: 44px;
+  padding: 0 1rem;
+  border: 0;
+  background: transparent;
+  color: var(--pp-muted);
+  font: 600 1rem/1 var(--pp-body);
+  cursor: pointer;
+}
+.pp .pp-seg button[aria-pressed='true'] {
+  background: var(--pp-text);
+  color: var(--pp-bg);
+}
+.pp .pp-seg button:focus-visible {
+  outline-offset: -3px;
+}
+
 /* Aviso */
 .pp .pp-notice {
   display: flex;

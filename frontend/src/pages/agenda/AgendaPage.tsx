@@ -1,19 +1,20 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { agendaApi, type AgendaItem, type Workplace } from '../../api/agenda'
-import { addDays, isDate, longDate, timeIn, todayIn } from '../../api/dates'
+import { addDays, isDate, longDate, startOfWeek, timeIn, todayIn, weekTitle } from '../../api/dates'
 import { ApiError } from '../../api/client'
 import { isNotConfigured } from '../../api/errors'
 import { describeError } from '../../api/messages'
 import { petDescription } from '../../api/pets'
 import { useAuth } from '../../auth/session'
-import { Summary } from '../../ui/components'
+import { Segmented, Summary } from '../../ui/components'
 import { RefreshWarning } from '../RefreshWarning'
 import { useLoad } from '../useLoad'
 import { useSingleFlight } from '../useSingleFlight'
 import { Loading } from '../Loading'
 import { AppointmentHistory } from '../customer/AppointmentHistory'
 import { RescheduleBox } from '../customer/RescheduleBox'
+import { WeekView } from './WeekView'
 
 /** Agenda do dia do prestador, para o dono e para o atendente vinculado. O fuso e o negócio vêm do servidor (o atendente não os conhece). */
 export function AgendaPage() {
@@ -48,21 +49,28 @@ export function AgendaPage() {
 
 function Day({ workplace }: { workplace: Workplace }) {
   const [date, setDate] = useState(() => todayIn(workplace.timeZone))
+  // A visão mora no endereço (?visao=semana): dá para voltar, recarregar e mandar o link da semana.
+  const [params, setParams] = useSearchParams()
+  const view = params.get('visao') === 'semana' ? 'week' : 'day'
+  const setView = (next: 'day' | 'week') => setParams(next === 'week' ? { visao: 'semana' } : {}, { replace: true })
+  const week = view === 'week'
+  const step = week ? 7 : 1
   return (
     <section className="card">
       <h1>Agenda</h1>
       <p className="hint">
         {workplace.businessName} · horários no fuso {workplace.timeZone}
       </p>
+      <Segmented label="Visão da agenda" value={view} options={[{ value: 'day', label: 'Dia' }, { value: 'week', label: 'Semana' }]} onChange={setView} />
       <div className="daybar">
-        <button type="button" className="button secondary" onClick={() => setDate((d) => addDays(d, -1))}>
-          Dia anterior
+        <button type="button" className="button secondary" onClick={() => setDate((d) => addDays(d, -step))}>
+          {week ? 'Semana anterior' : 'Dia anterior'}
         </button>
         <button type="button" className="button secondary" onClick={() => setDate(todayIn(workplace.timeZone))}>
-          Hoje
+          {week ? 'Esta semana' : 'Hoje'}
         </button>
-        <button type="button" className="button secondary" onClick={() => setDate((d) => addDays(d, 1))}>
-          Próximo dia
+        <button type="button" className="button secondary" onClick={() => setDate((d) => addDays(d, step))}>
+          {week ? 'Próxima semana' : 'Próximo dia'}
         </button>
         <label>
           Data
@@ -75,9 +83,26 @@ function Day({ workplace }: { workplace: Workplace }) {
           />
         </label>
       </div>
-      <h2>{longDate(date)}</h2>
-      {/* A chave é a data: trocar de dia refaz a lista do zero (nunca aparece a lista de outro dia sob a data nova). */}
-      <DayList key={date} date={date} timeZone={workplace.timeZone} workplace={workplace} />
+      {week ? (
+        <>
+          <h2>Semana de {weekTitle(startOfWeek(date))}</h2>
+          <WeekView
+            key={startOfWeek(date)}
+            start={startOfWeek(date)}
+            timeZone={workplace.timeZone}
+            onOpenDay={(day) => {
+              setDate(day)
+              setView('day')
+            }}
+          />
+        </>
+      ) : (
+        <>
+          <h2>{longDate(date)}</h2>
+          {/* A chave é a data: trocar de dia refaz a lista do zero (nunca aparece a lista de outro dia sob a data nova). */}
+          <DayList key={date} date={date} timeZone={workplace.timeZone} workplace={workplace} />
+        </>
+      )}
     </section>
   )
 }
