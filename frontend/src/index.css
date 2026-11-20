@@ -1208,11 +1208,52 @@ textarea {
   clip-path: inset(50%);
 }
 
-/* um bloco curto (45 min) mostra só o horário e o nome; o serviço some */
+/* bloco CURTO (30 min ou menos): horário e nome em uma linha só, sem o serviço */
+.week-block[data-short='true'] .week-block__open {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 2px 8px;
+}
+
+.week-block[data-short='true'] .week-block__time {
+  flex: none;
+}
+
+.week-block[data-short='true'] .week-block__state {
+  position: static;
+  flex: none;
+  margin-left: auto;
+}
+
+.week-block[data-short='true'] .week-block__service {
+  display: none;
+}
+
+/* o horário de FIM sai nos blocos curtos (o início e a altura bastam); volta na lista do celular */
+.week-block[data-short='true'] .week-block__end {
+  display: none;
+}
+
+.week-block[data-short='true'] .week-block__name {
+  min-width: 0;
+}
+
+/* um bloco de 45 min mostra só o horário e o nome; o serviço some */
 .week-block[style*='--dur: 45'] .week-block__service,
 .week-block[style*='--dur: 30'] .week-block__service,
 .week-block[style*='--dur: 15'] .week-block__service {
   display: none;
+}
+
+.week-now-tag {
+  display: none;
+  padding: 4px 6px;
+  border-radius: 5px;
+  background: var(--pp-gold);
+  color: var(--pp-on-gold);
+  font: 700 0.6875rem/1 var(--font-heading);
+  font-variant-numeric: tabular-nums;
 }
 
 .week-now {
@@ -1281,6 +1322,24 @@ textarea {
 
   .week-now {
     display: none;
+  }
+
+  /* na lista não há linha atravessando o dia: o "agora" vira uma etiqueta ao lado de "hoje" */
+  .week-now-tag {
+    display: inline-block;
+  }
+
+  .week-block[data-short='true'] .week-block__open {
+    display: grid;
+    padding: 0.625rem 0.875rem;
+  }
+
+  .week-block[data-short='true'] .week-block__service {
+    display: block;
+  }
+
+  .week-block[data-short='true'] .week-block__end {
+    display: inline;
   }
 
   .week-block {

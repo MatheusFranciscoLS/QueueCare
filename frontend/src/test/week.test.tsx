@@ -78,10 +78,10 @@ describe('agenda: semana', () => {
     expect(dias).toHaveLength(7)
     const segunda = dias[0]
     expect(within(segunda).getByRole('heading', { level: 3 })).toHaveTextContent('Seg')
-    expect(within(segunda).getByText('10:00–11:00')).toBeInTheDocument() // 13:00Z = 10:00 em São Paulo, uma hora
+    expect(segunda).toHaveTextContent('10:00–11:00') // 13:00Z = 10:00 em São Paulo, uma hora
     expect(within(segunda).getByText('Mel')).toBeInTheDocument() // o pet em destaque, quando há
     expect(within(segunda).getByText('Concluído')).toBeInTheDocument() // o estado também em texto
-    expect(within(segunda).getByText('23:00–00:00')).toBeInTheDocument() // caiu na segunda, não na terça
+    expect(segunda).toHaveTextContent('23:00–00:00') // caiu na segunda, não na terça
     expect(within(segunda).getByText('Carla Mendes')).toBeInTheDocument() // sem pet, o tutor
     expect(within(dias[1]).getByText('Sem agendamentos')).toBeInTheDocument()
   })

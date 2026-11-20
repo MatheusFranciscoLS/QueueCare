@@ -7,6 +7,7 @@ import { useAuth } from '../../auth/session'
 import { PetAvatar, StateDot } from '../../ui/components'
 import { STATE_LABEL, type AppointmentState } from '../../ui/states'
 import { Loading } from '../Loading'
+import { hourHeight } from './weekScale'
 import { RefreshWarning } from '../RefreshWarning'
 import { useLoad } from '../useLoad'
 
@@ -72,7 +73,8 @@ export function WeekView({ start, timeZone, onOpenDay }: { start: string; timeZo
   const rows = lastHour - firstHour
   const today = todayIn(timeZone)
   const nowMin = minutesOf(timeIn(now.toISOString(), timeZone))
-  const grid = { '--rows': rows, '--first': firstHour * 60 } as CSSProperties
+  const hourPx = hourHeight(blocks.map((b) => b.duration))
+  const grid = { '--rows': rows, '--first': firstHour * 60, '--h': `${hourPx}px` } as CSSProperties
   return (
     <section className="week" aria-label={`Semana de ${weekTitle(start)}`} style={grid}>
       {error !== undefined && data && <RefreshWarning onRetry={reload} />}
@@ -98,15 +100,17 @@ export function WeekView({ start, timeZone, onOpenDay }: { start: string; timeZo
                   <span className="pp-sr"> (abrir o dia {longDate(date)})</span>
                 </button>
                 {isToday && <span className="week-today">hoje</span>}
+                {isToday && <span className="week-now-tag">agora {timeIn(now.toISOString(), timeZone)}</span>}
               </h3>
               {items.length === 0 ? <p className="week-empty">Sem agendamentos</p> : null}
               <ul className="week-slots">
                 {items.map(({ item, state, start: s, end, startMin, duration }) => (
-                  <li key={item.id} className="week-block" data-state={state} style={{ '--start': startMin - firstHour * 60, '--dur': duration } as CSSProperties}>
+                  <li key={item.id} className="week-block" data-state={state} data-short={duration <= 30 ? 'true' : undefined} style={{ '--start': startMin - firstHour * 60, '--dur': duration } as CSSProperties}>
                     <button type="button" className="week-block__open" onClick={() => onOpenDay(date)}>
                       {item.pet && <PetAvatar species={item.pet.species} size="sm" />}
                       <span className="week-block__time">
-                        {s}–{end}
+                        {s}
+                        <span className="week-block__end">–{end}</span>
                       </span>
                       <span className="week-block__name">{item.pet ? item.pet.name : (item.customerName ?? 'Cliente')}</span>
                       <span className="week-block__service">{item.serviceName ?? 'Serviço'}</span>
