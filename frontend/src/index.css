@@ -1742,3 +1742,117 @@ textarea {
 a.button {
   text-decoration: none;
 }
+
+/* INÍCIO COMO PAINEL (ADR 0019, fatia 5): o que pede atenção primeiro; cartões de informação do tutor; configuração do estúdio com o que já está pronto */
+.panel {
+  display: grid;
+  gap: var(--space-4);
+  max-width: 62rem;
+  margin: 0 0 var(--space-6);
+}
+
+.panel-card {
+  padding: 1.25rem 1.5rem;
+  background: var(--surface);
+  border: 2px solid var(--line);
+  border-radius: 18px;
+}
+
+.panel-card h2 {
+  margin: 0 0 0.75rem;
+  font-size: 1.125rem;
+}
+
+.panel-card p {
+  margin: 0 0 0.75rem;
+}
+
+.panel-card p:last-child {
+  margin-bottom: 0;
+}
+
+.panel-alert {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 0.5rem;
+  align-items: baseline;
+  margin: 0;
+  padding: 1rem 1.25rem;
+  font-size: 1.125rem;
+  border: 2px solid var(--st-done);
+  border-radius: 14px;
+  background: var(--st-done-bg);
+  color: var(--st-done);
+}
+
+.panel-alert[data-kind='working'] {
+  border-color: var(--pp-primary);
+  background: var(--st-scheduled-bg);
+  color: var(--st-scheduled);
+}
+
+.panel-next {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+}
+
+.panel-next p {
+  display: grid;
+  gap: 0.25rem;
+  justify-items: start;
+}
+
+.panel-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 1.5rem;
+}
+
+.panel-links a,
+.panel-card > p > a:not(.button) {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+}
+
+.panel-pets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.5rem;
+  margin: 0 0 0.75rem;
+  padding: 0;
+  list-style: none;
+}
+
+.panel-pets li {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.panel-pets small {
+  display: block;
+  color: var(--muted);
+}
+
+.panel-steps {
+  display: grid;
+  gap: 0.75rem;
+  margin: 0;
+  padding-left: 1.25rem;
+}
+
+.panel-steps li span {
+  display: block;
+  color: var(--muted);
+}
+
+.shortcuts.setup li[data-done='true'] {
+  background: color-mix(in srgb, var(--st-done) 8%, var(--surface));
+  border-color: color-mix(in srgb, var(--st-done) 40%, var(--line));
+}
+
+.setup-ok {
+  color: var(--st-done);
+}
