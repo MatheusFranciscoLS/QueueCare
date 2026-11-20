@@ -59,6 +59,10 @@
           "pet" : {
             "$ref" : "#/components/schemas/AgendaPetResponse"
           },
+          "priceCents" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
           "serviceId" : {
             "format" : "uuid",
             "type" : "string"
@@ -102,6 +106,10 @@
           },
           "pet" : {
             "$ref" : "#/components/schemas/AppointmentPetResponse"
+          },
+          "priceCents" : {
+            "format" : "int32",
+            "type" : "integer"
           },
           "providerId" : {
             "format" : "uuid",
@@ -532,6 +540,10 @@
             "format" : "int32",
             "type" : "integer"
           },
+          "priceCents" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
           "serviceId" : {
             "format" : "uuid",
             "type" : "string"
@@ -602,6 +614,18 @@
           },
           "name" : {
             "type" : "string"
+          },
+          "priceCents" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "priceLargeCents" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "priceMediumCents" : {
+            "format" : "int32",
+            "type" : "integer"
           }
         },
         "required" : [ "durationMinutes", "name" ],
@@ -630,6 +654,18 @@
           },
           "name" : {
             "type" : "string"
+          },
+          "priceCents" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "priceLargeCents" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "priceMediumCents" : {
+            "format" : "int32",
+            "type" : "integer"
           }
         },
         "required" : [ "active", "durationMinutes", "name" ],

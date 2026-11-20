@@ -44,19 +44,22 @@ class AgendaController {
 		}
 	}
 
-	/** {@code customerPhone}: só dígitos com DDI; presente na agenda do dia e na fila, nulo na semana e quando o tutor não informou. */
+	/**
+	 * {@code customerPhone}: só dígitos com DDI; presente na agenda do dia e na fila, nulo na semana e quando o tutor não informou.
+	 * {@code priceCents}: valor congelado na reserva (ADR 0019), também só no dia e na fila; nulo na semana e quando era "a combinar".
+	 */
 	record AgendaResponse(UUID id, Instant startsAt, Instant endsAt, String status, UUID serviceId, String serviceName, UUID customerId,
-			String customerName, String customerPhone, AgendaPetResponse pet) {
+			String customerName, String customerPhone, Integer priceCents, AgendaPetResponse pet) {
 		static AgendaResponse from(AgendaItem i) {
 			return new AgendaResponse(i.id(), i.startsAt(), i.endsAt(), i.status().name(), i.serviceId(), i.serviceName(), i.customerId(), i.customerName(),
-					i.customerPhone(), AgendaPetResponse.from(i.pet()));
+					i.customerPhone(), i.priceCents(), AgendaPetResponse.from(i.pet()));
 		}
 	}
 
 	record QueueResponse(int position, UUID id, Instant startsAt, Instant endsAt, UUID serviceId, String serviceName, UUID customerId, String customerName,
-			String customerPhone, Instant checkedInAt, AgendaPetResponse pet) {
+			String customerPhone, Integer priceCents, Instant checkedInAt, AgendaPetResponse pet) {
 		static QueueResponse from(QueueItem i) {
-			return new QueueResponse(i.position(), i.id(), i.startsAt(), i.endsAt(), i.serviceId(), i.serviceName(), i.customerId(), i.customerName(), i.customerPhone(), i.checkedInAt(),
+			return new QueueResponse(i.position(), i.id(), i.startsAt(), i.endsAt(), i.serviceId(), i.serviceName(), i.customerId(), i.customerName(), i.customerPhone(), i.priceCents(), i.checkedInAt(),
 					AgendaPetResponse.from(i.pet()));
 		}
 	}

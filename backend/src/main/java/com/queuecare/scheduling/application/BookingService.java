@@ -101,6 +101,7 @@ public class BookingService {
 
 		Appointment draft = new Appointment(provider.getId(), service.getId(), customer.getId(), range.startsAt(), range.endsAt(), now);
 		draft.attachPet(pet); // cópia dos dados do pet no momento da reserva (ADR 0016)
+		draft.attachPrice(service.priceFor(pet.getSize())); // valor congelado pelo porte do pet (ADR 0019)
 		Appointment appointment = appointments.saveAndFlush(draft);
 		events.save(new AppointmentEvent(appointment.getId(), customer.getId(), AppointmentEventType.SCHEDULED, now, null));
 		return appointment;

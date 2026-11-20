@@ -52,16 +52,18 @@ class ProviderController {
 		}
 	}
 
-	record ServiceRequest(@NotNull String name, @NotNull Integer durationMinutes) {
+	/** Preços em centavos (ADR 0019): {@code priceCents} é o base; os de porte médio e grande, quando ausentes, usam o base; todos ausentes = a combinar. */
+	record ServiceRequest(@NotNull String name, @NotNull Integer durationMinutes, Integer priceCents, Integer priceMediumCents, Integer priceLargeCents) {
 	}
 
 	/** No PUT, active é obrigatório: omitir o campo não pode reativar um serviço desativado sem querer. */
-	record ServiceUpdateRequest(@NotNull String name, @NotNull Integer durationMinutes, @NotNull Boolean active) {
+	record ServiceUpdateRequest(@NotNull String name, @NotNull Integer durationMinutes, @NotNull Boolean active, Integer priceCents, Integer priceMediumCents,
+			Integer priceLargeCents) {
 	}
 
-	record ServiceResponse(UUID id, String name, int durationMinutes, boolean active) {
+	record ServiceResponse(UUID id, String name, int durationMinutes, boolean active, Integer priceCents, Integer priceMediumCents, Integer priceLargeCents) {
 		static ServiceResponse from(ServiceOffering s) {
-			return new ServiceResponse(s.getId(), s.getName(), s.getDurationMinutes(), s.isActive());
+			return new ServiceResponse(s.getId(), s.getName(), s.getDurationMinutes(), s.isActive(), s.getPriceCents(), s.getPriceMediumCents(), s.getPriceLargeCents());
 		}
 	}
 
@@ -127,12 +129,12 @@ class ProviderController {
 	@PostMapping("/services")
 	@ResponseStatus(HttpStatus.CREATED)
 	ServiceResponse createService(@AuthenticationPrincipal Jwt jwt, @Valid @RequestBody ServiceRequest r) {
-		return ServiceResponse.from(admin.createService(userId(jwt), r.name(), r.durationMinutes()));
+		return ServiceResponse.from(admin.createService(userId(jwt), r.name(), r.durationMinutes(), r.priceCents(), r.priceMediumCents(), r.priceLargeCents()));
 	}
 
 	@PutMapping("/services/{id}")
 	ServiceResponse updateService(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID id, @Valid @RequestBody ServiceUpdateRequest r) {
-		return ServiceResponse.from(admin.updateService(userId(jwt), id, r.name(), r.durationMinutes(), r.active()));
+		return ServiceResponse.from(admin.updateService(userId(jwt), id, r.name(), r.durationMinutes(), r.active(), r.priceCents(), r.priceMediumCents(), r.priceLargeCents()));
 	}
 
 	// --- janelas de atendimento ---

@@ -92,6 +92,10 @@ public class Appointment {
 	@Column(name = "pet_vaccinated", updatable = false)
 	private Boolean petVaccinated;
 
+	/** Valor em centavos congelado na reserva (ADR 0019); nulo = a combinar. Nunca muda depois: mudar o preço do serviço não reescreve o histórico. */
+	@Column(name = "price_cents", updatable = false)
+	private Integer priceCents;
+
 	@Version
 	@Column(nullable = false)
 	private long version;
@@ -124,6 +128,15 @@ public class Appointment {
 		this.petTemperament = pet.getTemperament();
 		this.petHealthNotes = pet.getHealthNotes();
 		this.petVaccinated = pet.getVaccinated();
+	}
+
+	/** Congela o valor do agendamento NOVO (preço do serviço pelo porte do pet naquele momento). Só na criação, antes de gravar. */
+	public void attachPrice(Integer priceCents) {
+		this.priceCents = priceCents;
+	}
+
+	public Integer getPriceCents() {
+		return priceCents;
 	}
 
 	/** Move o agendamento para outro horário (ADR 0017). O serviço confere regras e situação antes; aqui só se muda. Mesma duração, mesmo pet. */

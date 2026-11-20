@@ -150,18 +150,24 @@ public class ProviderAdminService {
 	}
 
 	@Transactional
-	public ServiceOffering createService(UUID ownerUserId, String name, int durationMinutes) {
+	public ServiceOffering createService(UUID ownerUserId, String name, int durationMinutes, Integer priceCents, Integer priceMediumCents, Integer priceLargeCents) {
 		validateService(name, durationMinutes);
+		validatePrices(priceCents, priceMediumCents, priceLargeCents);
 		Provider provider = getBusiness(ownerUserId);
-		return services.save(new ServiceOffering(provider.getId(), name.trim(), durationMinutes));
+		ServiceOffering service = new ServiceOffering(provider.getId(), name.trim(), durationMinutes);
+		service.setPrices(priceCents, priceMediumCents, priceLargeCents);
+		return services.save(service);
 	}
 
 	@Transactional
-	public ServiceOffering updateService(UUID ownerUserId, UUID serviceId, String name, int durationMinutes, boolean active) {
+	public ServiceOffering updateService(UUID ownerUserId, UUID serviceId, String name, int durationMinutes, boolean active, Integer priceCents,
+			Integer priceMediumCents, Integer priceLargeCents) {
 		validateService(name, durationMinutes);
+		validatePrices(priceCents, priceMediumCents, priceLargeCents);
 		Provider provider = getBusiness(ownerUserId);
 		ServiceOffering service = services.findByIdAndProviderId(serviceId, provider.getId()).orElseThrow(ServiceNotFoundException::new);
 		service.update(name.trim(), durationMinutes, active);
+		service.setPrices(priceCents, priceMediumCents, priceLargeCents);
 		return services.save(service);
 	}
 
@@ -227,6 +233,19 @@ public class ProviderAdminService {
 		}
 		if (cancellationDeadlineMinutes < 0 || cancellationDeadlineMinutes > MAX_MINUTES_SETTING) {
 			throw new InvalidConfigurationException("cancellationDeadlineMinutes", "entre 0 e " + MAX_MINUTES_SETTING);
+		}
+	}
+
+	/** Preços em centavos, de 0 a R$ 100.000,00; nulo = a combinar. O banco repete a faixa. */
+	static final int MAX_PRICE_CENTS = 10_000_000;
+
+	private static void validatePrices(Integer base, Integer medium, Integer large) {
+		String[] fields = { "priceCents", "priceMediumCents", "priceLargeCents" };
+		Integer[] values = { base, medium, large };
+		for (int i = 0; i < values.length; i++) {
+			if (values[i] != null && (values[i] < 0 || values[i] > MAX_PRICE_CENTS)) {
+				throw new InvalidConfigurationException(fields[i], "entre 0 e " + MAX_PRICE_CENTS + " centavos");
+			}
 		}
 	}
 
