@@ -28,6 +28,8 @@ export interface AgendaItem {
 /** Quem chegou e espera, por ordem de chegada (a posição vem do servidor). */
 export interface QueueItem {
   position: number
+  /** CHECKED_IN (esperando), IN_PROGRESS (em atendimento) ou READY (pronto para retirada); ausente = CHECKED_IN. */
+  status?: string
   id: string
   startsAt: string
   endsAt: string
@@ -52,6 +54,10 @@ export function agendaApi(request: Request) {
     week: (start: string) => request<AgendaItem[]>(`/api/agenda/week?start=${encodeURIComponent(start)}`),
     queue: () => request<QueueItem[]>('/api/agenda/queue'),
     checkIn: (appointmentId: string) => request<unknown>(`/api/appointments/${encodeURIComponent(appointmentId)}/check-in`, { method: 'POST' }),
+    /** Começa o atendimento (de quem chegou). */
+    start: (appointmentId: string) => request<unknown>(`/api/appointments/${encodeURIComponent(appointmentId)}/start`, { method: 'POST' }),
+    /** O pet está pronto para retirada (de quem chegou ou está em atendimento). */
+    ready: (appointmentId: string) => request<unknown>(`/api/appointments/${encodeURIComponent(appointmentId)}/ready`, { method: 'POST' }),
     complete: (appointmentId: string) => request<unknown>(`/api/appointments/${encodeURIComponent(appointmentId)}/complete`, { method: 'POST' }),
     /** Remarcar: move o MESMO agendamento para o novo horário LOCAL do negócio (equipe: sem prazo e sem limite). */
     reschedule: (appointmentId: string, localStart: string) =>

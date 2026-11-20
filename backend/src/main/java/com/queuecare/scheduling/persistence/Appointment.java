@@ -155,7 +155,17 @@ public class Appointment {
 		this.status = AppointmentStatus.CHECKED_IN;
 	}
 
-	/** Atendimento concluído (CHECKED_IN para COMPLETED). */
+	/** O atendimento começou (CHECKED_IN para IN_PROGRESS). */
+	public void start() {
+		this.status = AppointmentStatus.IN_PROGRESS;
+	}
+
+	/** O pet está pronto para retirada (CHECKED_IN ou IN_PROGRESS para READY). */
+	public void markReady() {
+		this.status = AppointmentStatus.READY;
+	}
+
+	/** Atendimento concluído, ou seja, o pet foi retirado (CHECKED_IN, IN_PROGRESS ou READY para COMPLETED). */
 	public void complete() {
 		this.status = AppointmentStatus.COMPLETED;
 	}

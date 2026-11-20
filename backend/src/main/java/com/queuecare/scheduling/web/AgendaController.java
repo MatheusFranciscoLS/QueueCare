@@ -56,10 +56,11 @@ class AgendaController {
 		}
 	}
 
-	record QueueResponse(int position, UUID id, Instant startsAt, Instant endsAt, UUID serviceId, String serviceName, UUID customerId, String customerName,
+	/** {@code status}: CHECKED_IN (esperando), IN_PROGRESS (em atendimento) ou READY (pronto para retirada); ADR 0019. */
+	record QueueResponse(int position, String status, UUID id, Instant startsAt, Instant endsAt, UUID serviceId, String serviceName, UUID customerId, String customerName,
 			String customerPhone, Integer priceCents, Instant checkedInAt, AgendaPetResponse pet) {
 		static QueueResponse from(QueueItem i) {
-			return new QueueResponse(i.position(), i.id(), i.startsAt(), i.endsAt(), i.serviceId(), i.serviceName(), i.customerId(), i.customerName(), i.customerPhone(), i.priceCents(), i.checkedInAt(),
+			return new QueueResponse(i.position(), i.status().name(), i.id(), i.startsAt(), i.endsAt(), i.serviceId(), i.serviceName(), i.customerId(), i.customerName(), i.customerPhone(), i.priceCents(), i.checkedInAt(),
 					AgendaPetResponse.from(i.pet()));
 		}
 	}

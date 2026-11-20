@@ -592,3 +592,25 @@
     animation: none !important;
   }
 }
+
+/* Estados do atendimento (ADR 0019): em atendimento = meio preenchido por baixo; pronto = anel com centro */
+.pp .pp-dot[data-state='inprogress'] {
+  border-color: var(--pp-primary);
+  background: linear-gradient(0deg, var(--pp-primary) 50%, var(--pp-bg) 50%);
+}
+.pp .pp-dot[data-state='ready'] {
+  border-color: var(--pp-done);
+  background: radial-gradient(circle, var(--pp-done) 38%, var(--pp-bg) 42%);
+}
+.pp .pp-badge[data-state='inprogress'] {
+  background: var(--pp-st-scheduled-bg);
+  color: var(--pp-st-scheduled-fg);
+}
+.pp .pp-badge[data-state='ready'] {
+  background: var(--pp-st-done-bg);
+  color: var(--pp-st-done-fg);
+}
+.pp .week-block__state .pp-dot[data-state='inprogress'],
+.pp .week-block__state .pp-dot[data-state='ready'] {
+  border-width: 2.5px;
+}

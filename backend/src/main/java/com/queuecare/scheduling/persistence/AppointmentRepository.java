@@ -38,12 +38,13 @@ public interface AppointmentRepository extends JpaRepository<Appointment, UUID> 
 	}
 
 	/**
-	 * Fila do prestador: agendamentos em CHECKED_IN que COMEÇAM em [start, end), na ordem de chegada (instante do evento CHECKED_IN) e,
+	 * Fila do prestador: agendamentos que já chegaram e ainda não foram retirados (CHECKED_IN, IN_PROGRESS e READY) e COMEÇAM em [start, end), na ordem de chegada (instante do evento CHECKED_IN) e,
 	 * em empate, por id (ordem estável). Cada agendamento tem no máximo um evento CHECKED_IN (a transição só acontece uma vez).
 	 */
 	@Query("select new com.queuecare.scheduling.persistence.AppointmentRepository$QueueRow(a, e.createdAt) from Appointment a, AppointmentEvent e "
 			+ "where e.appointmentId = a.id and e.eventType = com.queuecare.scheduling.persistence.AppointmentEventType.CHECKED_IN "
-			+ "and a.providerId = :providerId and a.status = com.queuecare.scheduling.persistence.AppointmentStatus.CHECKED_IN "
+			+ "and a.providerId = :providerId and a.status in (com.queuecare.scheduling.persistence.AppointmentStatus.CHECKED_IN, com.queuecare.scheduling.persistence.AppointmentStatus.IN_PROGRESS, "
+			+ "com.queuecare.scheduling.persistence.AppointmentStatus.READY) "
 			+ "and a.startsAt >= :start and a.startsAt < :end order by e.createdAt asc, a.id asc")
 	java.util.List<QueueRow> findQueue(@Param("providerId") UUID providerId, @Param("start") Instant start, @Param("end") Instant end);
 

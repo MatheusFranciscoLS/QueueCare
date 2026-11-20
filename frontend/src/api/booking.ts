@@ -41,7 +41,7 @@ export interface BookedAppointment {
 
 /** Uma linha do histórico. `by`: quem agiu, sem nomes de funcionários para o cliente. Horários só nas remarcações. */
 export interface HistoryEntry {
-  type: 'SCHEDULED' | 'RESCHEDULED' | 'CHECKED_IN' | 'COMPLETED' | 'CANCELLED'
+  type: 'SCHEDULED' | 'RESCHEDULED' | 'CHECKED_IN' | 'STARTED' | 'READY' | 'COMPLETED' | 'CANCELLED'
   at: string
   by: 'CUSTOMER' | 'STAFF' | 'SYSTEM'
   actorName?: string | null

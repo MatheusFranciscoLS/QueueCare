@@ -78,7 +78,7 @@ public class AgendaService {
 	}
 
 	/** Uma pessoa na fila: posição (1 = a primeira a chegar), quem é, o que vai fazer e quando chegou. */
-	public record QueueItem(int position, UUID id, Instant startsAt, Instant endsAt, UUID serviceId, String serviceName, UUID customerId, String customerName,
+	public record QueueItem(int position, AppointmentStatus status, UUID id, Instant startsAt, Instant endsAt, UUID serviceId, String serviceName, UUID customerId, String customerName,
 			String customerPhone, Integer priceCents, Instant checkedInAt, PetInfo pet) {
 	}
 
@@ -167,7 +167,7 @@ public class AgendaService {
 		List<QueueItem> queue = new java.util.ArrayList<>();
 		for (AppointmentRepository.QueueRow row : rows) {
 			Appointment a = row.appointment();
-			queue.add(new QueueItem(queue.size() + 1, a.getId(), a.getStartsAt(), a.getEndsAt(), a.getServiceId(), serviceNames.get(a.getServiceId()), a.getCustomerId(),
+			queue.add(new QueueItem(queue.size() + 1, a.getStatus(), a.getId(), a.getStartsAt(), a.getEndsAt(), a.getServiceId(), serviceNames.get(a.getServiceId()), a.getCustomerId(),
 					customers.get(a.getCustomerId()).getName(), customers.get(a.getCustomerId()).getPhone(), a.getPriceCents(), row.checkedInAt(), PetInfo.of(a, true)));
 		}
 		return queue;

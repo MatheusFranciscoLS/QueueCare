@@ -17,6 +17,8 @@ import com.queuecare.scheduling.persistence.UserRole;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneId;
+import java.util.EnumSet;
+import java.util.Set;
 import java.util.UUID;
 import java.util.function.Consumer;
 import org.springframework.dao.OptimisticLockingFailureException;
@@ -31,7 +33,7 @@ import org.springframework.transaction.support.TransactionTemplate;
  * resposta, sem pista de existência); atendente sem vínculo: 403 antes de qualquer consulta ao agendamento.
  * <ul>
  *   <li>check-in: SCHEDULED para CHECKED_IN, só no DIA do agendamento no fuso do prestador (WRONG_DAY, 422);</li>
- *   <li>conclusão: CHECKED_IN para COMPLETED;</li>
+ *   <li>começar (IN_PROGRESS), pronto (READY) e conclusão (COMPLETED): só para frente, a partir de quem já chegou (ADR 0019);</li>
  *   <li>cancelado: ALREADY_CANCELLED; qualquer outra situação: INVALID_STATE (409);</li>
  *   <li>cada transição grava o evento no histórico; duas requisições ao mesmo tempo: uma vence e a outra recebe
  *       CONCURRENT_UPDATE (bloqueio otimista por {@code version}).</li>
@@ -60,11 +62,24 @@ public class AttendanceService {
 	}
 
 	public Appointment checkIn(UUID appointmentId, UUID actorId) {
-		return run(() -> inTransaction(appointmentId, actorId, AppointmentStatus.SCHEDULED, AppointmentEventType.CHECKED_IN, Appointment::checkIn, true));
+		return run(() -> inTransaction(appointmentId, actorId, EnumSet.of(AppointmentStatus.SCHEDULED), AppointmentEventType.CHECKED_IN, Appointment::checkIn, true));
 	}
 
+	/** Começa o atendimento (ADR 0019): só de quem chegou. */
+	public Appointment start(UUID appointmentId, UUID actorId) {
+		return run(() -> inTransaction(appointmentId, actorId, EnumSet.of(AppointmentStatus.CHECKED_IN), AppointmentEventType.STARTED, Appointment::start, false));
+	}
+
+	/** Pet pronto para retirada (ADR 0019): de quem chegou ou está em atendimento (começar não é obrigatório). */
+	public Appointment ready(UUID appointmentId, UUID actorId) {
+		return run(() -> inTransaction(appointmentId, actorId, EnumSet.of(AppointmentStatus.CHECKED_IN, AppointmentStatus.IN_PROGRESS), AppointmentEventType.READY,
+				Appointment::markReady, false));
+	}
+
+	/** Conclui (pet retirado): de qualquer situação de atendimento em andamento; só para frente, nunca de SCHEDULED nem de CANCELLED. */
 	public Appointment complete(UUID appointmentId, UUID actorId) {
-		return run(() -> inTransaction(appointmentId, actorId, AppointmentStatus.CHECKED_IN, AppointmentEventType.COMPLETED, Appointment::complete, false));
+		return run(() -> inTransaction(appointmentId, actorId, EnumSet.of(AppointmentStatus.CHECKED_IN, AppointmentStatus.IN_PROGRESS, AppointmentStatus.READY),
+				AppointmentEventType.COMPLETED, Appointment::complete, false));
 	}
 
 	private Appointment run(java.util.function.Supplier<Appointment> action) {
@@ -76,7 +91,7 @@ public class AttendanceService {
 		}
 	}
 
-	private Appointment inTransaction(UUID appointmentId, UUID actorId, AppointmentStatus required, AppointmentEventType event,
+	private Appointment inTransaction(UUID appointmentId, UUID actorId, Set<AppointmentStatus> allowed, AppointmentEventType event,
 			Consumer<Appointment> transition, boolean sameDayOnly) {
 		UserAccount actor = users.findById(actorId).filter(UserAccount::isActive).orElseThrow(() -> new AccessDeniedException("usuário inválido"));
 		if (actor.getRole() != UserRole.PROVIDER && actor.getRole() != UserRole.ATTENDANT) {
@@ -88,7 +103,7 @@ public class AttendanceService {
 		if (appointment.getStatus() == AppointmentStatus.CANCELLED) {
 			throw new AttendanceRejectedException(Reason.ALREADY_CANCELLED);
 		}
-		if (appointment.getStatus() != required) {
+		if (!allowed.contains(appointment.getStatus())) {
 			throw new AttendanceRejectedException(Reason.INVALID_STATE);
 		}
 		Instant now = clock.instant();
