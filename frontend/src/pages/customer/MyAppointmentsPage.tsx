@@ -12,6 +12,7 @@ import { useSingleFlight } from '../useSingleFlight'
 import { Loading } from '../Loading'
 import { AppointmentHistory } from './AppointmentHistory'
 import { RescheduleBox } from './RescheduleBox'
+import { PetAvatar } from '../../ui/components'
 
 const PAGE_SIZE = 50
 const STATUS_LABEL: Record<string, string> = { SCHEDULED: 'Agendado', CHECKED_IN: 'Chegou', COMPLETED: 'Concluído', CANCELLED: 'Cancelado' }
@@ -160,6 +161,7 @@ function Row({
 
   return (
     <li className="row" ref={rowRef} tabIndex={-1}>
+      {item.pet && <PetAvatar species={item.pet.species} />}
       <span>
         <strong>{longDate(todayIn(zone, new Date(item.startsAt)))}</strong>, {timeIn(item.startsAt, zone)}–{timeIn(item.endsAt, zone)} · {what}
         {item.pet && (
