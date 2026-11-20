@@ -173,15 +173,22 @@ describe('cadastro', () => {
     await user.click(screen.getByRole('button', { name: 'Criar conta' }))
     expect(await screen.findByText('Informe o seu nome.')).toBeInTheDocument()
     expect(screen.getByText('Informe um e-mail válido.')).toBeInTheDocument()
+    expect(screen.getByText('Informe o seu WhatsApp, com DDD.')).toBeInTheDocument()
     expect(calls.length).toBe(0)
 
     await user.type(screen.getByLabelText('Nome'), 'Maria Souza')
     await user.type(screen.getByLabelText('E-mail'), 'maria@exemplo.test')
+    await user.type(screen.getByLabelText('WhatsApp'), '123')
+    await user.click(screen.getByRole('button', { name: 'Criar conta' }))
+    expect(await screen.findByText('Informe o DDD e o número. Exemplo: (11) 91234-5678.')).toBeInTheDocument()
+    expect(calls.length).toBe(0)
+    await user.clear(screen.getByLabelText('WhatsApp'))
+    await user.type(screen.getByLabelText('WhatsApp'), '(11) 91234-5678')
     await user.type(screen.getByLabelText('Senha'), PASSWORD)
     await user.click(screen.getByRole('button', { name: 'Criar conta' }))
 
     expect(await screen.findByRole('heading', { name: 'Olá, Maria Souza' })).toBeInTheDocument()
-    expect(calls[0].body).toEqual({ name: 'Maria Souza', email: 'maria@exemplo.test', password: PASSWORD })
+    expect(calls[0].body).toEqual({ name: 'Maria Souza', email: 'maria@exemplo.test', password: PASSWORD, phone: '(11) 91234-5678' })
   })
 
   it('e-mail já cadastrado aparece no campo de e-mail', async () => {
@@ -191,6 +198,7 @@ describe('cadastro', () => {
 
     await user.type(screen.getByLabelText('Nome'), 'Maria Souza')
     await user.type(screen.getByLabelText('E-mail'), 'maria@exemplo.test')
+    await user.type(screen.getByLabelText('WhatsApp'), '11912345678')
     await user.type(screen.getByLabelText('Senha'), PASSWORD)
     await user.click(screen.getByRole('button', { name: 'Criar conta' }))
 

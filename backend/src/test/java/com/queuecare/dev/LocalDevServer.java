@@ -136,7 +136,15 @@ public final class LocalDevServer {
 		UUID marina = user(c, "Marina Souza", "marina@pelo.test", "CUSTOMER");
 		UUID joao = user(c, "João Ferreira", "joao@pelo.test", "CUSTOMER");
 		UUID carla = user(c, "Carla Mendes", "carla@pelo.test", "CUSTOMER");
-		user(c, "Paulo Ribeiro", "paulo@pelo.test", "CUSTOMER"); // cliente novo, sem pets nem agendamentos (estado vazio)
+		user(c, "Paulo Ribeiro", "paulo@pelo.test", "CUSTOMER"); // cliente novo, sem pets nem agendamentos nem WhatsApp (estados vazios)
+		// WhatsApp fictício (ADR 0019): números de demonstração, nunca de pessoas reais.
+		try (PreparedStatement ps = c.prepareStatement("UPDATE users SET phone = ? WHERE id = ?")) {
+			for (Object[] row : new Object[][] { { "5511999990001", marina }, { "5511999990002", joao }, { "5511999990003", carla } }) {
+				ps.setString(1, (String) row[0]);
+				ps.setObject(2, row[1]);
+				ps.executeUpdate();
+			}
+		}
 
 		UUID provider;
 		try (PreparedStatement ps = c.prepareStatement("INSERT INTO providers (user_id, business_name, time_zone, minimum_notice_minutes, cancellation_deadline_minutes, slug, published) "

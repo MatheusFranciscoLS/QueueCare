@@ -69,6 +69,11 @@ export function HomePage() {
       )}
       {user.role === 'CUSTOMER' && (
         <>
+          {!user.phone && (
+            <p className="notice">
+              Falta o seu WhatsApp: é por ele que o estúdio avisa quando o seu pet fica pronto. <Link to="/perfil">Adicionar WhatsApp</Link>
+            </p>
+          )}
           <h2>No dia a dia</h2>
           <ul className="shortcuts">
             <li>

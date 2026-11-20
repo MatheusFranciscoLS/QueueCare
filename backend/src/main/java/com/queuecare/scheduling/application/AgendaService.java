@@ -68,12 +68,12 @@ public class AgendaService {
 
 	/** Um agendamento da agenda. */
 	public record AgendaItem(UUID id, Instant startsAt, Instant endsAt, AppointmentStatus status, UUID serviceId, String serviceName,
-			UUID customerId, String customerName, PetInfo pet) {
+			UUID customerId, String customerName, String customerPhone, PetInfo pet) {
 	}
 
 	/** Uma pessoa na fila: posição (1 = a primeira a chegar), quem é, o que vai fazer e quando chegou. */
 	public record QueueItem(int position, UUID id, Instant startsAt, Instant endsAt, UUID serviceId, String serviceName, UUID customerId, String customerName,
-			Instant checkedInAt, PetInfo pet) {
+			String customerPhone, Instant checkedInAt, PetInfo pet) {
 	}
 
 	/** Onde a pessoa trabalha: o negócio e o fuso em que os horários da agenda valem (o atendente não tem acesso a /api/provider). */
@@ -134,10 +134,12 @@ public class AgendaService {
 
 		Map<UUID, String> serviceNames = services.findAllById(found.stream().map(Appointment::getServiceId).distinct().toList()).stream()
 				.collect(Collectors.toMap(ServiceOffering::getId, ServiceOffering::getName));
-		Map<UUID, String> customerNames = users.findAllById(found.stream().map(Appointment::getCustomerId).distinct().toList()).stream()
-				.collect(Collectors.toMap(UserAccount::getId, UserAccount::getName, (a, b) -> a, java.util.HashMap::new));
+		Map<UUID, UserAccount> customers = users.findAllById(found.stream().map(Appointment::getCustomerId).distinct().toList()).stream()
+				.collect(Collectors.toMap(UserAccount::getId, u -> u, (a, b) -> a, java.util.HashMap::new));
+		// O telefone do tutor só vai na agenda do DIA (onde o atendimento acontece); a semana, de várias linhas, não o leva (ADR 0019).
 		return found.stream().map(a -> new AgendaItem(a.getId(), a.getStartsAt(), a.getEndsAt(), a.getStatus(), a.getServiceId(),
-				serviceNames.get(a.getServiceId()), a.getCustomerId(), customerNames.get(a.getCustomerId()), PetInfo.of(a, petDetails))).toList();
+				serviceNames.get(a.getServiceId()), a.getCustomerId(), customers.get(a.getCustomerId()).getName(),
+				petDetails ? customers.get(a.getCustomerId()).getPhone() : null, PetInfo.of(a, petDetails))).toList();
 	}
 
 
@@ -154,13 +156,13 @@ public class AgendaService {
 
 		Map<UUID, String> serviceNames = services.findAllById(rows.stream().map(r -> r.appointment().getServiceId()).distinct().toList()).stream()
 				.collect(Collectors.toMap(ServiceOffering::getId, ServiceOffering::getName));
-		Map<UUID, String> customerNames = users.findAllById(rows.stream().map(r -> r.appointment().getCustomerId()).distinct().toList()).stream()
-				.collect(Collectors.toMap(UserAccount::getId, UserAccount::getName, (a, b) -> a, java.util.HashMap::new));
+		Map<UUID, UserAccount> customers = users.findAllById(rows.stream().map(r -> r.appointment().getCustomerId()).distinct().toList()).stream()
+				.collect(Collectors.toMap(UserAccount::getId, u -> u, (a, b) -> a, java.util.HashMap::new));
 		List<QueueItem> queue = new java.util.ArrayList<>();
 		for (AppointmentRepository.QueueRow row : rows) {
 			Appointment a = row.appointment();
 			queue.add(new QueueItem(queue.size() + 1, a.getId(), a.getStartsAt(), a.getEndsAt(), a.getServiceId(), serviceNames.get(a.getServiceId()), a.getCustomerId(),
-					customerNames.get(a.getCustomerId()), row.checkedInAt(), PetInfo.of(a, true)));
+					customers.get(a.getCustomerId()).getName(), customers.get(a.getCustomerId()).getPhone(), row.checkedInAt(), PetInfo.of(a, true)));
 		}
 		return queue;
 	}

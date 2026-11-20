@@ -33,8 +33,8 @@ public class AccountProvisioner {
 
 	/** Cadastro público: e-mail repetido é {@code EmailAlreadyRegisteredException} (409 "e-mail já cadastrado"). */
 	@Transactional
-	UserAccount registerPublic(UserRole role, String name, String email, String rawPassword) {
-		return create(role, name, email, rawPassword, false);
+	UserAccount registerPublic(UserRole role, String name, String email, String rawPassword, String phone) {
+		return create(role, name, email, rawPassword, false, phone);
 	}
 
 	/**
@@ -45,19 +45,20 @@ public class AccountProvisioner {
 	@Transactional
 	public UserAccount provision(UserRole role, String name, String email, String rawPassword, boolean mustChangePassword) {
 		try {
-			return create(role, name, email, rawPassword, mustChangePassword);
+			return create(role, name, email, rawPassword, mustChangePassword, null);
 		} catch (EmailAlreadyRegisteredException e) {
 			throw new AccountConflictException();
 		}
 	}
 
-	private UserAccount create(UserRole role, String name, String email, String rawPassword, boolean mustChangePassword) {
+	private UserAccount create(UserRole role, String name, String email, String rawPassword, boolean mustChangePassword, String phone) {
 		AuthService.validatePassword(rawPassword);
 		String normalizedEmail = AuthService.normalizeEmail(email);
 		if (users.findByEmail(normalizedEmail).isPresent()) {
 			throw new EmailAlreadyRegisteredException();
 		}
 		UserAccount user = new UserAccount(name.trim(), normalizedEmail, passwordEncoder.encode(rawPassword), role, clock.instant(), mustChangePassword);
+		user.setPhone(phone);
 		try {
 			return users.saveAndFlush(user);
 		} catch (DataIntegrityViolationException e) {

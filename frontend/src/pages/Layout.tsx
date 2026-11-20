@@ -41,9 +41,14 @@ function Account({ user, onNavigate }: { user: User; onNavigate?: () => void }) 
         <span>{ROLE_LABEL[user.role]}</span>
       </div>
       {!user.mustChangePassword && (
-        <Link to="/trocar-senha" className="pp-who__link" onClick={onNavigate}>
-          Trocar senha
-        </Link>
+        <>
+          <Link to="/perfil" className="pp-who__link" onClick={onNavigate}>
+            Meu perfil
+          </Link>
+          <Link to="/trocar-senha" className="pp-who__link" onClick={onNavigate}>
+            Trocar senha
+          </Link>
+        </>
       )}
       <ThemeToggle />
       <Button variant="quiet" onClick={logout}>
