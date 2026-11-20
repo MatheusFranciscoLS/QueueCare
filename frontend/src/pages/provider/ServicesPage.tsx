@@ -3,7 +3,8 @@ import { Link } from 'react-router-dom'
 import { ApiError } from '../../api/client'
 import { isNotConfigured } from '../../api/errors'
 import { describeError } from '../../api/messages'
-import { providerApi, type Service } from '../../api/provider'
+import { formatMoney, moneyInput, parseMoney } from '../../api/money'
+import { providerApi, type Service, type ServicePrices } from '../../api/provider'
 import { useAuth } from '../../auth/session'
 import { Field } from '../Field'
 import { RefreshWarning } from '../RefreshWarning'
@@ -13,6 +14,22 @@ import { Loading } from '../Loading'
 
 const MIN_MINUTES = 5
 const MAX_MINUTES = 480
+
+type PriceErrors = { price?: string; priceMedium?: string; priceLarge?: string }
+
+const PRICE_ERROR = 'Informe o valor em reais, por exemplo 50 ou 49,90.'
+
+/** Os três preços digitados (vazio = não informado) em centavos, ou o erro de cada campo. */
+function readPrices(price: string, medium: string, large: string): { prices?: ServicePrices; errors: PriceErrors } {
+  const values = [parseMoney(price), parseMoney(medium), parseMoney(large)]
+  const errors: PriceErrors = {
+    price: values[0] === undefined ? PRICE_ERROR : undefined,
+    priceMedium: values[1] === undefined ? PRICE_ERROR : undefined,
+    priceLarge: values[2] === undefined ? PRICE_ERROR : undefined,
+  }
+  if (errors.price || errors.priceMedium || errors.priceLarge) return { errors }
+  return { prices: { priceCents: values[0] ?? null, priceMediumCents: values[1] ?? null, priceLargeCents: values[2] ?? null }, errors }
+}
 
 function validate(name: string, duration: string): { name?: string; duration?: string } {
   const minutes = Number(duration)
@@ -62,7 +79,10 @@ function NewService({ onCreated }: { onCreated: () => Promise<void> }) {
   const api = useMemo(() => providerApi(request), [request])
   const [name, setName] = useState('')
   const [duration, setDuration] = useState('60')
-  const [errors, setErrors] = useState<{ name?: string; duration?: string; form?: string }>({})
+  const [price, setPrice] = useState('')
+  const [priceMedium, setPriceMedium] = useState('')
+  const [priceLarge, setPriceLarge] = useState('')
+  const [errors, setErrors] = useState<{ name?: string; duration?: string; form?: string } & PriceErrors>({})
   const [busy, setBusy] = useState(false)
   const once = useSingleFlight()
 
@@ -70,20 +90,25 @@ function NewService({ onCreated }: { onCreated: () => Promise<void> }) {
     event.preventDefault()
     await once(async () => {
       const found = validate(name, duration)
-      if (found.name || found.duration) {
-        setErrors(found)
+      const read = readPrices(price, priceMedium, priceLarge)
+      if (found.name || found.duration || !read.prices) {
+        setErrors({ ...found, ...read.errors })
         return
       }
       setErrors({})
       setBusy(true)
       try {
-        await api.createService({ name: name.trim(), durationMinutes: Number(duration) })
+        await api.createService({ name: name.trim(), durationMinutes: Number(duration), ...read.prices })
         setName('')
         setDuration('60')
+        setPrice('')
+        setPriceMedium('')
+        setPriceLarge('')
         await onCreated()
       } catch (e) {
         // Erro de campo aparece no campo; o aviso geral só quando não há campo a apontar (sem repetir o mesmo texto).
-        if (e instanceof ApiError && e.status === 400 && (e.fieldErrors.name || e.fieldErrors.durationMinutes)) setErrors({ name: e.fieldErrors.name, duration: e.fieldErrors.durationMinutes })
+        if (e instanceof ApiError && e.status === 400 && (e.fieldErrors.name || e.fieldErrors.durationMinutes || e.fieldErrors.priceCents || e.fieldErrors.priceMediumCents || e.fieldErrors.priceLargeCents))
+          setErrors({ name: e.fieldErrors.name, duration: e.fieldErrors.durationMinutes, price: e.fieldErrors.priceCents, priceMedium: e.fieldErrors.priceMediumCents, priceLarge: e.fieldErrors.priceLargeCents })
         else setErrors({ form: describeError(e) })
       } finally {
         setBusy(false)
@@ -107,6 +132,9 @@ function NewService({ onCreated }: { onCreated: () => Promise<void> }) {
         error={errors.duration}
         onChange={(e) => { setDuration(e.target.value); setErrors((x) => ({ ...x, duration: undefined })) }}
       />
+      <Field label="Preço base (R$, opcional)" name="new-price" disabled={busy} inputMode="decimal" hint="Vazio = a combinar." value={price} error={errors.price} onChange={(e) => { setPrice(e.target.value); setErrors((x) => ({ ...x, price: undefined })) }} />
+      <Field label="Preço para porte médio (R$, opcional)" name="new-price-medium" disabled={busy} inputMode="decimal" hint="Vazio = usa o preço base." value={priceMedium} error={errors.priceMedium} onChange={(e) => { setPriceMedium(e.target.value); setErrors((x) => ({ ...x, priceMedium: undefined })) }} />
+      <Field label="Preço para porte grande (R$, opcional)" name="new-price-large" disabled={busy} inputMode="decimal" hint="Vazio = usa o preço base." value={priceLarge} error={errors.priceLarge} onChange={(e) => { setPriceLarge(e.target.value); setErrors((x) => ({ ...x, priceLarge: undefined })) }} />
       <p role="alert" className="error" hidden={!errors.form}>
         {errors.form}
       </p>
@@ -117,27 +145,43 @@ function NewService({ onCreated }: { onCreated: () => Promise<void> }) {
   )
 }
 
+/** Algum preço cadastrado? Sem nenhum, a linha não fala de preço (fica "a combinar" só no Agendar). */
+function hasPrice(s: Service) {
+  return s.priceCents != null || s.priceMediumCents != null || s.priceLargeCents != null
+}
+
+/** "R$ 50,00" ou, com preço por porte, "P R$ 50,00 · M R$ 70,00 · G R$ 90,00" (médio e grande sem valor próprio usam o base). */
+function priceLine(s: Service): string {
+  if (s.priceMediumCents == null && s.priceLargeCents == null) return formatMoney(s.priceCents ?? 0)
+  const part = (label: string, cents: number | null | undefined) => (cents == null ? null : `${label} ${formatMoney(cents)}`)
+  return [part('P', s.priceCents), part('M', s.priceMediumCents), part('G', s.priceLargeCents)].filter(Boolean).join(' · ')
+}
+
 function ServiceRow({ service, onChanged }: { service: Service; onChanged: () => Promise<void> }) {
   const { request } = useAuth()
   const api = useMemo(() => providerApi(request), [request])
   const [editing, setEditing] = useState(false)
   const [name, setName] = useState(service.name)
   const [duration, setDuration] = useState(String(service.durationMinutes))
-  const [errors, setErrors] = useState<{ name?: string; duration?: string; form?: string }>({})
+  const [price, setPrice] = useState(moneyInput(service.priceCents))
+  const [priceMedium, setPriceMedium] = useState(moneyInput(service.priceMediumCents))
+  const [priceLarge, setPriceLarge] = useState(moneyInput(service.priceLargeCents))
+  const [errors, setErrors] = useState<{ name?: string; duration?: string; form?: string } & PriceErrors>({})
   const [busy, setBusy] = useState(false)
   const once = useSingleFlight()
 
   async function save(active: boolean) {
     await once(async () => {
       const found = validate(name, duration)
-      if (found.name || found.duration) {
-        setErrors(found)
+      const read = readPrices(price, priceMedium, priceLarge)
+      if (found.name || found.duration || !read.prices) {
+        setErrors({ ...found, ...read.errors })
         return
       }
       setErrors({})
       setBusy(true)
       try {
-        await api.updateService(service.id, { name: name.trim(), durationMinutes: Number(duration), active })
+        await api.updateService(service.id, { name: name.trim(), durationMinutes: Number(duration), active, ...read.prices })
         setEditing(false)
         await onChanged()
       } catch (e) {
@@ -152,7 +196,7 @@ function ServiceRow({ service, onChanged }: { service: Service; onChanged: () =>
     return (
       <li className="row">
         <span>
-          <strong>{service.name}</strong> · {service.durationMinutes} min {!service.active && <span className="badge">Desativado</span>}
+          <strong>{service.name}</strong> · {service.durationMinutes} min{hasPrice(service) && <> · {priceLine(service)}</>} {!service.active && <span className="badge">Desativado</span>}
         </span>
         <span className="actions">
           <button
@@ -163,6 +207,9 @@ function ServiceRow({ service, onChanged }: { service: Service; onChanged: () =>
               // Ao abrir a edição, os campos partem dos valores ATUAIS do serviço (o que o servidor devolveu por último).
               setName(service.name)
               setDuration(String(service.durationMinutes))
+              setPrice(moneyInput(service.priceCents))
+              setPriceMedium(moneyInput(service.priceMediumCents))
+              setPriceLarge(moneyInput(service.priceLargeCents))
               setErrors({})
               setEditing(true)
             }}
@@ -185,6 +232,9 @@ function ServiceRow({ service, onChanged }: { service: Service; onChanged: () =>
     <li className="row editing">
       <Field label="Nome" name={`name-${service.id}`} disabled={busy} value={name} error={errors.name} onChange={(e) => setName(e.target.value)} />
       <Field label="Duração (minutos)" name={`duration-${service.id}`} disabled={busy} type="number" inputMode="numeric" min={MIN_MINUTES} max={MAX_MINUTES} step={5} value={duration} error={errors.duration} onChange={(e) => setDuration(e.target.value)} />
+      <Field label="Preço base (R$, opcional)" name={`price-${service.id}`} disabled={busy} inputMode="decimal" hint="Vazio = a combinar." value={price} error={errors.price} onChange={(e) => { setPrice(e.target.value); setErrors((x) => ({ ...x, price: undefined })) }} />
+      <Field label="Preço para porte médio (R$, opcional)" name={`price-medium-${service.id}`} disabled={busy} inputMode="decimal" hint="Vazio = usa o preço base." value={priceMedium} error={errors.priceMedium} onChange={(e) => { setPriceMedium(e.target.value); setErrors((x) => ({ ...x, priceMedium: undefined })) }} />
+      <Field label="Preço para porte grande (R$, opcional)" name={`price-large-${service.id}`} disabled={busy} inputMode="decimal" hint="Vazio = usa o preço base." value={priceLarge} error={errors.priceLarge} onChange={(e) => { setPriceLarge(e.target.value); setErrors((x) => ({ ...x, priceLarge: undefined })) }} />
       <p role="alert" className="error" hidden={!errors.form}>
         {errors.form}
       </p>
@@ -200,6 +250,9 @@ function ServiceRow({ service, onChanged }: { service: Service; onChanged: () =>
             setEditing(false)
             setName(service.name)
             setDuration(String(service.durationMinutes))
+            setPrice(moneyInput(service.priceCents))
+            setPriceMedium(moneyInput(service.priceMediumCents))
+            setPriceLarge(moneyInput(service.priceLargeCents))
             setErrors({})
           }}
         >

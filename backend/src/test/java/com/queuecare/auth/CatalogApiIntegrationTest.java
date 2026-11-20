@@ -99,12 +99,12 @@ class CatalogApiIntegrationTest extends AuthIntegrationTestBase {
 	}
 
 	@Test
-	void servicosSoOsAtivosComIdNomeEDuracao() throws Exception {
+	void servicosSoOsAtivosComIdNomeDuracaoEPreco() throws Exception {
 		String body = call("/api/catalog/providers/" + providerA + "/services", customer).getContentAsString();
 
 		assertEquals(List.of("Alinhamento", "Troca de óleo"), JsonPath.<List<String>>read(body, "$[*].name"));
 		for (Map<String, Object> item : JsonPath.<List<Map<String, Object>>>read(body, "$")) {
-			assertEquals(Set.of("id", "name", "durationMinutes"), item.keySet());
+			assertEquals(Set.of("id", "name", "durationMinutes", "priceCents", "priceMediumCents", "priceLargeCents"), item.keySet()); // ADR 0019: o cliente vê o preço
 		}
 		assertFalse(body.contains("Serviço antigo"), "serviço desativado nunca aparece");
 		assertEquals("[]", call("/api/catalog/providers/" + providerC + "/services", customer).getContentAsString(), "prestador sem serviços: lista vazia");

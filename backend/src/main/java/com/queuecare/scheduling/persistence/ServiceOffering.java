@@ -24,6 +24,16 @@ public class ServiceOffering {
 	@Column(name = "duration_minutes", nullable = false)
 	private int durationMinutes;
 
+	/** Preço em centavos (ADR 0019). Nulo = a combinar. O de porte médio e o de grande, quando nulos, valem o base. */
+	@Column(name = "price_cents")
+	private Integer priceCents;
+
+	@Column(name = "price_medium_cents")
+	private Integer priceMediumCents;
+
+	@Column(name = "price_large_cents")
+	private Integer priceLargeCents;
+
 	@Column(nullable = false)
 	private boolean active;
 
@@ -43,6 +53,39 @@ public class ServiceOffering {
 		this.name = Objects.requireNonNull(name);
 		this.durationMinutes = durationMinutes;
 		this.active = active;
+	}
+
+	/** Define os preços em centavos (nulo = a combinar / usa o base). Já validados pelo serviço de aplicação; o banco repete a faixa. */
+	public void setPrices(Integer base, Integer medium, Integer large) {
+		this.priceCents = base;
+		this.priceMediumCents = medium;
+		this.priceLargeCents = large;
+	}
+
+	/**
+	 * O preço para o porte do pet: médio e grande usam o próprio valor se houver, senão o base; pequeno e porte não informado usam o base.
+	 * Nulo quando o serviço está "a combinar" para aquele porte.
+	 */
+	public Integer priceFor(com.queuecare.pets.PetSize size) {
+		if (size == com.queuecare.pets.PetSize.MEDIUM && priceMediumCents != null) {
+			return priceMediumCents;
+		}
+		if (size == com.queuecare.pets.PetSize.LARGE && priceLargeCents != null) {
+			return priceLargeCents;
+		}
+		return priceCents;
+	}
+
+	public Integer getPriceCents() {
+		return priceCents;
+	}
+
+	public Integer getPriceMediumCents() {
+		return priceMediumCents;
+	}
+
+	public Integer getPriceLargeCents() {
+		return priceLargeCents;
 	}
 
 	public UUID getId() {

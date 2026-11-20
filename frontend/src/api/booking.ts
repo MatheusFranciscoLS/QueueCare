@@ -10,6 +10,10 @@ export interface CatalogService {
   id: string
   name: string
   durationMinutes: number
+  /** Preços em centavos (ADR 0019); todos nulos = a combinar. Médio e grande nulos valem o base. */
+  priceCents?: number | null
+  priceMediumCents?: number | null
+  priceLargeCents?: number | null
 }
 
 /** Horário livre: `localStart` é o horário LOCAL do negócio (AAAA-MM-DDTHH:mm:ss), o mesmo que se envia para reservar. */
@@ -29,6 +33,8 @@ export interface BookedAppointment {
   businessName: string | null
   timeZone: string | null
   serviceName: string | null
+  /** Valor congelado na reserva, em centavos; nulo = a combinar. */
+  priceCents?: number | null
   /** Cópia dos dados do pet no momento da reserva (só nome e espécie); nulo em agendamento sem pet. */
   pet?: { name: string; species: string } | null
 }

@@ -34,9 +34,10 @@ class CatalogController {
 		}
 	}
 
-	record ServiceResponse(UUID id, String name, int durationMinutes) {
+	/** Preços em centavos (ADR 0019); todos nulos = a combinar. Médio e grande nulos valem o base. */
+	record ServiceResponse(UUID id, String name, int durationMinutes, Integer priceCents, Integer priceMediumCents, Integer priceLargeCents) {
 		static ServiceResponse from(ServiceView v) {
-			return new ServiceResponse(v.id(), v.name(), v.durationMinutes());
+			return new ServiceResponse(v.id(), v.name(), v.durationMinutes(), v.priceCents(), v.priceMediumCents(), v.priceLargeCents());
 		}
 	}
 

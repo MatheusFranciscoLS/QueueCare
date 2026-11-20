@@ -4,6 +4,7 @@ import { ApiError } from '../../api/client'
 import { longDate, timeIn, todayIn } from '../../api/dates'
 import { describeError } from '../../api/messages'
 import { bookingApi, type BookedAppointment } from '../../api/booking'
+import { formatMoney } from '../../api/money'
 import { SPECIES_LABEL } from '../../api/pets'
 import { useAuth } from '../../auth/session'
 import { RefreshWarning } from '../RefreshWarning'
@@ -169,7 +170,8 @@ function Row({
             {' '}
             · {item.pet.name} ({SPECIES_LABEL[item.pet.species] ?? item.pet.species})
           </>
-        )}{' '}
+        )}
+        {item.priceCents != null && <> · {formatMoney(item.priceCents)}</>}{' '}
         <span className="badge" data-status={status}>{STATUS_LABEL[status] ?? status}</span>
       </span>
       {status === 'SCHEDULED' && (

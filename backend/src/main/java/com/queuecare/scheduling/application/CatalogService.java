@@ -22,7 +22,7 @@ public class CatalogService {
 	}
 
 	/** Serviço ativo visível ao cliente. */
-	public record ServiceView(UUID id, String name, int durationMinutes) {
+	public record ServiceView(UUID id, String name, int durationMinutes, Integer priceCents, Integer priceMediumCents, Integer priceLargeCents) {
 	}
 
 	private final ProviderRepository providers;
@@ -42,6 +42,6 @@ public class CatalogService {
 	public List<ServiceView> services(UUID providerId) {
 		providers.findActiveById(providerId).orElseThrow(() -> new BookingRejectedException(Reason.PROVIDER_NOT_FOUND));
 		return services.findByProviderIdAndActiveTrueOrderByNameAscIdAsc(providerId).stream()
-				.map(s -> new ServiceView(s.getId(), s.getName(), s.getDurationMinutes())).toList();
+				.map(s -> new ServiceView(s.getId(), s.getName(), s.getDurationMinutes(), s.getPriceCents(), s.getPriceMediumCents(), s.getPriceLargeCents())).toList();
 	}
 }

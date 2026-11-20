@@ -189,6 +189,12 @@ public final class LocalDevServer {
 		exec(c, "UPDATE pets SET coat = 'SHORT', weight_kg = 4.2, temperament = 'CALM', vaccinated = true WHERE id = ?", mel);
 		exec(c, "UPDATE pets SET coat = 'CURLY', weight_kg = 6.8, temperament = 'REACTIVE', vaccinated = false, health_notes = 'Alérgico a um shampoo comum.' WHERE id = ?", bidu);
 		exec(c, "UPDATE pets SET coat = 'MEDIUM', weight_kg = 14.0 WHERE id = ?", nina);
+		// Preços de demonstração (ADR 0019): em centavos; "Banho" varia por porte, "Hidratação" fica a combinar. O valor das reservas é o do porte do pet.
+		exec(c, "UPDATE services SET price_cents = 5000, price_medium_cents = 7000, price_large_cents = 9000 WHERE id = ?", bath);
+		exec(c, "UPDATE services SET price_cents = 4500 WHERE id = ?", hygienic);
+		exec(c, "UPDATE services SET price_cents = 9000, price_large_cents = 12000 WHERE id = ?", full);
+		exec(c, "UPDATE appointments a SET price_cents = COALESCE(CASE a.pet_size WHEN 'MEDIUM' THEN s.price_medium_cents WHEN 'LARGE' THEN s.price_large_cents END, s.price_cents) "
+				+ "FROM services s WHERE a.service_id = s.id");
 		exec(c, "UPDATE appointments a SET pet_coat = p.coat, pet_weight_kg = p.weight_kg, pet_temperament = p.temperament, pet_health_notes = p.health_notes, "
 				+ "pet_vaccinated = p.vaccinated FROM pets p WHERE a.pet_id = p.id");
 	}

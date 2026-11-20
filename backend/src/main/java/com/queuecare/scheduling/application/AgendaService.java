@@ -74,12 +74,12 @@ public class AgendaService {
 
 	/** Um agendamento da agenda. */
 	public record AgendaItem(UUID id, Instant startsAt, Instant endsAt, AppointmentStatus status, UUID serviceId, String serviceName,
-			UUID customerId, String customerName, String customerPhone, PetInfo pet) {
+			UUID customerId, String customerName, String customerPhone, Integer priceCents, PetInfo pet) {
 	}
 
 	/** Uma pessoa na fila: posição (1 = a primeira a chegar), quem é, o que vai fazer e quando chegou. */
 	public record QueueItem(int position, UUID id, Instant startsAt, Instant endsAt, UUID serviceId, String serviceName, UUID customerId, String customerName,
-			String customerPhone, Instant checkedInAt, PetInfo pet) {
+			String customerPhone, Integer priceCents, Instant checkedInAt, PetInfo pet) {
 	}
 
 	/** Onde a pessoa trabalha: o negócio e o fuso em que os horários da agenda valem (o atendente não tem acesso a /api/provider). */
@@ -145,7 +145,7 @@ public class AgendaService {
 		// O telefone do tutor só vai na agenda do DIA (onde o atendimento acontece); a semana, de várias linhas, não o leva (ADR 0019).
 		return found.stream().map(a -> new AgendaItem(a.getId(), a.getStartsAt(), a.getEndsAt(), a.getStatus(), a.getServiceId(),
 				serviceNames.get(a.getServiceId()), a.getCustomerId(), customers.get(a.getCustomerId()).getName(),
-				petDetails ? customers.get(a.getCustomerId()).getPhone() : null, PetInfo.of(a, petDetails))).toList();
+				petDetails ? customers.get(a.getCustomerId()).getPhone() : null, petDetails ? a.getPriceCents() : null, PetInfo.of(a, petDetails))).toList();
 	}
 
 
@@ -168,7 +168,7 @@ public class AgendaService {
 		for (AppointmentRepository.QueueRow row : rows) {
 			Appointment a = row.appointment();
 			queue.add(new QueueItem(queue.size() + 1, a.getId(), a.getStartsAt(), a.getEndsAt(), a.getServiceId(), serviceNames.get(a.getServiceId()), a.getCustomerId(),
-					customers.get(a.getCustomerId()).getName(), customers.get(a.getCustomerId()).getPhone(), row.checkedInAt(), PetInfo.of(a, true)));
+					customers.get(a.getCustomerId()).getName(), customers.get(a.getCustomerId()).getPhone(), a.getPriceCents(), row.checkedInAt(), PetInfo.of(a, true)));
 		}
 		return queue;
 	}

@@ -15,6 +15,8 @@ export interface AgendaItem {
   status: string
   serviceId: string
   serviceName: string | null
+  /** Valor congelado na reserva (centavos); vem na agenda do dia e na fila, nunca na semana. */
+  priceCents?: number | null
   customerId: string
   customerName: string | null
   /** WhatsApp do tutor (só dígitos com DDI); vem na agenda do dia e na fila, nunca na semana; ausente se o tutor não informou. */
@@ -31,6 +33,7 @@ export interface QueueItem {
   endsAt: string
   serviceId: string
   serviceName: string | null
+  priceCents?: number | null
   customerId: string
   customerName: string | null
   customerPhone?: string | null

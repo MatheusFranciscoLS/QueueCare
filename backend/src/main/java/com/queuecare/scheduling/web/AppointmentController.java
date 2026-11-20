@@ -73,7 +73,7 @@ class AppointmentController {
 	 * vêm do histórico: continuam aparecendo mesmo se o prestador ou o serviço forem desativados depois.
 	 */
 	record AppointmentResponse(UUID id, UUID providerId, UUID serviceId, Instant startsAt, Instant endsAt, String status, String businessName,
-			String timeZone, String serviceName, AppointmentPetResponse pet) {
+			String timeZone, String serviceName, Integer priceCents, AppointmentPetResponse pet) {
 	}
 
 	/** Pet do agendamento (cópia gravada nele): só nome e espécie; ausente (nulo) em agendamento sem pet. */
@@ -91,7 +91,7 @@ class AppointmentController {
 			var provider = byProvider.get(a.getProviderId());
 			var service = byService.get(a.getServiceId());
 			return new AppointmentResponse(a.getId(), a.getProviderId(), a.getServiceId(), a.getStartsAt(), a.getEndsAt(), a.getStatus().name(),
-					provider == null ? null : provider.getBusinessName(), provider == null ? null : provider.getTimeZone(), service == null ? null : service.getName(),
+					provider == null ? null : provider.getBusinessName(), provider == null ? null : provider.getTimeZone(), service == null ? null : service.getName(), a.getPriceCents(),
 					a.getPetId() == null ? null : new AppointmentPetResponse(a.getPetName(), a.getPetSpecies().name()));
 		}).toList();
 	}
