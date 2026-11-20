@@ -1,3 +1,4 @@
+import { formatMoney } from '../../api/money'
 import { ContactLink } from './ContactLink'
 import { PetFicha } from './PetFicha'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
@@ -188,6 +189,7 @@ function QueueRow({
         {item.customerPhone && <ContactLink phone={item.customerPhone} name={customer} />}
         <span className="sep" aria-hidden="true"> · </span>
         <span className="appt-service">{item.serviceName ?? 'Serviço'}</span>
+        {item.priceCents != null && <span className="appt-price">{formatMoney(item.priceCents)}</span>}
         {item.pet && <PetFicha pet={item.pet} />}
         {item.pet?.notes && <span className="appt-notes">Observações do tutor: {item.pet.notes}</span>}
         <span className="sep" aria-hidden="true"> · </span>

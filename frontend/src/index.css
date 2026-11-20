@@ -1695,3 +1695,13 @@ textarea {
 .appt-ficha {
   color: var(--muted);
 }
+
+/* PREÇO (ADR 0019): valor na agenda/fila e na confirmação do agendamento */
+.appt-price {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.confirm-price {
+  font-size: 1.125rem;
+}

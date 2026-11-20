@@ -4,6 +4,7 @@ import { longDate, todayIn } from '../../api/dates'
 import { describeError } from '../../api/messages'
 import { ApiError } from '../../api/client'
 import { bookingApi, type BookedAppointment, type CatalogProvider, type CatalogService, type FreeSlot } from '../../api/booking'
+import { formatMoney, priceForSize, priceSummary } from '../../api/money'
 import { petDescription, petsApi, type Pet, type PetInput } from '../../api/pets'
 import { useAuth } from '../../auth/session'
 import { RefreshWarning } from '../RefreshWarning'
@@ -225,7 +226,7 @@ function ServiceStep({ provider, selected, disabled, onSelect }: { provider: Cat
         <label key={s.id} className="choice">
           <input type="radio" name="service" disabled={disabled} checked={selected?.id === s.id} onChange={() => onSelect(s)} />
           <span>
-            {s.name} · {s.durationMinutes} min
+            {s.name} · {s.durationMinutes} min · {priceSummary(s)}
           </span>
         </label>
       ))}
@@ -256,6 +257,13 @@ function ConfirmStep({
       <p>
         <strong>{service.name}</strong> ({service.durationMinutes} min){pet && <> para <strong>{pet.name}</strong></>} em <strong>{provider.businessName}</strong>, {longDate(slot.localStart.slice(0, 10))}, às{' '}
         <strong>{slot.localStart.slice(11, 16)}</strong> (horário do negócio).
+      </p>
+      <p className="confirm-price">
+        Valor: <strong>{(() => {
+          const cents = priceForSize(service, pet?.size)
+          return cents == null ? 'a combinar com o estúdio' : formatMoney(cents)
+        })()}</strong>
+        {pet?.size == null && (service.priceMediumCents != null || service.priceLargeCents != null) && <span className="hint"> Informe o porte do pet para ver o valor exato.</span>}
       </p>
       <span className="actions">
         <button type="button" className="button" disabled={busy || !pet} onClick={onConfirm}>
