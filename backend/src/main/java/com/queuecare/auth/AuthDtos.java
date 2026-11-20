@@ -20,7 +20,8 @@ final class AuthDtos {
 	record RegisterRequest(
 			@NotBlank @Size(max = 120) String name,
 			@NotBlank @Email @Size(max = 254) String email,
-			@NotBlank @Size(max = MAX_PASSWORD_CHARACTERS) String password) {
+			@NotBlank @Size(max = MAX_PASSWORD_CHARACTERS) String password,
+			@Size(max = PhoneNumber.MAX_INPUT) String phone) {
 		/** Remove espaços externos ANTES da validação, para "  ana@exemplo.test " ser aceito e normalizado. */
 		RegisterRequest {
 			name = name == null ? null : name.trim();
@@ -40,7 +41,12 @@ final class AuthDtos {
 			@NotBlank @Size(max = MAX_PASSWORD_CHARACTERS) String newPassword) {
 	}
 
-	record UserResponse(UUID id, String name, String email, String role, boolean mustChangePassword) {
+	/** Telefone da própria pessoa (só dígitos com DDI) ou nulo. */
+	record UserResponse(UUID id, String name, String email, String role, boolean mustChangePassword, String phone) {
+	}
+
+	/** Troca do próprio telefone; vazio ou ausente remove. */
+	record UpdatePhoneRequest(@Size(max = PhoneNumber.MAX_INPUT) String phone) {
 	}
 
 	record TokenResponse(String accessToken, String tokenType, long expiresIn, boolean mustChangePassword) {

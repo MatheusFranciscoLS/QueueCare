@@ -1,3 +1,4 @@
+import { ContactLink } from './ContactLink'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { agendaApi, type QueueItem, type Workplace } from '../../api/agenda'
@@ -183,6 +184,7 @@ function QueueRow({
         )}
         <span className="sep" aria-hidden="true"> · </span>
         <span className="appt-who">{customer}</span>
+        {item.customerPhone && <ContactLink phone={item.customerPhone} name={customer} />}
         <span className="sep" aria-hidden="true"> · </span>
         <span className="appt-service">{item.serviceName ?? 'Serviço'}</span>
         {item.pet?.notes && <span className="appt-notes">Observações do tutor: {item.pet.notes}</span>}

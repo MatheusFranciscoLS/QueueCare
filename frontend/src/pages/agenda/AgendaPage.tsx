@@ -1,3 +1,4 @@
+import { ContactLink } from './ContactLink'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { agendaApi, type AgendaItem, type Workplace } from '../../api/agenda'
@@ -378,6 +379,7 @@ function AppointmentRow({
           </span>
         )}
         <span className="appt-who">{customer}</span>
+        {item.customerPhone && <ContactLink phone={item.customerPhone} name={customer} />}
         <span className="appt-service">{item.serviceName ?? 'Serviço'}</span>
         {item.pet?.notes && <span className="appt-notes">Observações do tutor: {item.pet.notes}</span>}
         <span className="badge" data-status={status}>{STATUS_LABEL[status] ?? status}</span>

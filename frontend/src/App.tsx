@@ -5,6 +5,7 @@ import { AuthLayout } from './pages/AuthLayout'
 import { PublicOnly, RequireAuth } from './auth/guards'
 import { RequireRole } from './auth/RequireRole'
 import { ChangePasswordPage } from './pages/ChangePasswordPage'
+import { ProfilePage } from './pages/ProfilePage'
 import { HomePage } from './pages/HomePage'
 import { Layout } from './pages/Layout'
 import { LoginPage } from './pages/LoginPage'
@@ -45,6 +46,7 @@ export function App() {
         <Route element={<RequireAuth />}>
           <Route path="/" element={<HomePage />} />
           <Route path="/trocar-senha" element={<ChangePasswordPage />} />
+          <Route path="/perfil" element={<ProfilePage />} />
           <Route element={<RequireRole roles={['PROVIDER']} />}>
             <Route path="/meu-negocio" element={<BusinessPage />} />
             <Route path="/servicos" element={<ServicesPage />} />

@@ -17,6 +17,8 @@ export interface AgendaItem {
   serviceName: string | null
   customerId: string
   customerName: string | null
+  /** WhatsApp do tutor (só dígitos com DDI); vem na agenda do dia e na fila, nunca na semana; ausente se o tutor não informou. */
+  customerPhone?: string | null
   /** O pet (cópia gravada no agendamento); nulo em agendamento sem pet. Raça e observações vêm na agenda do dia e na fila. */
   pet?: PetOnAppointment | null
 }
@@ -31,6 +33,7 @@ export interface QueueItem {
   serviceName: string | null
   customerId: string
   customerName: string | null
+  customerPhone?: string | null
   checkedInAt: string
   pet?: PetOnAppointment | null
 }

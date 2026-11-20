@@ -44,6 +44,9 @@ public class UserAccount {
 	@Column(name = "token_version", nullable = false)
 	private int tokenVersion;
 
+	/** Telefone só com dígitos e DDI (ADR 0019); nulo = não informado. O formato é garantido pelo banco (users_phone_check). */
+	private String phone;
+
 	@Column(name = "created_at", nullable = false)
 	private Instant createdAt;
 
@@ -114,6 +117,15 @@ public class UserAccount {
 
 	public boolean isMustChangePassword() {
 		return mustChangePassword;
+	}
+
+	public String getPhone() {
+		return phone;
+	}
+
+	/** Já normalizado por {@code PhoneNumber.normalize}; nulo remove o telefone. */
+	public void setPhone(String phone) {
+		this.phone = phone;
 	}
 
 	public Instant getCreatedAt() {

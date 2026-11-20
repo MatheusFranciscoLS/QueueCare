@@ -9,6 +9,8 @@ export interface User {
   email: string
   role: Role
   mustChangePassword: boolean
+  /** WhatsApp só com dígitos e DDI (ex.: 5511912345678); ausente se não informado. */
+  phone?: string | null
 }
 
 interface TokenResponse {
@@ -28,7 +30,9 @@ export interface AuthApi {
   /** A sessão acabou por expirar (e não porque a pessoa saiu); a tela de entrada avisa. */
   expired: boolean
   login(email: string, password: string): Promise<void>
-  register(name: string, email: string, password: string): Promise<void>
+  register(name: string, email: string, password: string, phone?: string): Promise<void>
+  /** Troca o próprio WhatsApp (vazio remove) e atualiza a sessão. */
+  updatePhone(phone: string): Promise<void>
   logout(): void
   changePassword(currentPassword: string, newPassword: string): Promise<void>
   /** Chamada autenticada à API. Um 401 encerra a sessão (token vencido, conta desativada ou senha trocada em outro lugar). */
@@ -107,10 +111,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const operation = ++generation.current
         await enter(await apiRequest<TokenResponse>('/api/auth/login', { method: 'POST', body: { email, password } }), operation)
       },
-      async register(name, email, password) {
+      async register(name, email, password, phone) {
         const operation = ++generation.current
-        await apiRequest('/api/auth/register', { method: 'POST', body: { name, email, password } })
+        await apiRequest('/api/auth/register', { method: 'POST', body: phone ? { name, email, password, phone } : { name, email, password } })
         await enter(await apiRequest<TokenResponse>('/api/auth/login', { method: 'POST', body: { email, password } }), operation)
+      },
+      async updatePhone(phone) {
+        const updated = await request<User>('/api/me/phone', { method: 'PUT', body: { phone } })
+        setSession((current) => (current ? { ...current, user: updated } : current))
       },
       logout: () => clear('logout'),
       async changePassword(currentPassword, newPassword) {

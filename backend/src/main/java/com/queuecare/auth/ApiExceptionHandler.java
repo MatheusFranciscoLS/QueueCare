@@ -46,6 +46,13 @@ class ApiExceptionHandler {
 		return problem;
 	}
 
+	@ExceptionHandler(AuthExceptions.InvalidPhoneException.class)
+	ProblemDetail invalidPhone(AuthExceptions.InvalidPhoneException e) {
+		ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, "dados inválidos");
+		problem.setProperty("errors", Map.of("phone", "informe DDD e número, por exemplo (11) 91234-5678"));
+		return problem;
+	}
+
 	@ExceptionHandler(EmailAlreadyRegisteredException.class)
 	ProblemDetail emailAlreadyRegistered(EmailAlreadyRegisteredException e) {
 		return ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, "e-mail já cadastrado");

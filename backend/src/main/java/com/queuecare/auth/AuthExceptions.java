@@ -55,6 +55,13 @@ final class AuthExceptions {
 		}
 	}
 
+	/** O telefone não tem formato de telefone do Brasil (HTTP 400, errors.phone; nunca repete o valor). */
+	static class InvalidPhoneException extends RuntimeException {
+		InvalidPhoneException() {
+			super("telefone inválido");
+		}
+	}
+
 	/** A senha não cumpre a política (HTTP 400). */
 	static class InvalidPasswordException extends RuntimeException {
 		InvalidPasswordException(String message) {

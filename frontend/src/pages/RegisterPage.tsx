@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { ApiError } from '../api/client'
 import { describeError } from '../api/messages'
+import { validatePhone } from '../api/phone'
 import { validateNewPassword } from '../auth/passwordPolicy'
 import { useAuth } from '../auth/session'
 import { AuthLayout } from './AuthLayout'
@@ -14,8 +15,9 @@ export function RegisterPage() {
   const navigate = useNavigate()
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
+  const [phone, setPhone] = useState('')
   const [password, setPassword] = useState('')
-  const [errors, setErrors] = useState<{ name?: string; email?: string; password?: string; form?: string }>({})
+  const [errors, setErrors] = useState<{ name?: string; email?: string; phone?: string; password?: string; form?: string }>({})
   const [busy, setBusy] = useState(false)
   const once = useSingleFlight()
   const focusFirstInvalid = useFocusFirstInvalid()
@@ -26,9 +28,10 @@ export function RegisterPage() {
     const found = {
       name: name.trim() ? undefined : 'Informe o seu nome.',
       email: /^\S+@\S+$/.test(email.trim()) ? undefined : 'Informe um e-mail válido.',
+      phone: validatePhone(phone),
       password: validateNewPassword(password) ?? undefined,
     }
-    if (found.name || found.email || found.password) {
+    if (found.name || found.email || found.phone || found.password) {
       setErrors(found)
       focusFirstInvalid()
       return
@@ -36,11 +39,11 @@ export function RegisterPage() {
     setErrors({})
     setBusy(true)
     try {
-      await register(name.trim(), email.trim(), password)
+      await register(name.trim(), email.trim(), password, phone.trim())
       navigate('/', { replace: true })
     } catch (e) {
       if (e instanceof ApiError && e.status === 409) setErrors({ email: 'Esse e-mail já está cadastrado.' })
-      else if (e instanceof ApiError && e.status === 400 && e.fieldErrors.password) setErrors({ password: e.fieldErrors.password })
+      else if (e instanceof ApiError && e.status === 400 && (e.fieldErrors.password || e.fieldErrors.phone)) setErrors({ password: e.fieldErrors.password, phone: e.fieldErrors.phone })
       else setErrors({ form: describeError(e) })
       focusFirstInvalid()
       setBusy(false)
@@ -56,6 +59,17 @@ export function RegisterPage() {
       <form onSubmit={submit} noValidate>
         <Field label="Nome" name="name" autoComplete="name" value={name} error={errors.name} onChange={(e) => { setName(e.target.value); setErrors((x) => ({ ...x, name: undefined })) }} />
         <Field label="E-mail" name="email" type="email" autoComplete="username" value={email} error={errors.email} onChange={(e) => { setEmail(e.target.value); setErrors((x) => ({ ...x, email: undefined })) }} />
+        <Field
+          label="WhatsApp"
+          name="phone"
+          type="tel"
+          autoComplete="tel"
+          inputMode="tel"
+          hint="O estúdio avisa por aqui quando o seu pet ficar pronto."
+          value={phone}
+          error={errors.phone}
+          onChange={(e) => { setPhone(e.target.value); setErrors((x) => ({ ...x, phone: undefined })) }}
+        />
         <Field
           label="Senha"
           name="password"

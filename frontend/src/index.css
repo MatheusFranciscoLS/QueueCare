@@ -1646,3 +1646,33 @@ textarea {
 .shortcuts li {
   align-content: start;
 }
+
+/* WhatsApp do tutor na agenda e na fila (alvo de 44 px) e ficha de "Meu perfil" */
+.appt-contact {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  font-weight: 600;
+}
+
+.profile-facts {
+  display: grid;
+  gap: 0.75rem;
+  margin: 0 0 var(--space-6);
+}
+
+.profile-facts div {
+  display: grid;
+  grid-template-columns: 6rem minmax(0, 1fr);
+  gap: 0.75rem;
+}
+
+.profile-facts dt {
+  color: var(--muted);
+}
+
+.profile-facts dd {
+  margin: 0;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}

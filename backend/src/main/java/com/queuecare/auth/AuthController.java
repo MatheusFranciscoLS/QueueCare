@@ -32,7 +32,7 @@ class AuthController {
 	@PostMapping("/register")
 	@ResponseStatus(HttpStatus.CREATED)
 	UserResponse register(@Valid @RequestBody RegisterRequest request) {
-		UserAccount user = authService.registerCustomer(request.name(), request.email(), request.password());
+		UserAccount user = authService.registerCustomer(request.name(), request.email(), request.password(), request.phone());
 		return toResponse(user);
 	}
 
@@ -51,6 +51,6 @@ class AuthController {
 	}
 
 	static UserResponse toResponse(UserAccount user) {
-		return new UserResponse(user.getId(), user.getName(), user.getEmail(), user.getRole().name(), user.isMustChangePassword());
+		return new UserResponse(user.getId(), user.getName(), user.getEmail(), user.getRole().name(), user.isMustChangePassword(), user.getPhone());
 	}
 }
