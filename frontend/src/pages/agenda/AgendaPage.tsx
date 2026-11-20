@@ -1,6 +1,7 @@
 import { formatMoney } from '../../api/money'
 import { ContactLink } from './ContactLink'
 import { PetFicha } from './PetFicha'
+import { PetVisitsList } from './PetVisitsList'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { agendaApi, type AgendaItem, type Workplace } from '../../api/agenda'
@@ -282,6 +283,7 @@ function AppointmentRow({
   const [busy, setBusy] = useState(false)
   const [rescheduling, setRescheduling] = useState(false)
   const [historyOpen, setHistoryOpen] = useState(false)
+  const [visitsOpen, setVisitsOpen] = useState(false)
   const once = useSingleFlight()
   const customer = item.customerName ?? 'Cliente'
   // Foco (teclado e leitor de tela): a confirmação abre em "Voltar" (a opção segura); ao fechar volta para "Cancelar agendamento";
@@ -435,7 +437,17 @@ function AppointmentRow({
         <button type="button" className="button secondary" aria-expanded={historyOpen} onClick={() => setHistoryOpen((open) => !open)}>
           {historyOpen ? 'Ocultar histórico' : 'Histórico'}
         </button>
+        {item.pet && (
+          <button type="button" className="button secondary" aria-expanded={visitsOpen} onClick={() => setVisitsOpen((open) => !open)}>
+            {visitsOpen ? 'Ocultar visitas anteriores' : 'Visitas anteriores'}
+          </button>
+        )}
       </span>
+      {visitsOpen && item.pet && (
+        <div className="row-extra">
+          <PetVisitsList appointmentId={item.id} petName={item.pet.name} timeZone={timeZone} />
+        </div>
+      )}
       {rescheduling && status === 'SCHEDULED' && (
         <div className="row-extra">
           <RescheduleBox

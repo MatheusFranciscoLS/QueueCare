@@ -433,6 +433,47 @@
         },
         "type" : "object"
       },
+      "PetVisitResponse" : {
+        "properties" : {
+          "businessName" : {
+            "type" : "string"
+          },
+          "endsAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "id" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "priceCents" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "providerId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "serviceId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "serviceName" : {
+            "type" : "string"
+          },
+          "startsAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "status" : {
+            "type" : "string"
+          },
+          "timeZone" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
       "Problem" : {
         "description" : "Erro no formato application/problem+json. O campo reason é um código estável.",
         "properties" : {
@@ -1543,6 +1584,50 @@
         "tags" : [ "appointment-controller" ]
       }
     },
+    "/api/appointments/{id}/pet-visits" : {
+      "get" : {
+        "description" : "Perfis: PROVIDER, ATTENDANT.",
+        "operationId" : "petVisits",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/PetVisitResponse"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "401" : {
+            "description" : "Sem token ou token inválido. Corpo vazio; o cabeçalho WWW-Authenticate: Bearer indica o esquema."
+          },
+          "403" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "O perfil não tem permissão (corpo vazio) ou a troca de senha é obrigatória (application/problem+json com reason PASSWORD_CHANGE_REQUIRED)."
+          }
+        },
+        "tags" : [ "appointment-controller" ]
+      }
+    },
     "/api/appointments/{id}/ready" : {
       "post" : {
         "description" : "Perfis: PROVIDER, ATTENDANT.",
@@ -2189,6 +2274,60 @@
           }
         } ],
         "responses" : {
+          "401" : {
+            "description" : "Sem token ou token inválido. Corpo vazio; o cabeçalho WWW-Authenticate: Bearer indica o esquema."
+          },
+          "403" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "O perfil não tem permissão (corpo vazio) ou a troca de senha é obrigatória (application/problem+json com reason PASSWORD_CHANGE_REQUIRED)."
+          },
+          "404" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Pet inexistente ou de outro cliente (reason PET_NOT_FOUND)."
+          }
+        },
+        "tags" : [ "pet-controller" ]
+      }
+    },
+    "/api/customer/pets/{id}/history" : {
+      "get" : {
+        "description" : "Perfis: CUSTOMER.",
+        "operationId" : "listPetVisits",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/PetVisitResponse"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "Visitas do pet (todas as situações), a mais recente primeiro, até 50."
+          },
           "401" : {
             "description" : "Sem token ou token inválido. Corpo vazio; o cabeçalho WWW-Authenticate: Bearer indica o esquema."
           },

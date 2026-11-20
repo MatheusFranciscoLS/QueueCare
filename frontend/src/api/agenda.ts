@@ -43,6 +43,13 @@ export interface QueueItem {
   pet?: PetOnAppointment | null
 }
 
+/** Uma visita anterior concluída do pet neste estúdio (ADR 0019, fatia 6). */
+export interface PetVisitItem {
+  startsAt: string
+  serviceName: string | null
+  priceCents: number | null
+}
+
 type Request = AuthApi['request']
 
 /** Agenda do dia, cancelamento, chegada, conclusão e fila, pela equipe. O prestador vem do usuário autenticado, nunca da requisição. */
@@ -54,6 +61,8 @@ export function agendaApi(request: Request) {
     week: (start: string) => request<AgendaItem[]>(`/api/agenda/week?start=${encodeURIComponent(start)}`),
     queue: () => request<QueueItem[]>('/api/agenda/queue'),
     checkIn: (appointmentId: string) => request<unknown>(`/api/appointments/${encodeURIComponent(appointmentId)}/check-in`, { method: 'POST' }),
+    /** "Quando foi o último banho?": visitas anteriores concluídas do mesmo pet neste estúdio (até 10). */
+    petVisits: (appointmentId: string) => request<PetVisitItem[]>(`/api/appointments/${encodeURIComponent(appointmentId)}/pet-visits`),
     /** Começa o atendimento (de quem chegou). */
     start: (appointmentId: string) => request<unknown>(`/api/appointments/${encodeURIComponent(appointmentId)}/start`, { method: 'POST' }),
     /** O pet está pronto para retirada (de quem chegou ou está em atendimento). */
