@@ -389,10 +389,12 @@ function AppointmentRow({
             <span className="appt-pet__desc">{petDescription(item.pet)}</span>
           </span>
         )}
-        <span className="appt-who">{customer}</span>
-        {item.customerPhone && <ContactLink phone={item.customerPhone} name={customer} />}
-        <span className="appt-service">{item.serviceName ?? 'Serviço'}</span>
-        {item.priceCents != null && <span className="appt-price">{formatMoney(item.priceCents)}</span>}
+        <span className="appt-line">
+          <span className="appt-who">{customer}</span>
+          {item.customerPhone && <ContactLink phone={item.customerPhone} name={customer} />}
+          <span className="appt-service">{item.serviceName ?? 'Serviço'}</span>
+          {item.priceCents != null && <span className="appt-price">{formatMoney(item.priceCents)}</span>}
+        </span>
         {item.pet && <PetFicha pet={item.pet} />}
         {item.pet?.notes && <span className="appt-notes">Observações do tutor: {item.pet.notes}</span>}
         <span className="badge" data-status={status}>{STATUS_LABEL[status] ?? status}</span>

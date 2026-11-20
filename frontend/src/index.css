@@ -1856,3 +1856,213 @@ a.button {
 .setup-ok {
   color: var(--st-done);
 }
+
+/* DIA E FILA, REVISÃO VISUAL (20/11): os itens novos (tutor, WhatsApp, valor, aviso, ficha) entram na coluna do texto; tutor, contato, serviço e valor
+   ficam numa linha só; a ficha vira etiquetas; as ações da fila ficam empilhadas numa coluna de largura fixa. */
+.timeline .appt-line,
+.queue-list .appt-line,
+.timeline .appt-alert,
+.queue-list .appt-alert,
+.timeline .appt-ficha,
+.queue-list .appt-ficha {
+  grid-column: 3;
+  min-width: 0;
+}
+
+.appt-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0 1.125rem;
+  color: var(--muted);
+}
+
+.appt-line .appt-who {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.appt-line .sep {
+  display: none;
+}
+
+.appt-line .appt-contact {
+  min-height: 36px;
+}
+
+.appt-line .appt-price {
+  color: var(--text);
+}
+
+.appt-alert {
+  justify-self: start;
+  margin-top: 0.25rem;
+  padding: 0.25rem 0.75rem;
+  font-size: 0.9375rem;
+}
+
+.appt-ficha {
+  justify-self: start;
+  padding: 0.125rem 0.75rem;
+  color: var(--text);
+  font-size: 0.9375rem;
+  background: var(--surface-2);
+  border-radius: 999px;
+}
+
+.queue-list .row {
+  grid-template-columns: 3.5rem 44px minmax(0, 1fr) 13.5rem;
+}
+
+.queue-list .actions {
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
+  gap: 0.5rem;
+}
+
+.queue-list .actions .button {
+  width: 100%;
+}
+
+.queue-list .appt-time {
+  font-size: 2.25rem;
+}
+
+@media (max-width: 880px) {
+  .queue-list .row {
+    grid-template-columns: 3rem 44px minmax(0, 1fr);
+  }
+
+  .queue-list .actions {
+    grid-column: 1 / -1;
+    grid-row: auto;
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+
+  .queue-list .actions .button {
+    width: auto;
+    flex: 1 1 12rem;
+  }
+}
+
+.queue-list .actions {
+  grid-row: 1 / span 8;
+}
+
+@media (max-width: 880px) {
+  .queue-list .actions {
+    grid-row: auto;
+  }
+}
+
+/* FORMULÁRIOS EM DUAS COLUNAS (campos curtos lado a lado, texto longo em largura total) e seções com divisória */
+.field-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 1.25rem;
+}
+
+.form-section {
+  margin: var(--space-6) 0 var(--space-3);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--line);
+}
+
+@media (max-width: 720px) {
+  .field-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* AGENDA DO DIA: "Histórico" e "Visitas anteriores" são ações secundárias: discretas, para a linha não ficar pesada */
+.timeline .row-extra .button {
+  min-height: 44px;
+  padding: 0 0.625rem;
+  color: var(--accent);
+  background: transparent;
+  border-color: transparent;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.timeline .row-extra .button:hover {
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+}
+
+.field-row--three {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+@media (max-width: 880px) {
+  .field-row--three {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* ações secundárias de linha (Histórico, Visitas anteriores) discretas também nas listas de pets */
+.rows .row-extra .button {
+  min-height: 44px;
+  padding: 0 0.625rem;
+  color: var(--accent);
+  background: transparent;
+  border-color: transparent;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.rows .row-extra .button:hover {
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+}
+
+/* CELULAR, DIA E FILA (revisão 20/11): tudo na coluna do texto, ao lado do avatar; posição/hora acima; ações embaixo, em largura total */
+@media (max-width: 720px) {
+  .timeline .appt-line,
+  .timeline .appt-alert,
+  .timeline .appt-ficha,
+  .queue-list .appt-pet,
+  .queue-list .badge,
+  .queue-list .appt-line,
+  .queue-list .appt-alert,
+  .queue-list .appt-ficha,
+  .queue-list .appt-notes,
+  .queue-list .appt-meta {
+    grid-column: 2;
+    grid-row: auto;
+  }
+
+  .timeline .row:not(:has(.pp-avatar)) .appt-line,
+  .timeline .row:not(:has(.pp-avatar)) .appt-ficha,
+  .timeline .row:not(:has(.pp-avatar)) .appt-alert {
+    grid-column: 1 / -1;
+  }
+
+  .queue-list .row {
+    grid-template-columns: 44px minmax(0, 1fr);
+  }
+
+  .queue-list .appt-time {
+    grid-column: 1 / -1;
+    grid-row: auto;
+    text-align: left;
+    font-size: 1.5rem;
+  }
+
+  .queue-list .pp-avatar {
+    grid-column: 1;
+    grid-row: 2 / span 3;
+  }
+
+  .queue-list .actions {
+    grid-column: 1 / -1;
+    grid-row: auto;
+    flex-direction: column;
+    margin-top: 0.5rem;
+  }
+
+  .queue-list .actions .button {
+    width: 100%;
+    flex: none;
+  }
+}

@@ -137,6 +137,7 @@ export function PetForm({
   const id = (field: string) => `${idPrefix}-${field}`
   return (
     <form onSubmit={submit} noValidate aria-label={pet ? `Editar ${pet.name}` : 'Cadastrar pet'}>
+      <div className="field-row">
       <Field label="Nome do pet" name={id('name')} disabled={busy} maxLength={PET_LIMITS.name * 2} value={input.name} error={errors.name} onChange={(e) => change('name', e.target.value)} />
       <div className="field">
         <label htmlFor={id('species')}>Espécie</label>
@@ -162,6 +163,8 @@ export function PetForm({
           </p>
         )}
       </div>
+      </div>
+      <div className="field-row">
       <Field label="Raça (opcional)" name={id('breed')} disabled={busy} maxLength={PET_LIMITS.breed * 2} value={input.breed} error={errors.breed} onChange={(e) => change('breed', e.target.value)} />
       <div className="field">
         <label htmlFor={id('size')}>Porte (opcional)</label>
@@ -187,11 +190,16 @@ export function PetForm({
           </p>
         )}
       </div>
+      </div>
       <p className="form-section">Ficha para o banho e a tosa</p>
+      <div className="field-row">
       <SelectField label="Pelo (opcional)" name={id('coat')} value={input.coat} error={errors.coat} disabled={busy} empty="Não informado" options={COAT_LABEL} onChange={(v) => change('coat', v)} />
       <Field label="Peso em kg (opcional)" name={id('weightKg')} inputMode="decimal" disabled={busy} maxLength={8} value={input.weightKg} error={errors.weightKg} onChange={(e) => change('weightKg', e.target.value)} />
+      </div>
+      <div className="field-row">
       <SelectField label="Comportamento (opcional)" name={id('temperament')} value={input.temperament} error={errors.temperament} disabled={busy} empty="Não informado" options={TEMPERAMENT_LABEL} onChange={(v) => change('temperament', v)} />
       <SelectField label="Vacinas em dia (opcional)" name={id('vaccinated')} value={input.vaccinated} disabled={busy} empty="Não informado" options={{ yes: 'Sim', no: 'Não' }} onChange={(v) => change('vaccinated', v)} />
+      </div>
       <div className="field">
         <label htmlFor={id('healthNotes')}>Saúde e alergias (opcional)</label>
         <textarea
