@@ -117,7 +117,7 @@ describe('meus pets: cadastrar', () => {
     await user.click(screen.getByRole('button', { name: 'Cadastrar pet' }))
 
     expect(await screen.findByText('Rex cadastrado.')).toBeInTheDocument()
-    expect(calls(all, 'POST', '/api/customer/pets')[0].body).toEqual({ name: '  Rex  ', species: 'DOG', breed: 'Poodle', size: 'MEDIUM', notes: 'Tem coceira na pata.' })
+    expect(calls(all, 'POST', '/api/customer/pets')[0].body).toEqual({ name: '  Rex  ', species: 'DOG', breed: 'Poodle', size: 'MEDIUM', notes: 'Tem coceira na pata.', coat: '', weightKg: null, temperament: '', healthNotes: '', vaccinated: null })
     expect(await screen.findByText('Observações: Tem coceira na pata.')).toBeInTheDocument()
     expect(screen.getByLabelText('Nome do pet')).toHaveValue('')
   })
@@ -217,7 +217,7 @@ describe('meus pets: editar, arquivar e reativar', () => {
     await user.click(within(form).getByRole('button', { name: 'Salvar' }))
 
     expect(await screen.findByText('Rex Jr atualizado.')).toBeInTheDocument()
-    expect(calls(all, 'PUT', '/api/customer/pets/pet-1')[0].body).toEqual({ name: 'Rex Jr', species: 'DOG', breed: 'Poodle', size: 'MEDIUM', notes: 'Tem coceira na pata.' })
+    expect(calls(all, 'PUT', '/api/customer/pets/pet-1')[0].body).toEqual({ name: 'Rex Jr', species: 'DOG', breed: 'Poodle', size: 'MEDIUM', notes: 'Tem coceira na pata.', coat: '', weightKg: null, temperament: '', healthNotes: '', vaccinated: null })
     expect(screen.queryByRole('form', { name: 'Editar Rex' })).not.toBeInTheDocument()
     expect(await screen.findByText('Rex Jr')).toBeInTheDocument()
   })

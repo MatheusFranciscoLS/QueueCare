@@ -1,6 +1,8 @@
 package com.queuecare.scheduling.application;
 
+import com.queuecare.pets.PetCoat;
 import com.queuecare.pets.PetSize;
+import com.queuecare.pets.PetTemperament;
 import com.queuecare.pets.PetSpecies;
 import com.queuecare.scheduling.application.ProviderExceptions.ProviderNotConfiguredException;
 import com.queuecare.scheduling.persistence.Appointment;
@@ -56,13 +58,17 @@ public class AgendaService {
 	 * consultas da agenda e da fila filtram pelo prestador em que a pessoa opera. {@code breed} e {@code notes} são nulos na visão da semana
 	 * (várias linhas de uma vez); aparecem na agenda do dia e na fila, onde o atendimento acontece (ADR 0016, item 4).
 	 */
-	public record PetInfo(String name, PetSpecies species, String breed, PetSize size, String notes) {
+	public record PetInfo(String name, PetSpecies species, String breed, PetSize size, String notes, PetCoat coat, java.math.BigDecimal weightKg,
+			PetTemperament temperament, String healthNotes, Boolean vaccinated) {
 		/** Nulo se o agendamento não tem pet (antigo ou feito sem escolher um). */
 		static PetInfo of(Appointment a, boolean withDetails) {
 			if (a.getPetId() == null) {
 				return null;
 			}
-			return new PetInfo(a.getPetName(), a.getPetSpecies(), withDetails ? a.getPetBreed() : null, a.getPetSize(), withDetails ? a.getPetNotes() : null);
+			// A ficha (ADR 0019) acompanha raça e observações: só na agenda do dia e na fila, onde o atendimento acontece.
+			return new PetInfo(a.getPetName(), a.getPetSpecies(), withDetails ? a.getPetBreed() : null, a.getPetSize(), withDetails ? a.getPetNotes() : null,
+					withDetails ? a.getPetCoat() : null, withDetails ? a.getPetWeightKg() : null, withDetails ? a.getPetTemperament() : null,
+					withDetails ? a.getPetHealthNotes() : null, withDetails ? a.getPetVaccinated() : null);
 		}
 	}
 

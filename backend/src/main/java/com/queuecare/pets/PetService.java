@@ -69,7 +69,8 @@ public class PetService {
 		Pet saved = pets.saveAndFlush(pet);
 		// A cópia dos dados nos agendamentos ainda SCHEDULED acompanha a edição (o prestador vê o dado mais atual de quem ainda vai atender);
 		// os demais ficam congelados. Esta transação só carrega o pet, nunca entidades Appointment.
-		appointments.refreshPetSnapshot(saved.getId(), saved.getName(), saved.getSpecies(), saved.getBreed(), saved.getSize(), saved.getNotes());
+		appointments.refreshPetSnapshot(saved.getId(), saved.getName(), saved.getSpecies(), saved.getBreed(), saved.getSize(), saved.getNotes(),
+				saved.getCoat(), saved.getWeightKg(), saved.getTemperament(), saved.getHealthNotes(), saved.getVaccinated());
 		return saved;
 	}
 

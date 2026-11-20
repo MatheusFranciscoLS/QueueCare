@@ -36,9 +36,11 @@ class AgendaController {
 	 * Pet do agendamento (cópia gravada no agendamento). Na agenda do dia e na fila vêm raça e observações; na visão da semana vêm nulas
 	 * (só nome, espécie e porte). Ausente (nulo) em agendamento sem pet.
 	 */
-	record AgendaPetResponse(String name, String species, String breed, String size, String notes) {
+	record AgendaPetResponse(String name, String species, String breed, String size, String notes, String coat, java.math.BigDecimal weightKg,
+			String temperament, String healthNotes, Boolean vaccinated) {
 		static AgendaPetResponse from(AgendaService.PetInfo p) {
-			return p == null ? null : new AgendaPetResponse(p.name(), p.species().name(), p.breed(), p.size() == null ? null : p.size().name(), p.notes());
+			return p == null ? null : new AgendaPetResponse(p.name(), p.species().name(), p.breed(), p.size() == null ? null : p.size().name(), p.notes(),
+					p.coat() == null ? null : p.coat().name(), p.weightKg(), p.temperament() == null ? null : p.temperament().name(), p.healthNotes(), p.vaccinated());
 		}
 	}
 

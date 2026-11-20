@@ -6,6 +6,12 @@
           "breed" : {
             "type" : "string"
           },
+          "coat" : {
+            "type" : "string"
+          },
+          "healthNotes" : {
+            "type" : "string"
+          },
           "name" : {
             "type" : "string"
           },
@@ -17,6 +23,15 @@
           },
           "species" : {
             "type" : "string"
+          },
+          "temperament" : {
+            "type" : "string"
+          },
+          "vaccinated" : {
+            "type" : "boolean"
+          },
+          "weightKg" : {
+            "type" : "number"
           }
         },
         "type" : "object"
@@ -338,6 +353,12 @@
           "breed" : {
             "type" : "string"
           },
+          "coat" : {
+            "type" : "string"
+          },
+          "healthNotes" : {
+            "type" : "string"
+          },
           "name" : {
             "type" : "string"
           },
@@ -349,6 +370,15 @@
           },
           "species" : {
             "type" : "string"
+          },
+          "temperament" : {
+            "type" : "string"
+          },
+          "vaccinated" : {
+            "type" : "boolean"
+          },
+          "weightKg" : {
+            "type" : "number"
           }
         },
         "type" : "object"
@@ -359,6 +389,12 @@
             "type" : "boolean"
           },
           "breed" : {
+            "type" : "string"
+          },
+          "coat" : {
+            "type" : "string"
+          },
+          "healthNotes" : {
             "type" : "string"
           },
           "id" : {
@@ -376,6 +412,15 @@
           },
           "species" : {
             "type" : "string"
+          },
+          "temperament" : {
+            "type" : "string"
+          },
+          "vaccinated" : {
+            "type" : "boolean"
+          },
+          "weightKg" : {
+            "type" : "number"
           }
         },
         "type" : "object"
@@ -1880,7 +1925,7 @@
                 }
               }
             },
-            "description" : "Dados inválidos (errors.name, errors.species, errors.breed, errors.size, errors.notes)."
+            "description" : "Dados inválidos (errors.name, errors.species, errors.breed, errors.size, errors.notes, errors.coat, errors.weightKg, errors.temperament, errors.healthNotes)."
           },
           "401" : {
             "description" : "Sem token ou token inválido. Corpo vazio; o cabeçalho WWW-Authenticate: Bearer indica o esquema."
@@ -1980,7 +2025,7 @@
                 }
               }
             },
-            "description" : "Dados inválidos (errors.name, errors.species, errors.breed, errors.size, errors.notes)."
+            "description" : "Dados inválidos (errors.name, errors.species, errors.breed, errors.size, errors.notes, errors.coat, errors.weightKg, errors.temperament, errors.healthNotes)."
           },
           "401" : {
             "description" : "Sem token ou token inválido. Corpo vazio; o cabeçalho WWW-Authenticate: Bearer indica o esquema."
