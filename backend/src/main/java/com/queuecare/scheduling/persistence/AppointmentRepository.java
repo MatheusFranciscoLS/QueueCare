@@ -27,6 +27,16 @@ public interface AppointmentRepository extends JpaRepository<Appointment, UUID> 
 
 	java.util.List<Appointment> findByCustomerId(UUID customerId, org.springframework.data.domain.Pageable pageable);
 
+	/** Visitas de UM pet do cliente (ADR 0019, fatia 6): todas as situações, a mais recente primeiro (ordem estável por id). */
+	@Query("select a from Appointment a where a.petId = :petId and a.customerId = :customerId order by a.startsAt desc, a.id desc")
+	java.util.List<Appointment> findPetVisits(@Param("petId") UUID petId, @Param("customerId") UUID customerId, org.springframework.data.domain.Pageable pageable);
+
+	/** Atendimentos CONCLUÍDOS do pet neste prestador, antes do instante dado, o mais recente primeiro: o que a equipe vê como "visitas anteriores". */
+	@Query("select a from Appointment a where a.petId = :petId and a.providerId = :providerId and a.status = "
+			+ "com.queuecare.scheduling.persistence.AppointmentStatus.COMPLETED and a.startsAt < :before order by a.startsAt desc, a.id desc")
+	java.util.List<Appointment> findCompletedVisits(@Param("petId") UUID petId, @Param("providerId") UUID providerId, @Param("before") Instant before,
+			org.springframework.data.domain.Pageable pageable);
+
 	/** Agenda do dia: agendamentos NÃO cancelados do prestador que COMEÇAM em [start, end), por início e depois por id (ordem estável). */
 	@Query("select a from Appointment a where a.providerId = :providerId and a.status <> "
 			+ "com.queuecare.scheduling.persistence.AppointmentStatus.CANCELLED and a.startsAt >= :start and a.startsAt < :end "

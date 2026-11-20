@@ -38,6 +38,20 @@ export interface PetInput {
   vaccinated: string
 }
 
+/** Uma visita do pet (ADR 0019, fatia 6): tudo o que a API guarda do agendamento, com o valor congelado na reserva. */
+export interface PetVisit {
+  id: string
+  startsAt: string
+  endsAt: string
+  status: string
+  providerId: string
+  businessName: string | null
+  timeZone: string | null
+  serviceId: string
+  serviceName: string | null
+  priceCents: number | null
+}
+
 /** Pet como aparece no agendamento (cópia gravada no momento da reserva). Raça e observações só chegam onde a API as envia. */
 export interface PetOnAppointment {
   name: string
@@ -107,6 +121,8 @@ export function petsApi(request: Request) {
     list: (includeArchived = false) => request<Pet[]>(includeArchived ? '/api/customer/pets?includeArchived=true' : '/api/customer/pets'),
     create: (input: PetInput) => request<Pet>('/api/customer/pets', { method: 'POST', body: body(input) }),
     update: (id: string, input: PetInput) => request<Pet>(`/api/customer/pets/${encodeURIComponent(id)}`, { method: 'PUT', body: body(input) }),
+    /** Visitas do pet, da mais recente para a mais antiga (até 50). */
+    history: (id: string) => request<PetVisit[]>(`/api/customer/pets/${encodeURIComponent(id)}/history`),
     archive: (id: string) => request<Pet>(`/api/customer/pets/${encodeURIComponent(id)}/archive`, { method: 'POST' }),
     reactivate: (id: string) => request<Pet>(`/api/customer/pets/${encodeURIComponent(id)}/reactivate`, { method: 'POST' }),
   }

@@ -46,18 +46,20 @@ class AppointmentController {
 	private final AttendanceService attendanceService;
 	private final RescheduleService rescheduleService;
 	private final AppointmentHistoryService historyService;
+	private final com.queuecare.scheduling.application.PetVisitsService petVisitsService;
 	private final AppointmentRepository appointments;
 	private final com.queuecare.scheduling.persistence.ProviderRepository providers;
 	private final com.queuecare.scheduling.persistence.ServiceOfferingRepository services;
 
 	AppointmentController(BookingService bookingService, CancellationService cancellationService, AttendanceService attendanceService, RescheduleService rescheduleService,
-			AppointmentHistoryService historyService, AppointmentRepository appointments,
+			AppointmentHistoryService historyService, com.queuecare.scheduling.application.PetVisitsService petVisitsService, AppointmentRepository appointments,
 			com.queuecare.scheduling.persistence.ProviderRepository providers, com.queuecare.scheduling.persistence.ServiceOfferingRepository services) {
 		this.bookingService = bookingService;
 		this.cancellationService = cancellationService;
 		this.attendanceService = attendanceService;
 		this.rescheduleService = rescheduleService;
 		this.historyService = historyService;
+		this.petVisitsService = petVisitsService;
 		this.appointments = appointments;
 		this.providers = providers;
 		this.services = services;
@@ -143,6 +145,20 @@ class AppointmentController {
 	List<HistoryEntryResponse> events(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID id) {
 		return historyService.history(id, userId(jwt)).stream()
 				.map(e -> new HistoryEntryResponse(e.type().name(), e.at(), e.by().name(), e.actorName(), e.previousStartsAt(), e.newStartsAt())).toList();
+	}
+
+	/** Uma visita anterior do pet neste prestador (ADR 0019, fatia 6). */
+	record PetVisitResponse(Instant startsAt, String serviceName, Integer priceCents) {
+	}
+
+	/**
+	 * "Quando foi o último banho?" (ADR 0019, fatia 6): atendimentos CONCLUÍDOS anteriores do MESMO pet NESTE prestador, o mais recente primeiro (até 10).
+	 * Só a equipe do prestador do agendamento; outro prestador ou agendamento inexistente: 404. Agendamento sem pet: lista vazia.
+	 */
+	@GetMapping("/{id}/pet-visits")
+	@PreAuthorize("hasAnyRole('PROVIDER','ATTENDANT')")
+	List<PetVisitResponse> petVisits(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID id) {
+		return petVisitsService.visits(id, userId(jwt)).stream().map(v -> new PetVisitResponse(v.startsAt(), v.serviceName(), v.priceCents())).toList();
 	}
 
 	@PostMapping("/{id}/cancel")

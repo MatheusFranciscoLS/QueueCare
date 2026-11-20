@@ -1,5 +1,5 @@
-import { useCallback, useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import { Link, useSearchParams } from 'react-router-dom'
 import { longDate, todayIn } from '../../api/dates'
 import { describeError } from '../../api/messages'
 import { ApiError } from '../../api/client'
@@ -25,6 +25,10 @@ const PET_REASONS = new Set(['PET_NOT_FOUND', 'PET_INACTIVE'])
  * escolhido. Recusa por causa do PET (arquivado em outra tela, por exemplo) mantém o horário e refaz a lista de pets.
  */
 export function BookPage() {
+  // "Agendar de novo" (ADR 0019, fatia 6): o histórico do pet abre esta tela com estúdio, serviço e pet já escolhidos; só o horário é novo.
+  // As escolhas vêm do endereço UMA vez: depois de usadas (ou de agendar), a pessoa escolhe livremente.
+  const [params] = useSearchParams()
+  const [wanted, setWanted] = useState<{ provider: string | null; service: string | null }>({ provider: params.get('estudio'), service: params.get('servico') })
   const [provider, setProvider] = useState<CatalogProvider | null>(null)
   const [service, setService] = useState<CatalogService | null>(null)
   const [date, setDate] = useState<string | null>(null)
@@ -39,7 +43,7 @@ export function BookPage() {
   const pets = useMemo(() => petsApi(request), [request])
   const loadPets = useCallback(() => pets.list(), [pets])
   const petList = useLoad<Pet[]>(loadPets)
-  const [petChoice, setPetChoice] = useState<string | null>(null)
+  const [petChoice, setPetChoice] = useState<string | null>(params.get('pet'))
   // Versão da lista de pets no momento em que a API recusou um pet: enquanto nenhuma carga NOVA der certo, a lista é velha e não vale
   // (se a atualização falhar, os dados antigos continuam na tela, mas nenhum pet pode ser escolhido nem vir escolhido sozinho).
   const [refusedAtVersion, setRefusedAtVersion] = useState<number | null>(null)
@@ -57,6 +61,7 @@ export function BookPage() {
       setSubmitting(true)
       try {
         const appointment = await api.book({ providerId: sent.provider.id, serviceId: sent.service.id, localStart: sent.slot.localStart, petId: sent.pet.id })
+        setWanted({ provider: null, service: null })
         setDone({ appointment, serviceName: sent.service.name, businessName: sent.provider.businessName, localStart: sent.slot.localStart, petName: sent.pet.name })
       } catch (e) {
         // A API recusou este horário: mostra o motivo e refaz a lista de horários (o escolhido pode não existir mais).
@@ -109,6 +114,7 @@ export function BookPage() {
       </p>
       <ProviderStep
         disabled={submitting}
+        preselectId={wanted.provider}
         selected={provider}
         onSelect={(p) => {
           setProvider(p)
@@ -122,6 +128,7 @@ export function BookPage() {
         <ServiceStep
           key={provider.id}
           disabled={submitting}
+          preselectId={provider.id === wanted.provider ? wanted.service : null}
           provider={provider}
           selected={service}
           onSelect={(s) => {
@@ -185,11 +192,27 @@ export function BookPage() {
   )
 }
 
-function ProviderStep({ selected, disabled, onSelect }: { selected: CatalogProvider | null; disabled: boolean; onSelect: (p: CatalogProvider) => void }) {
+function ProviderStep({
+  selected,
+  disabled,
+  preselectId,
+  onSelect,
+}: {
+  selected: CatalogProvider | null
+  disabled: boolean
+  preselectId: string | null
+  onSelect: (p: CatalogProvider) => void
+}) {
   const { request } = useAuth()
   const api = useMemo(() => bookingApi(request), [request])
   const load = useCallback(() => api.providers(0, PAGE_SIZE), [api])
   const { data, error, loading, reload } = useLoad<CatalogProvider[]>(load)
+  // Escolha vinda do "Agendar de novo": quando a lista chega e ainda não há escolha, seleciona o estúdio pedido (se ele ainda existir).
+  useEffect(() => {
+    if (!preselectId || selected || !data) return
+    const wanted = data.find((p) => p.id === preselectId)
+    if (wanted) onSelect(wanted)
+  }, [preselectId, selected, data, onSelect])
 
   if (loading && !data) return <Loading>Carregando prestadores…</Loading>
   if (error && !data) return <p role="alert" className="error">{describeError(error)}</p>
@@ -209,11 +232,29 @@ function ProviderStep({ selected, disabled, onSelect }: { selected: CatalogProvi
   )
 }
 
-function ServiceStep({ provider, selected, disabled, onSelect }: { provider: CatalogProvider; selected: CatalogService | null; disabled: boolean; onSelect: (s: CatalogService) => void }) {
+function ServiceStep({
+  provider,
+  selected,
+  disabled,
+  preselectId,
+  onSelect,
+}: {
+  provider: CatalogProvider
+  selected: CatalogService | null
+  disabled: boolean
+  preselectId: string | null
+  onSelect: (s: CatalogService) => void
+}) {
   const { request } = useAuth()
   const api = useMemo(() => bookingApi(request), [request])
   const load = useCallback(() => api.services(provider.id), [api, provider.id])
   const { data, error, loading, reload } = useLoad<CatalogService[]>(load)
+  // Serviço vindo do "Agendar de novo": seleciona quando a lista chega, se o serviço continua ativo.
+  useEffect(() => {
+    if (!preselectId || selected || !data) return
+    const wanted = data.find((s) => s.id === preselectId)
+    if (wanted) onSelect(wanted)
+  }, [preselectId, selected, data, onSelect])
 
   if (loading && !data) return <Loading>Carregando serviços…</Loading>
   if (error && !data) return <p role="alert" className="error">{describeError(error)}</p>

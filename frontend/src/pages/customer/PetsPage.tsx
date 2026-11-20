@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { describeError } from '../../api/messages'
+import { PetVisits } from './PetVisits'
 import { fichaSummary, PET_LIMITS, petDescription, petsApi, type Pet } from '../../api/pets'
 import { useAuth } from '../../auth/session'
 import { Loading } from '../Loading'
@@ -105,6 +106,7 @@ function PetRow({
   const api = useMemo(() => petsApi(request), [request])
   const [editing, setEditing] = useState(false)
   const [confirming, setConfirming] = useState(false)
+  const [historyOpen, setHistoryOpen] = useState(false)
   const [busy, setBusy] = useState(false)
   const once = useSingleFlight()
   // Foco (teclado e leitor de tela): a confirmação abre em "Voltar" (a opção segura); ao fechar volta para "Arquivar".
@@ -211,6 +213,16 @@ function PetRow({
           </>
         )}
       </span>
+      <span className="row-extra">
+        <button type="button" className="button secondary" aria-expanded={historyOpen} onClick={() => setHistoryOpen((open) => !open)}>
+          {historyOpen ? 'Ocultar histórico' : 'Histórico'}
+        </button>
+      </span>
+      {historyOpen && (
+        <div className="row-extra">
+          <PetVisits petId={pet.id} petName={pet.name} active={pet.active} />
+        </div>
+      )}
     </li>
   )
 }

@@ -43,3 +43,6 @@ Seis fatias, **cada uma um PR** (backend + telas juntos, testes leves por PR; a 
 - O produto passa de "marcar horário" para "tocar o dia do estúdio", que é o que sustenta uso diário.
 - Mais colunas no snapshot do agendamento (ADR 0016) e mais um estado na fila; o custo é a migração de cada fatia e a revisão do contrato.
 - Sem integração paga: o aviso ao tutor é um link `wa.me` aberto pela equipe, não um envio automático.
+
+## Andamento
+Fatias 1 a 6 implementadas em 20/11/2026 (PRs 66 a 71): telefone, ficha do pet, preço, estados de atendimento, Início como painel e histórico do pet ("Agendar de novo" e "Visitas anteriores" para a equipe). Próximos passos de produto: duração por porte/pelo (ADR próprio) e a revisão visual de todas as telas com o produto novo.

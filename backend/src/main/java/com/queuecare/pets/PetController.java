@@ -32,9 +32,11 @@ class PetController {
 	private static final String PROBLEM = "#/components/schemas/Problem";
 
 	private final PetService service;
+	private final PetHistoryService history;
 
-	PetController(PetService service) {
+	PetController(PetService service, PetHistoryService history) {
 		this.service = service;
+		this.history = history;
 	}
 
 	/** Dados do pet (criar e substituir). Textos como o tutor digitou: a API normaliza e valida (veja PetText). */
@@ -76,6 +78,23 @@ class PetController {
 	@GetMapping("/{id}")
 	PetResponse get(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID id) {
 		return PetResponse.from(service.get(userId(jwt), id));
+	}
+
+	/** Uma visita do pet (ADR 0019, fatia 6): o que foi feito, onde, quando e quanto custou (valor congelado na reserva). */
+	record PetVisitResponse(UUID id, java.time.Instant startsAt, java.time.Instant endsAt, String status, UUID providerId, String businessName, String timeZone,
+			UUID serviceId, String serviceName, Integer priceCents) {
+		static PetVisitResponse from(PetHistoryService.Visit v) {
+			return new PetVisitResponse(v.id(), v.startsAt(), v.endsAt(), v.status().name(), v.providerId(), v.businessName(), v.timeZone(), v.serviceId(), v.serviceName(),
+					v.priceCents());
+		}
+	}
+
+	@Operation(operationId = "listPetVisits")
+	@ApiResponse(responseCode = "200", description = "Visitas do pet (todas as situações), a mais recente primeiro, até 50.")
+	@ApiResponse(responseCode = "404", description = "Pet inexistente ou de outro cliente (reason PET_NOT_FOUND).", content = @Content(mediaType = "application/problem+json", schema = @Schema(ref = PROBLEM)))
+	@GetMapping("/{id}/history")
+	List<PetVisitResponse> history(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID id) {
+		return history.visits(userId(jwt), id).stream().map(PetVisitResponse::from).toList();
 	}
 
 	@Operation(operationId = "updatePet")
