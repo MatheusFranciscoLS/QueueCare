@@ -1,4 +1,5 @@
 import { formatMoney } from '../../api/money'
+import { whatsappLink } from '../../api/phone'
 import { ContactLink } from './ContactLink'
 import { PetFicha } from './PetFicha'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
@@ -91,7 +92,7 @@ function Queue({ workplace }: { workplace: Workplace }) {
     <section className="card">
       <h1>Fila</h1>
       <p className="hint">
-        {workplace.businessName} · quem já chegou hoje e espera, por ordem de chegada · horários no fuso {workplace.timeZone}
+        {workplace.businessName} · quem já chegou hoje e ainda não foi retirado, por ordem de chegada · horários no fuso {workplace.timeZone}
       </p>
       <p>
         <button type="button" className="button secondary" onClick={() => void reload()}>
@@ -113,6 +114,7 @@ function Queue({ workplace }: { workplace: Workplace }) {
             item={item}
             position={index + 1}
             timeZone={workplace.timeZone}
+            businessName={workplace.businessName}
             now={now}
             onDone={() => {
               focusNotice.current = true
@@ -132,6 +134,7 @@ function QueueRow({
   item,
   position,
   timeZone,
+  businessName,
   now,
   onDone,
   onChanged,
@@ -141,6 +144,7 @@ function QueueRow({
   item: QueueItem
   position: number
   timeZone: string
+  businessName: string
   now: Date
   onDone: () => void
   onChanged: () => Promise<void>
@@ -149,31 +153,40 @@ function QueueRow({
 }) {
   const { request } = useAuth()
   const api = useMemo(() => agendaApi(request), [request])
-  const [busy, setBusy] = useState(false)
+  const [busy, setBusy] = useState<'start' | 'ready' | 'complete' | null>(null)
   const once = useSingleFlight()
   const customer = item.customerName ?? 'Cliente'
+  const status = item.status ?? 'CHECKED_IN'
+  const petName = item.pet?.name
 
-  async function complete() {
+  /** Roda um passo do atendimento: bloqueia o botão durante o envio, avisa o resultado e refaz a fila (que traz a situação nova do servidor). */
+  async function act(step: 'start' | 'ready' | 'complete', run: () => Promise<unknown>, message: string, leavesQueue = false) {
     await once(async () => {
       setProblem(null)
       setNotice(null)
-      setBusy(true)
+      setBusy(step)
       try {
-        await api.complete(item.id)
-        onDone() // sai da fila agora; o GET seguinte só confirma
-        setNotice(`Atendimento de ${customer} concluído.`)
+        await run()
+        if (leavesQueue) onDone() // sai da fila agora; o GET seguinte só confirma
+        setNotice(message)
         await onChanged()
       } catch (e) {
         setProblem(describeError(e))
         if (e instanceof ApiError && e.reason && STATE_CHANGED.has(e.reason)) await onChanged().catch(() => undefined)
       } finally {
-        setBusy(false)
+        setBusy(null)
       }
     })
   }
 
+  const who = petName ? `${petName} (${customer})` : customer
+  const start = () => act('start', () => api.start(item.id), `Atendimento de ${who} iniciado.`)
+  const ready = () => act('ready', () => api.ready(item.id), `${petName ?? 'O pet'} está pronto para retirada.`)
+  const complete = () => act('complete', () => api.complete(item.id), `Atendimento de ${who} concluído.`, true)
+  const readyMessage = `Olá, ${customer}! ${petName ? `O ${petName} está` : 'O seu pet está'} pronto para retirada no ${businessName}.`
+
   return (
-    <li className="row appt" data-status="CHECKED_IN">
+    <li className="row appt" data-status={status}>
       <span className="appt-info">
         <strong className="appt-time">{position}º</strong>
         {item.pet && <PetAvatar species={item.pet.species} />}
@@ -186,21 +199,39 @@ function QueueRow({
         )}
         <span className="sep" aria-hidden="true"> · </span>
         <span className="appt-who">{customer}</span>
-        {item.customerPhone && <ContactLink phone={item.customerPhone} name={customer} />}
+        {item.customerPhone && <ContactLink phone={item.customerPhone} name={customer} message={status === 'READY' ? readyMessage : undefined} />}
         <span className="sep" aria-hidden="true"> · </span>
         <span className="appt-service">{item.serviceName ?? 'Serviço'}</span>
         {item.priceCents != null && <span className="appt-price">{formatMoney(item.priceCents)}</span>}
         {item.pet && <PetFicha pet={item.pet} />}
         {item.pet?.notes && <span className="appt-notes">Observações do tutor: {item.pet.notes}</span>}
         <span className="sep" aria-hidden="true"> · </span>
-        <span className="badge" data-status="CHECKED_IN">chegou às {timeIn(item.checkedInAt, timeZone)}</span>
+        <span className="badge" data-status={status}>
+          {status === 'IN_PROGRESS' ? 'em atendimento' : status === 'READY' ? 'pronto para retirada' : `chegou às ${timeIn(item.checkedInAt, timeZone)}`}
+        </span>
         <span className="appt-meta">
           marcado para {timeIn(item.startsAt, timeZone)} · {waitLabel(item.checkedInAt, now)}
         </span>
       </span>
       <span className="actions">
-        <button type="button" className="button" disabled={busy} onClick={complete}>
-          {busy ? 'Enviando…' : 'Concluir atendimento'}
+        {status === 'CHECKED_IN' && (
+          <button type="button" className="button" disabled={busy !== null} onClick={start}>
+            {busy === 'start' ? 'Enviando…' : 'Começar atendimento'}
+          </button>
+        )}
+        {(status === 'CHECKED_IN' || status === 'IN_PROGRESS') && (
+          <button type="button" className={status === 'IN_PROGRESS' ? 'button' : 'button secondary'} disabled={busy !== null} onClick={ready}>
+            {busy === 'ready' ? 'Enviando…' : 'Pronto para retirada'}
+          </button>
+        )}
+        {status === 'READY' && item.customerPhone && (
+          <a className="button secondary" href={whatsappLink(item.customerPhone, readyMessage)} target="_blank" rel="noopener noreferrer">
+            Avisar no WhatsApp
+            <span className="pp-sr"> ({customer})</span>
+          </a>
+        )}
+        <button type="button" className={status === 'READY' ? 'button' : 'button secondary'} disabled={busy !== null} onClick={complete}>
+          {busy === 'complete' ? 'Enviando…' : status === 'READY' ? 'Pet retirado (concluir)' : 'Concluir atendimento'}
         </button>
       </span>
     </li>

@@ -158,7 +158,21 @@ class AppointmentController {
 		return respond(List.of(attendanceService.checkIn(id, userId(jwt)))).get(0);
 	}
 
-	/** Atendimento concluído. Só a equipe do prestador. */
+	/** O atendimento começou (de quem chegou). Só a equipe do prestador. */
+	@PostMapping("/{id}/start")
+	@PreAuthorize("hasAnyRole('PROVIDER','ATTENDANT')")
+	AppointmentResponse start(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID id) {
+		return respond(List.of(attendanceService.start(id, userId(jwt)))).get(0);
+	}
+
+	/** O pet está pronto para retirada (de quem chegou ou está em atendimento). Só a equipe do prestador. */
+	@PostMapping("/{id}/ready")
+	@PreAuthorize("hasAnyRole('PROVIDER','ATTENDANT')")
+	AppointmentResponse ready(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID id) {
+		return respond(List.of(attendanceService.ready(id, userId(jwt)))).get(0);
+	}
+
+	/** Atendimento concluído (pet retirado). Só a equipe do prestador. */
 	@PostMapping("/{id}/complete")
 	@PreAuthorize("hasAnyRole('PROVIDER','ATTENDANT')")
 	AppointmentResponse complete(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID id) {

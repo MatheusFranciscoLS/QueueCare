@@ -81,6 +81,8 @@ export function TodaySummary() {
           <>
             <strong>Próximo:</strong> {timeIn(next.startsAt, data.timeZone)} · {next.customerName ?? 'Cliente'} · {next.serviceName ?? 'Serviço'}
             {next.status === 'CHECKED_IN' && ' (já chegou)'}
+            {next.status === 'IN_PROGRESS' && ' (em atendimento)'}
+            {next.status === 'READY' && ' (pronto para retirada)'}
           </>
         ) : (
           'Nenhum atendimento por vir hoje.'

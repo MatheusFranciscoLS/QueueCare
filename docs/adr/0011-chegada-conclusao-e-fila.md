@@ -25,3 +25,6 @@ O banco já prevê as situações `CHECKED_IN` e `COMPLETED` e os eventos corres
 ## Consequências e limitações conhecidas
 - Quem chegou e nunca foi concluído fica `CHECKED_IN` na agenda do dia; não há expiração automática nem "faltou" (no-show).
 - A posição é a ordem da lista no momento da consulta; a tela precisa atualizar para refletir mudanças.
+
+## Atualização (ADR 0019, fatia 4)
+A máquina de estados passou a ser SCHEDULED, CHECKED_IN, IN_PROGRESS (em atendimento), READY (pronto para retirada) e COMPLETED (retirado), sempre só para frente. A conclusão aceita quem chegou, está em atendimento ou está pronto (fluxo antigo preservado); começar e ficar pronto têm rotas próprias (`/start` e `/ready`) e eventos `STARTED` e `READY` (um de cada por agendamento). A fila (item 8) passa a listar os três estados de quem já chegou e ainda não foi retirado, com a situação de cada um.

@@ -26,6 +26,10 @@ function describeEntry(entry: HistoryEntry, zone: string, showNames: boolean): s
         : `Remarcado ${by}`
     case 'CHECKED_IN':
       return 'Chegada registrada'
+    case 'STARTED':
+      return 'Atendimento iniciado'
+    case 'READY':
+      return 'Pet pronto para retirada'
     case 'COMPLETED':
       return 'Atendimento concluído'
     case 'CANCELLED':

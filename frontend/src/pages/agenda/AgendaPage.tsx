@@ -212,23 +212,30 @@ function countByStatus(statuses: string[]) {
   return {
     done: statuses.filter((s) => s === 'COMPLETED').length,
     waiting: statuses.filter((s) => s === 'CHECKED_IN').length,
+    working: statuses.filter((s) => s === 'IN_PROGRESS' || s === 'READY').length,
     upcoming: statuses.filter((s) => s === 'SCHEDULED').length,
   }
 }
 
-function DaySummary({ counts }: { counts: { done: number; waiting: number; upcoming: number } }) {
+function DaySummary({ counts }: { counts: { done: number; waiting: number; working: number; upcoming: number } }) {
   return (
     <Summary>
       <strong>
         {counts.done} {counts.done === 1 ? 'concluído' : 'concluídos'}
       </strong>
-      , <strong>{counts.waiting} esperando</strong> e <strong>{counts.upcoming} por vir</strong>.
+      , <strong>{counts.waiting} esperando</strong>
+      {counts.working > 0 && (
+        <>
+          , <strong>{counts.working} em atendimento</strong>
+        </>
+      )}{' '}
+      e <strong>{counts.upcoming} por vir</strong>.
     </Summary>
   )
 }
 
 /** As situações só andam para frente. */
-const RANK: Record<string, number> = { SCHEDULED: 0, CHECKED_IN: 1, COMPLETED: 2 }
+const RANK: Record<string, number> = { SCHEDULED: 0, CHECKED_IN: 1, IN_PROGRESS: 2, READY: 3, COMPLETED: 4 }
 
 /** A situação mais avançada entre a do servidor e a confirmada aqui: uma lista de antes da mudança não a desfaz, e uma leitura nova que a confirme ou ultrapasse (outra pessoa concluiu) prevalece. */
 function laterOf(server: string, local: string | undefined): string {
@@ -236,7 +243,7 @@ function laterOf(server: string, local: string | undefined): string {
   return RANK[local] > RANK[server] ? local : server
 }
 
-const STATUS_LABEL: Record<string, string> = { SCHEDULED: 'Agendado', CHECKED_IN: 'Chegou', COMPLETED: 'Concluído' }
+const STATUS_LABEL: Record<string, string> = { SCHEDULED: 'Agendado', CHECKED_IN: 'Chegou', IN_PROGRESS: 'Em atendimento', READY: 'Pronto para retirada', COMPLETED: 'Concluído' }
 
 /** Motivos em que o agendamento JÁ mudou no servidor: a linha volta a valer o que o servidor diz e a lista é refeita. */
 const STATE_CHANGED = new Set(['ALREADY_CANCELLED', 'NOT_CANCELLABLE', 'NOT_RESCHEDULABLE', 'INVALID_STATE', 'CONCURRENT_UPDATE'])
@@ -417,7 +424,7 @@ function AppointmentRow({
           )}
         </span>
       )}
-      {status === 'CHECKED_IN' && (
+      {(status === 'CHECKED_IN' || status === 'IN_PROGRESS' || status === 'READY') && (
         <span className="actions">
           <button type="button" className="button" disabled={busy} onClick={complete}>
             {busy ? 'Enviando…' : 'Concluir atendimento'}

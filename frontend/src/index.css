@@ -1705,3 +1705,40 @@ textarea {
 .confirm-price {
   font-size: 1.125rem;
 }
+
+/* ESTADOS DE ATENDIMENTO (ADR 0019): em atendimento (azul, meio cheio) e pronto para retirada (verde, anel com centro); sempre com o texto */
+.badge[data-status='IN_PROGRESS'] {
+  color: var(--st-scheduled);
+  background: var(--st-scheduled-bg);
+}
+
+.badge[data-status='READY'] {
+  color: var(--st-done);
+  background: var(--st-done-bg);
+}
+
+.timeline .badge[data-status='IN_PROGRESS']::before,
+.queue-list .badge[data-status='IN_PROGRESS']::before {
+  background: linear-gradient(0deg, currentColor 50%, transparent 50%);
+}
+
+.timeline .badge[data-status='READY']::before,
+.queue-list .badge[data-status='READY']::before {
+  background: radial-gradient(circle, currentColor 38%, transparent 42%);
+}
+
+.week-block[data-state='inprogress'] .week-block__open {
+  border-color: var(--pp-primary);
+  background: var(--st-scheduled-bg);
+  color: var(--st-scheduled);
+}
+
+.week-block[data-state='ready'] .week-block__open {
+  border-color: var(--st-done);
+  background: var(--st-done-bg);
+  color: var(--st-done);
+}
+
+a.button {
+  text-decoration: none;
+}

@@ -253,7 +253,7 @@ describe('fila', () => {
     expect(rows).toHaveLength(2)
     expect(rows[0]).toHaveTextContent('1º · Joana Lima · Troca de óleo · chegou às 09:30') // 12:30Z = 09:30 em São Paulo
     expect(rows[1]).toHaveTextContent('2º · Maria Souza · Troca de óleo · chegou às 10:05')
-    expect(screen.getByText(/Oficina Central · quem já chegou hoje e espera/)).toBeInTheDocument()
+    expect(screen.getByText(/Oficina Central · quem já chegou hoje e ainda não foi retirado/)).toBeInTheDocument()
     expect(calls.some((c) => c.path === '/api/provider')).toBe(false)
   })
 

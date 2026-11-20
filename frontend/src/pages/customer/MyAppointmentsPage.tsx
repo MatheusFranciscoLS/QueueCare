@@ -16,7 +16,7 @@ import { RescheduleBox } from './RescheduleBox'
 import { PetAvatar } from '../../ui/components'
 
 const PAGE_SIZE = 50
-const STATUS_LABEL: Record<string, string> = { SCHEDULED: 'Agendado', CHECKED_IN: 'Chegou', COMPLETED: 'Concluído', CANCELLED: 'Cancelado' }
+const STATUS_LABEL: Record<string, string> = { SCHEDULED: 'Agendado', CHECKED_IN: 'Chegou', IN_PROGRESS: 'Em atendimento', READY: 'Pronto para retirada', COMPLETED: 'Concluído', CANCELLED: 'Cancelado' }
 
 /** Motivos em que o agendamento JÁ mudou no servidor: a lista precisa ser refeita, não só mostrar o erro. */
 const STATE_CHANGED = new Set(['ALREADY_CANCELLED', 'NOT_CANCELLABLE', 'NOT_RESCHEDULABLE', 'CONCURRENT_UPDATE'])

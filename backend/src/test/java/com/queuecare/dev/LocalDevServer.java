@@ -118,8 +118,14 @@ public final class LocalDevServer {
 		}
 		Instant created = starts.minusSeconds(3 * 86400L);
 		exec(c, "INSERT INTO appointment_events (appointment_id, actor_id, event_type, created_at) VALUES (?, ?, 'SCHEDULED', ?)", appointmentId, actor, Timestamp.from(created));
-		if (status.equals("CHECKED_IN") || status.equals("COMPLETED")) {
+		if (status.equals("CHECKED_IN") || status.equals("IN_PROGRESS") || status.equals("READY") || status.equals("COMPLETED")) {
 			exec(c, "INSERT INTO appointment_events (appointment_id, actor_id, event_type, created_at) VALUES (?, ?, 'CHECKED_IN', ?)", appointmentId, staff, Timestamp.from(starts.minusSeconds(600)));
+		}
+		if (status.equals("IN_PROGRESS") || status.equals("READY") || status.equals("COMPLETED")) {
+			exec(c, "INSERT INTO appointment_events (appointment_id, actor_id, event_type, created_at) VALUES (?, ?, 'STARTED', ?)", appointmentId, staff, Timestamp.from(starts.minusSeconds(300)));
+		}
+		if (status.equals("READY") || status.equals("COMPLETED")) {
+			exec(c, "INSERT INTO appointment_events (appointment_id, actor_id, event_type, created_at) VALUES (?, ?, 'READY', ?)", appointmentId, staff, Timestamp.from(starts.plusSeconds(minutes * 60L - 60)));
 		}
 		if (status.equals("COMPLETED")) {
 			exec(c, "INSERT INTO appointment_events (appointment_id, actor_id, event_type, created_at) VALUES (?, ?, 'COMPLETED', ?)", appointmentId, staff, Timestamp.from(starts.plusSeconds(minutes * 60L)));
@@ -172,8 +178,9 @@ public final class LocalDevServer {
 
 		// Hoje: um de cada situação, para a Agenda e a Fila terem o que mostrar.
 		appointment(c, provider, bath, marina, mel, melCopy, 0, LocalTime.of(8, 0), 60, "COMPLETED", marina, attendant);
-		appointment(c, provider, full, joao, bidu, biduCopy, 0, LocalTime.of(9, 30), 90, "CHECKED_IN", joao, attendant);
-		appointment(c, provider, hygienic, carla, nina, ninaCopy, 0, LocalTime.of(11, 0), 45, "CHECKED_IN", carla, attendant);
+		appointment(c, provider, full, joao, bidu, biduCopy, 0, LocalTime.of(9, 30), 90, "IN_PROGRESS", joao, attendant);
+		appointment(c, provider, hygienic, carla, nina, ninaCopy, 0, LocalTime.of(11, 0), 45, "READY", carla, attendant);
+		appointment(c, provider, bath, marina, mel, melCopy, 0, LocalTime.of(17, 0), 60, "CHECKED_IN", marina, attendant);
 		appointment(c, provider, bath, marina, thor, thorCopy, 0, LocalTime.of(14, 0), 60, "SCHEDULED", marina, attendant);
 		appointment(c, provider, full, carla, nina, ninaCopy, 0, LocalTime.of(15, 30), 90, "SCHEDULED", carla, attendant);
 		appointment(c, provider, bath, joao, bidu, biduCopy, 0, LocalTime.of(17, 0), 60, "CANCELLED", joao, attendant);
