@@ -17,9 +17,13 @@ public interface AppointmentRepository extends JpaRepository<Appointment, UUID> 
 	 */
 	@org.springframework.data.jpa.repository.Modifying(flushAutomatically = true, clearAutomatically = true)
 	@Query("update Appointment a set a.petName = :name, a.petSpecies = :species, a.petBreed = :breed, a.petSize = :size, a.petNotes = :notes, "
+			+ "a.petCoat = :coat, a.petWeightKg = :weight, a.petTemperament = :temperament, a.petHealthNotes = :healthNotes, a.petVaccinated = :vaccinated, "
 			+ "a.version = a.version + 1 where a.petId = :petId and a.status = com.queuecare.scheduling.persistence.AppointmentStatus.SCHEDULED")
 	int refreshPetSnapshot(@Param("petId") UUID petId, @Param("name") String name, @Param("species") com.queuecare.pets.PetSpecies species,
-			@Param("breed") String breed, @Param("size") com.queuecare.pets.PetSize size, @Param("notes") String notes);
+			@Param("breed") String breed, @Param("size") com.queuecare.pets.PetSize size, @Param("notes") String notes,
+			@Param("coat") com.queuecare.pets.PetCoat coat, @Param("weight") java.math.BigDecimal weight,
+			@Param("temperament") com.queuecare.pets.PetTemperament temperament, @Param("healthNotes") String healthNotes,
+			@Param("vaccinated") Boolean vaccinated);
 
 	java.util.List<Appointment> findByCustomerId(UUID customerId, org.springframework.data.domain.Pageable pageable);
 

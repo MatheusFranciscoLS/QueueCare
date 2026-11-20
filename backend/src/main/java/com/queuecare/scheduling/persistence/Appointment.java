@@ -7,7 +7,9 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import com.queuecare.pets.Pet;
+import com.queuecare.pets.PetCoat;
 import com.queuecare.pets.PetSize;
+import com.queuecare.pets.PetTemperament;
 import com.queuecare.pets.PetSpecies;
 import jakarta.persistence.Version;
 import java.time.Instant;
@@ -72,6 +74,24 @@ public class Appointment {
 	@Column(name = "pet_notes", updatable = false)
 	private String petNotes;
 
+	/** Ficha do pet na reserva (ADR 0019); mesmas regras da cópia acima. */
+	@Column(name = "pet_coat", updatable = false)
+	@Enumerated(EnumType.STRING)
+	private PetCoat petCoat;
+
+	@Column(name = "pet_weight_kg", updatable = false)
+	private java.math.BigDecimal petWeightKg;
+
+	@Column(name = "pet_temperament", updatable = false)
+	@Enumerated(EnumType.STRING)
+	private PetTemperament petTemperament;
+
+	@Column(name = "pet_health_notes", updatable = false)
+	private String petHealthNotes;
+
+	@Column(name = "pet_vaccinated", updatable = false)
+	private Boolean petVaccinated;
+
 	@Version
 	@Column(nullable = false)
 	private long version;
@@ -99,6 +119,11 @@ public class Appointment {
 		this.petBreed = pet.getBreed();
 		this.petSize = pet.getSize();
 		this.petNotes = pet.getNotes();
+		this.petCoat = pet.getCoat();
+		this.petWeightKg = pet.getWeightKg();
+		this.petTemperament = pet.getTemperament();
+		this.petHealthNotes = pet.getHealthNotes();
+		this.petVaccinated = pet.getVaccinated();
 	}
 
 	/** Move o agendamento para outro horário (ADR 0017). O serviço confere regras e situação antes; aqui só se muda. Mesma duração, mesmo pet. */
@@ -177,5 +202,25 @@ public class Appointment {
 
 	public String getPetNotes() {
 		return petNotes;
+	}
+
+	public PetCoat getPetCoat() {
+		return petCoat;
+	}
+
+	public java.math.BigDecimal getPetWeightKg() {
+		return petWeightKg;
+	}
+
+	public PetTemperament getPetTemperament() {
+		return petTemperament;
+	}
+
+	public String getPetHealthNotes() {
+		return petHealthNotes;
+	}
+
+	public Boolean getPetVaccinated() {
+		return petVaccinated;
 	}
 }

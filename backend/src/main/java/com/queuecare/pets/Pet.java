@@ -6,6 +6,7 @@ import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.Objects;
 import java.util.UUID;
@@ -37,6 +38,21 @@ public class Pet {
 	private PetSize size;
 
 	private String notes;
+
+	/** Ficha (ADR 0019): tudo opcional. */
+	@Enumerated(EnumType.STRING)
+	private PetCoat coat;
+
+	@Column(name = "weight_kg")
+	private BigDecimal weightKg;
+
+	@Enumerated(EnumType.STRING)
+	private PetTemperament temperament;
+
+	@Column(name = "health_notes")
+	private String healthNotes;
+
+	private Boolean vaccinated;
 
 	@Column(nullable = false)
 	private boolean active;
@@ -78,6 +94,11 @@ public class Pet {
 		this.breed = data.breed();
 		this.size = data.size();
 		this.notes = data.notes();
+		this.coat = data.coat();
+		this.weightKg = data.weightKg();
+		this.temperament = data.temperament();
+		this.healthNotes = data.healthNotes();
+		this.vaccinated = data.vaccinated();
 		this.updatedAt = Objects.requireNonNull(now);
 	}
 
@@ -107,6 +128,26 @@ public class Pet {
 
 	public String getNotes() {
 		return notes;
+	}
+
+	public PetCoat getCoat() {
+		return coat;
+	}
+
+	public BigDecimal getWeightKg() {
+		return weightKg;
+	}
+
+	public PetTemperament getTemperament() {
+		return temperament;
+	}
+
+	public String getHealthNotes() {
+		return healthNotes;
+	}
+
+	public Boolean getVaccinated() {
+		return vaccinated;
 	}
 
 	public boolean isActive() {

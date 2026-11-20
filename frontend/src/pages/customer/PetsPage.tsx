@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { describeError } from '../../api/messages'
-import { PET_LIMITS, petDescription, petsApi, type Pet } from '../../api/pets'
+import { fichaSummary, PET_LIMITS, petDescription, petsApi, type Pet } from '../../api/pets'
 import { useAuth } from '../../auth/session'
 import { Loading } from '../Loading'
 import { RefreshWarning } from '../RefreshWarning'
@@ -172,6 +172,8 @@ function PetRow({
       <span className="pet-info">
         <strong>{pet.name}</strong> <span className="appt-service">{petDescription(pet)}</span>{' '}
         {!pet.active && <span className="badge">Arquivado</span>}
+        {fichaSummary(pet) && <span className="pet-notes">Ficha: {fichaSummary(pet)}</span>}
+        {pet.healthNotes && <span className="pet-notes">Saúde e alergias: {pet.healthNotes}</span>}
         {pet.notes && <span className="pet-notes">Observações: {pet.notes}</span>}
       </span>
       <span className="actions">

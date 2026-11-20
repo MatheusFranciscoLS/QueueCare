@@ -38,16 +38,20 @@ class PetController {
 	}
 
 	/** Dados do pet (criar e substituir). Textos como o tutor digitou: a API normaliza e valida (veja PetText). */
-	record PetRequest(String name, String species, String breed, String size, String notes) {
+	record PetRequest(String name, String species, String breed, String size, String notes, String coat, java.math.BigDecimal weightKg, String temperament,
+			String healthNotes, Boolean vaccinated) {
 		PetText.Input toInput() {
-			return new PetText.Input(name, species, breed, size, notes);
+			return new PetText.Input(name, species, breed, size, notes, coat, weightKg, temperament, healthNotes, vaccinated);
 		}
 	}
 
-	record PetResponse(UUID id, String name, String species, String breed, String size, String notes, boolean active) {
+	/** Ficha (ADR 0019): {@code coat}, {@code weightKg}, {@code temperament}, {@code healthNotes} e {@code vaccinated} são opcionais (nulos se não informados). */
+	record PetResponse(UUID id, String name, String species, String breed, String size, String notes, String coat, java.math.BigDecimal weightKg,
+			String temperament, String healthNotes, Boolean vaccinated, boolean active) {
 		static PetResponse from(Pet p) {
 			return new PetResponse(p.getId(), p.getName(), p.getSpecies().name(), p.getBreed(), p.getSize() == null ? null : p.getSize().name(),
-					p.getNotes(), p.isActive());
+					p.getNotes(), p.getCoat() == null ? null : p.getCoat().name(), p.getWeightKg(), p.getTemperament() == null ? null : p.getTemperament().name(),
+					p.getHealthNotes(), p.getVaccinated(), p.isActive());
 		}
 	}
 
@@ -59,7 +63,7 @@ class PetController {
 	}
 
 	@Operation(operationId = "createPet")
-	@ApiResponse(responseCode = "400", description = "Dados inválidos (errors.name, errors.species, errors.breed, errors.size, errors.notes).", content = @Content(mediaType = "application/problem+json", schema = @Schema(ref = PROBLEM)))
+	@ApiResponse(responseCode = "400", description = "Dados inválidos (errors.name, errors.species, errors.breed, errors.size, errors.notes, errors.coat, errors.weightKg, errors.temperament, errors.healthNotes).", content = @Content(mediaType = "application/problem+json", schema = @Schema(ref = PROBLEM)))
 	@ApiResponse(responseCode = "409", description = "Limite de pets ativos (20) ou cadastrados (100) atingido (reason PET_LIMIT_REACHED).", content = @Content(mediaType = "application/problem+json", schema = @Schema(ref = PROBLEM)))
 	@PostMapping
 	@ResponseStatus(HttpStatus.CREATED)
@@ -75,7 +79,7 @@ class PetController {
 	}
 
 	@Operation(operationId = "updatePet")
-	@ApiResponse(responseCode = "400", description = "Dados inválidos (errors.name, errors.species, errors.breed, errors.size, errors.notes).", content = @Content(mediaType = "application/problem+json", schema = @Schema(ref = PROBLEM)))
+	@ApiResponse(responseCode = "400", description = "Dados inválidos (errors.name, errors.species, errors.breed, errors.size, errors.notes, errors.coat, errors.weightKg, errors.temperament, errors.healthNotes).", content = @Content(mediaType = "application/problem+json", schema = @Schema(ref = PROBLEM)))
 	@ApiResponse(responseCode = "404", description = "Pet inexistente ou de outro cliente (reason PET_NOT_FOUND).", content = @Content(mediaType = "application/problem+json", schema = @Schema(ref = PROBLEM)))
 	@PutMapping("/{id}")
 	PetResponse update(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID id, @RequestBody PetRequest request) {

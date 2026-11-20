@@ -1,5 +1,6 @@
 package com.queuecare.pets;
 
+import java.math.BigDecimal;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -13,6 +14,9 @@ import java.util.Map;
  * <li>{@code size}: opcional (SMALL, MEDIUM, LARGE); vazio vira nulo.</li>
  * <li>{@code notes}: opcional, até 500 caracteres; CRLF e CR viram LF; apara as pontas; só o LF é aceito entre os caracteres
  * de controle; vazio vira nulo.</li>
+ * <li>Ficha (ADR 0019, todos opcionais): {@code coat} (SHORT, MEDIUM, LONG, CURLY, DOUBLE), {@code weightKg} (0,5 a 120,0 com no máximo
+ * uma casa decimal), {@code temperament} (CALM, ANXIOUS, REACTIVE), {@code healthNotes} (até 300 caracteres, mesmas regras de {@code notes})
+ * e {@code vaccinated} (sim, não ou não informado).</li>
  * </ul>
  * <p><b>Controles nas pontas:</b> o que {@code String.strip()} considera espaço (TAB, LF, VT, FF, CR, U+001C a U+001F e espaços Unicode) é
  * APARADO, pois um tutor que cola o texto com uma quebra de linha no fim não deve receber erro; qualquer outro controle (sino, NUL, DEL,
@@ -27,16 +31,25 @@ public final class PetText {
 	static final int MAX_NAME = 80;
 	static final int MAX_BREED = 80;
 	static final int MAX_NOTES = 500;
+	static final int MAX_HEALTH_NOTES = 300;
+	static final BigDecimal MIN_WEIGHT = new BigDecimal("0.5");
+	static final BigDecimal MAX_WEIGHT = new BigDecimal("120.0");
 
 	private PetText() {
 	}
 
 	/** Entrada crua (como veio da API). */
-	public record Input(String name, String species, String breed, String size, String notes) {
+	public record Input(String name, String species, String breed, String size, String notes, String coat, BigDecimal weightKg, String temperament,
+			String healthNotes, Boolean vaccinated) {
+		/** Só os dados básicos (sem a ficha). */
+		public Input(String name, String species, String breed, String size, String notes) {
+			this(name, species, breed, size, notes, null, null, null, null, null);
+		}
 	}
 
 	/** Dados válidos e normalizados, prontos para gravar. */
-	public record Normalized(String name, PetSpecies species, String breed, PetSize size, String notes) {
+	public record Normalized(String name, PetSpecies species, String breed, PetSize size, String notes, PetCoat coat, BigDecimal weightKg,
+			PetTemperament temperament, String healthNotes, Boolean vaccinated) {
 	}
 
 	public static Normalized normalize(Input in) {
@@ -57,11 +70,15 @@ public final class PetText {
 				errors.put("size", "SMALL, MEDIUM ou LARGE");
 			}
 		}
-		String notes = notes(in.notes(), errors);
+		String notes = notes(in.notes(), MAX_NOTES, "notes", errors);
+		PetCoat coat = optionalEnum(PetCoat.class, in.coat(), "coat", "SHORT, MEDIUM, LONG, CURLY ou DOUBLE", errors);
+		PetTemperament temperament = optionalEnum(PetTemperament.class, in.temperament(), "temperament", "CALM, ANXIOUS ou REACTIVE", errors);
+		BigDecimal weight = weight(in.weightKg(), errors);
+		String healthNotes = notes(in.healthNotes(), MAX_HEALTH_NOTES, "healthNotes", errors);
 		if (!errors.isEmpty()) {
 			throw new PetExceptions.InvalidPetException(errors);
 		}
-		return new Normalized(name, species, breed, size, notes);
+		return new Normalized(name, species, breed, size, notes, coat, weight, temperament, healthNotes, in.vaccinated());
 	}
 
 	/** Nome e raça: uma linha só. Devolve nulo se vazio (o chamador decide se é obrigatório); erro de formato vai para {@code errors}. */
@@ -85,7 +102,32 @@ public final class PetText {
 		return text;
 	}
 
-	private static String notes(String raw, Map<String, String> errors) {
+	/** Peso em kg: de 0,5 a 120,0, com no máximo uma casa decimal (o banco guarda numeric(4,1)). Nulo = não informado. */
+	private static BigDecimal weight(BigDecimal raw, Map<String, String> errors) {
+		if (raw == null) {
+			return null;
+		}
+		BigDecimal value = raw.stripTrailingZeros();
+		if (value.scale() > 1 || value.compareTo(MIN_WEIGHT) < 0 || value.compareTo(MAX_WEIGHT) > 0) {
+			errors.put("weightKg", "de 0,5 a 120 kg, com no máximo uma casa decimal");
+			return null;
+		}
+		return value.setScale(1);
+	}
+
+	/** Valor de lista fechada, opcional: vazio vira nulo; fora da lista é erro do campo. */
+	private static <E extends Enum<E>> E optionalEnum(Class<E> type, String raw, String field, String allowed, Map<String, String> errors) {
+		if (raw == null || raw.isBlank()) {
+			return null;
+		}
+		E value = parseEnum(type, raw.strip());
+		if (value == null) {
+			errors.put(field, allowed);
+		}
+		return value;
+	}
+
+	private static String notes(String raw, int max, String field, Map<String, String> errors) {
 		if (raw == null) {
 			return null;
 		}
@@ -94,11 +136,11 @@ public final class PetText {
 			return null;
 		}
 		if (hasControl(text, true)) {
-			errors.put("notes", "caracteres inválidos");
+			errors.put(field, "caracteres inválidos");
 			return null;
 		}
-		if (text.codePointCount(0, text.length()) > MAX_NOTES) {
-			errors.put("notes", "até " + MAX_NOTES + " caracteres");
+		if (text.codePointCount(0, text.length()) > max) {
+			errors.put(field, "até " + max + " caracteres");
 			return null;
 		}
 		return text;

@@ -183,6 +183,14 @@ public final class LocalDevServer {
 		appointment(c, provider, hygienic, carla, nina, ninaCopy, 2, LocalTime.of(10, 30), 45, "SCHEDULED", carla, attendant);
 		appointment(c, provider, bath, marina, mel, melCopy, 3, LocalTime.of(16, 0), 60, "SCHEDULED", marina, attendant);
 		appointment(c, provider, full, marina, thor, thorCopy, -7, LocalTime.of(9, 0), 90, "COMPLETED", marina, attendant);
+
+		// Ficha dos pets (ADR 0019) e a cópia dela nos agendamentos: dados fictícios de demonstração.
+		exec(c, "UPDATE pets SET coat = 'DOUBLE', weight_kg = 32.5, temperament = 'ANXIOUS', vaccinated = true, health_notes = 'Pele sensível: usar shampoo neutro.' WHERE id = ?", thor);
+		exec(c, "UPDATE pets SET coat = 'SHORT', weight_kg = 4.2, temperament = 'CALM', vaccinated = true WHERE id = ?", mel);
+		exec(c, "UPDATE pets SET coat = 'CURLY', weight_kg = 6.8, temperament = 'REACTIVE', vaccinated = false, health_notes = 'Alérgico a um shampoo comum.' WHERE id = ?", bidu);
+		exec(c, "UPDATE pets SET coat = 'MEDIUM', weight_kg = 14.0 WHERE id = ?", nina);
+		exec(c, "UPDATE appointments a SET pet_coat = p.coat, pet_weight_kg = p.weight_kg, pet_temperament = p.temperament, pet_health_notes = p.health_notes, "
+				+ "pet_vaccinated = p.vaccinated FROM pets p WHERE a.pet_id = p.id");
 	}
 
 	private static UUID service(Connection c, UUID provider, String name, int minutes) throws SQLException {

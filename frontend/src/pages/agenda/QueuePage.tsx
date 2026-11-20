@@ -1,4 +1,5 @@
 import { ContactLink } from './ContactLink'
+import { PetFicha } from './PetFicha'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { agendaApi, type QueueItem, type Workplace } from '../../api/agenda'
@@ -187,6 +188,7 @@ function QueueRow({
         {item.customerPhone && <ContactLink phone={item.customerPhone} name={customer} />}
         <span className="sep" aria-hidden="true"> · </span>
         <span className="appt-service">{item.serviceName ?? 'Serviço'}</span>
+        {item.pet && <PetFicha pet={item.pet} />}
         {item.pet?.notes && <span className="appt-notes">Observações do tutor: {item.pet.notes}</span>}
         <span className="sep" aria-hidden="true"> · </span>
         <span className="badge" data-status="CHECKED_IN">chegou às {timeIn(item.checkedInAt, timeZone)}</span>

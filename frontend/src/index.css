@@ -1676,3 +1676,22 @@ textarea {
   font-weight: 600;
   overflow-wrap: anywhere;
 }
+
+/* FICHA DO PET (ADR 0019): título da seção no formulário e informações para quem atende */
+.form-section {
+  margin: var(--space-6) 0 var(--space-3);
+  font: 700 1.125rem/1.2 var(--font-heading);
+}
+
+.appt-alert {
+  display: inline-block;
+  padding: 0.125rem 0.625rem;
+  color: var(--pp-ink, var(--text));
+  background: color-mix(in srgb, var(--pp-gold-mark) 22%, var(--surface));
+  border: 2px solid var(--pp-gold-mark);
+  border-radius: 8px;
+}
+
+.appt-ficha {
+  color: var(--muted);
+}
