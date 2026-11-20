@@ -4,6 +4,10 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { addDays, todayIn } from '../api/dates'
 import { json, mockApi, PASSWORD, problem, renderWithHarness, token, USER, type Call } from './helpers'
 
+// O painel do Início tem testes próprios; aqui ele sairia do caminho das contagens de chamadas.
+vi.mock('../pages/customer/CustomerPanel', () => ({ CustomerPanel: () => null }))
+vi.mock('../pages/provider/SetupPanel', () => ({ SetupPanel: () => null }))
+
 // O resumo da tela inicial tem testes próprios (today-summary.test.tsx); aqui ele sairia do caminho das contagens de chamadas à agenda.
 vi.mock('../pages/TodaySummary', () => ({ TodaySummary: () => null }))
 

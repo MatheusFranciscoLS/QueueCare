@@ -3,6 +3,10 @@ import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { json, mockApi, PASSWORD, problem, renderApp, renderWithHarness, token, USER, type Call } from './helpers'
 
+// O painel do Início tem testes próprios; aqui ele sairia do caminho das contagens de chamadas.
+vi.mock('../pages/customer/CustomerPanel', () => ({ CustomerPanel: () => null }))
+vi.mock('../pages/provider/SetupPanel', () => ({ SetupPanel: () => null }))
+
 afterEach(() => vi.unstubAllGlobals())
 
 const PROVIDER = { ...USER, role: 'PROVIDER', name: 'Oficina Central', email: 'oficina@exemplo.test' }

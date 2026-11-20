@@ -1,5 +1,7 @@
 import { Link } from 'react-router-dom'
 import { useAuth, type Role } from '../auth/session'
+import { CustomerPanel } from './customer/CustomerPanel'
+import { SetupPanel } from './provider/SetupPanel'
 import { TodaySummary } from './TodaySummary'
 
 /** O que cada perfil fará nas próximas telas. Honesto: as telas ainda não existem, então nada aqui finge ser um botão. */
@@ -20,21 +22,7 @@ export function HomePage() {
       {(user.role === 'PROVIDER' || user.role === 'ATTENDANT') && <TodaySummary />}
       {user.role === 'PROVIDER' && (
         <>
-          <h2>Configure o seu negócio</h2>
-          <ol className="shortcuts">
-            <li>
-              <Link to="/meu-negocio">Meu negócio</Link>
-              <span>nome, fuso horário, antecedência e prazo de cancelamento</span>
-            </li>
-            <li>
-              <Link to="/servicos">Serviços</Link>
-              <span>o que você oferece e quanto tempo leva</span>
-            </li>
-            <li>
-              <Link to="/expediente">Expediente</Link>
-              <span>dias e horários de atendimento</span>
-            </li>
-          </ol>
+          <SetupPanel />
           <h2>No dia a dia</h2>
           <ul className="shortcuts">
             <li>
@@ -69,6 +57,7 @@ export function HomePage() {
       )}
       {user.role === 'CUSTOMER' && (
         <>
+          <CustomerPanel />
           {!user.phone && (
             <p className="notice">
               Falta o seu WhatsApp: é por ele que o estúdio avisa quando o seu pet fica pronto. <Link to="/perfil">Adicionar WhatsApp</Link>
