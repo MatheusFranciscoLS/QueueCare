@@ -1432,3 +1432,217 @@ textarea {
 .agenda-tools .daybar {
   margin-bottom: 0;
 }
+
+/* LISTAS E FORMULÁRIOS DAS DEMAIS TELAS (ADR 0018 v2.1): as listas (serviços, equipe, pets, meus agendamentos, contas) são LINHAS dentro de uma folha,
+   o pet ganha o avatar, os passos do agendamento e os blocos de dia/expediente ganham a mesma superfície. */
+.rows:not(.timeline):not(.queue-list) {
+  max-width: 62rem;
+  margin: 0 0 var(--space-6);
+  padding: 4px 24px;
+  background: var(--surface);
+  border: 2px solid var(--line);
+  border-radius: 18px;
+}
+
+.rows:not(.timeline):not(.queue-list) .row {
+  gap: 0.5rem 1rem;
+  padding: 1rem 0;
+  border-top: 1px solid var(--line);
+  border-bottom: 0;
+}
+
+.rows:not(.timeline):not(.queue-list) .row:first-child {
+  border-top: 0;
+}
+
+/* linha com avatar do pet: o avatar à esquerda, o texto no meio, as ações à direita */
+.rows .row:has(> .pp-avatar) {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr) auto;
+  align-items: start;
+}
+
+.rows .row:has(> .pp-avatar) > .row-extra,
+.rows .row:has(> .pp-avatar) > .error,
+.rows .row:has(> .pp-avatar) > .notice {
+  grid-column: 2 / -1;
+}
+
+.pet-info strong,
+.rows .row > span > strong {
+  font-family: var(--font-heading);
+  letter-spacing: -0.01em;
+}
+
+.pet-info > strong {
+  font-size: 1.25rem;
+}
+
+/* passos do agendamento: a mesma superfície das listas */
+.step {
+  padding: 1.25rem 1.5rem;
+  background: var(--surface);
+  border: 2px solid var(--line);
+  border-radius: 18px;
+}
+
+/* expediente: os 7 dias formam UMA folha; cada dia é uma linha com o nome à esquerda e os horários à direita */
+.day {
+  display: flow-root;
+  margin: 0;
+  padding: 1rem 1.5rem;
+  background: var(--surface);
+  border: 2px solid var(--line);
+  border-top-width: 0;
+  border-radius: 0;
+}
+
+.day:first-of-type {
+  border-top-width: 2px;
+  border-radius: 18px 18px 0 0;
+}
+
+.day:last-of-type {
+  margin-bottom: var(--space-4);
+  border-radius: 0 0 18px 18px;
+}
+
+.day legend {
+  float: left;
+  width: 9rem;
+  padding: 0.7rem 0 0;
+  font: 700 1.0625rem/1.2 var(--font-heading);
+}
+
+.day > :not(legend) {
+  margin-left: 9rem;
+}
+
+.day .hint {
+  margin-top: 0.7rem;
+  margin-bottom: 0;
+}
+
+@media (max-width: 720px) {
+  .day {
+    padding: 1rem;
+  }
+
+  .day legend {
+    float: none;
+    width: auto;
+    padding: 0 0 0.5rem;
+  }
+
+  .day > :not(legend) {
+    margin-left: 0;
+  }
+}
+
+.step legend {
+  padding: 0 0.5rem;
+  font: 700 1.125rem/1.2 var(--font-heading);
+}
+
+/* opção de escolha (prestador, serviço, horário): linha inteira clicável de 56 px, selecionada com contorno da cor principal */
+.choice {
+  min-height: 56px;
+  padding: 0.5rem 0.875rem;
+  background: var(--surface);
+  border: 2px solid var(--field-line);
+  border-radius: 10px;
+}
+
+.choice:has(input:checked) {
+  border-color: var(--accent);
+  box-shadow: inset 0 0 0 1px var(--accent);
+}
+
+@media (max-width: 720px) {
+  .rows:not(.timeline):not(.queue-list) {
+    padding: 0 16px;
+  }
+
+  .rows .row:has(> .pp-avatar) {
+    grid-template-columns: 44px minmax(0, 1fr);
+  }
+
+  .rows .row:has(> .pp-avatar) > .actions {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 720px) {
+  .rows .row:has(> .pp-avatar) > .row-extra,
+  .rows .row:has(> .pp-avatar) > .error,
+  .rows .row:has(> .pp-avatar) > .notice {
+    grid-column: 1 / -1;
+  }
+
+  .rows .row:has(> .pp-avatar) > .actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+}
+
+/* AVISOS E ESTADOS VAZIOS: faixa suave com a cor principal (antes parecia um campo de formulário); lista vazia não deixa moldura solta */
+.notice {
+  background: color-mix(in srgb, var(--accent) 8%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--accent) 28%, var(--line));
+  border-radius: 12px;
+}
+
+.notice.warning {
+  background: color-mix(in srgb, var(--pp-gold-mark) 12%, var(--surface));
+  border-color: var(--pp-gold-mark);
+}
+
+.rows:empty {
+  display: none;
+}
+
+/* INÍCIO: atalhos como blocos clicáveis em grade (o bloco inteiro é o link) */
+.shortcuts {
+  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+  gap: 12px;
+  max-width: 62rem;
+}
+
+.shortcuts li {
+  position: relative;
+  display: grid;
+  gap: 0.25rem;
+  padding: 1rem 1.25rem;
+  background: var(--surface);
+  border: 2px solid var(--line);
+  border-radius: 16px;
+}
+
+.shortcuts li:hover {
+  border-color: var(--accent);
+}
+
+.shortcuts a {
+  text-decoration: none;
+}
+
+.shortcuts a::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 14px;
+}
+
+.shortcuts a:focus-visible {
+  outline: none;
+}
+
+.shortcuts li:has(a:focus-visible) {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.shortcuts li {
+  align-content: start;
+}

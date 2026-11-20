@@ -7,6 +7,7 @@ import { RefreshWarning } from '../RefreshWarning'
 import { useLoad } from '../useLoad'
 import { useSingleFlight } from '../useSingleFlight'
 import { PetForm } from './PetForm'
+import { PetAvatar } from '../../ui/components'
 
 /**
  * Meus pets: cadastrar, editar, arquivar e reativar os próprios pets (a API usa a identidade do token). Arquivar não apaga: o pet
@@ -167,6 +168,7 @@ function PetRow({
 
   return (
     <li className="row" ref={rowRef} tabIndex={-1} data-pet-id={pet.id} data-active={pet.active}>
+      <PetAvatar species={pet.species} />
       <span className="pet-info">
         <strong>{pet.name}</strong> <span className="appt-service">{petDescription(pet)}</span>{' '}
         {!pet.active && <span className="badge">Arquivado</span>}
