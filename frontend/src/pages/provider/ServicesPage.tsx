@@ -118,6 +118,7 @@ function NewService({ onCreated }: { onCreated: () => Promise<void> }) {
 
   return (
     <form onSubmit={submit} noValidate>
+      <div className="field-row">
       <Field label="Nome do serviço" name="new-name" disabled={busy} value={name} error={errors.name} onChange={(e) => { setName(e.target.value); setErrors((x) => ({ ...x, name: undefined })) }} />
       <Field
         label="Duração (minutos)"
@@ -132,9 +133,12 @@ function NewService({ onCreated }: { onCreated: () => Promise<void> }) {
         error={errors.duration}
         onChange={(e) => { setDuration(e.target.value); setErrors((x) => ({ ...x, duration: undefined })) }}
       />
+      </div>
+      <div className="field-row field-row--three">
       <Field label="Preço base (R$, opcional)" name="new-price" disabled={busy} inputMode="decimal" hint="Vazio = a combinar." value={price} error={errors.price} onChange={(e) => { setPrice(e.target.value); setErrors((x) => ({ ...x, price: undefined })) }} />
       <Field label="Preço para porte médio (R$, opcional)" name="new-price-medium" disabled={busy} inputMode="decimal" hint="Vazio = usa o preço base." value={priceMedium} error={errors.priceMedium} onChange={(e) => { setPriceMedium(e.target.value); setErrors((x) => ({ ...x, priceMedium: undefined })) }} />
       <Field label="Preço para porte grande (R$, opcional)" name="new-price-large" disabled={busy} inputMode="decimal" hint="Vazio = usa o preço base." value={priceLarge} error={errors.priceLarge} onChange={(e) => { setPriceLarge(e.target.value); setErrors((x) => ({ ...x, priceLarge: undefined })) }} />
+      </div>
       <p role="alert" className="error" hidden={!errors.form}>
         {errors.form}
       </p>
@@ -230,11 +234,15 @@ function ServiceRow({ service, onChanged }: { service: Service; onChanged: () =>
   }
   return (
     <li className="row editing">
+      <div className="field-row">
       <Field label="Nome" name={`name-${service.id}`} disabled={busy} value={name} error={errors.name} onChange={(e) => setName(e.target.value)} />
       <Field label="Duração (minutos)" name={`duration-${service.id}`} disabled={busy} type="number" inputMode="numeric" min={MIN_MINUTES} max={MAX_MINUTES} step={5} value={duration} error={errors.duration} onChange={(e) => setDuration(e.target.value)} />
+      </div>
+      <div className="field-row field-row--three">
       <Field label="Preço base (R$, opcional)" name={`price-${service.id}`} disabled={busy} inputMode="decimal" hint="Vazio = a combinar." value={price} error={errors.price} onChange={(e) => { setPrice(e.target.value); setErrors((x) => ({ ...x, price: undefined })) }} />
       <Field label="Preço para porte médio (R$, opcional)" name={`price-medium-${service.id}`} disabled={busy} inputMode="decimal" hint="Vazio = usa o preço base." value={priceMedium} error={errors.priceMedium} onChange={(e) => { setPriceMedium(e.target.value); setErrors((x) => ({ ...x, priceMedium: undefined })) }} />
       <Field label="Preço para porte grande (R$, opcional)" name={`price-large-${service.id}`} disabled={busy} inputMode="decimal" hint="Vazio = usa o preço base." value={priceLarge} error={errors.priceLarge} onChange={(e) => { setPriceLarge(e.target.value); setErrors((x) => ({ ...x, priceLarge: undefined })) }} />
+      </div>
       <p role="alert" className="error" hidden={!errors.form}>
         {errors.form}
       </p>

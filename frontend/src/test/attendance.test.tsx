@@ -255,8 +255,8 @@ describe('fila', () => {
 
     const rows = await screen.findAllByRole('listitem')
     expect(rows).toHaveLength(2)
-    expect(rows[0]).toHaveTextContent('1º · Joana Lima · Troca de óleo · chegou às 09:30') // 12:30Z = 09:30 em São Paulo
-    expect(rows[1]).toHaveTextContent('2º · Maria Souza · Troca de óleo · chegou às 10:05')
+    expect(rows[0]).toHaveTextContent(/1º\s*chegou às 09:30\s*·\s*Joana Lima\s*·\s*Troca de óleo/) // 12:30Z = 09:30 em São Paulo
+    expect(rows[1]).toHaveTextContent(/2º\s*chegou às 10:05\s*·\s*Maria Souza\s*·\s*Troca de óleo/)
     expect(screen.getByText(/Oficina Central · quem já chegou hoje e ainda não foi retirado/)).toBeInTheDocument()
     expect(calls.some((c) => c.path === '/api/provider')).toBe(false)
   })
@@ -286,7 +286,7 @@ describe('fila', () => {
     expect(await screen.findByText('Atendimento de Joana Lima concluído.')).toBeInTheDocument()
     const rows = screen.getAllByRole('listitem')
     expect(rows).toHaveLength(1)
-    expect(rows[0]).toHaveTextContent('1º · Maria Souza')
+    expect(rows[0]).toHaveTextContent(/1º.*Maria Souza/)
     expect(posts(calls, '/complete')).toHaveLength(1)
   })
 

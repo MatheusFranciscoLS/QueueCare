@@ -197,18 +197,20 @@ function QueueRow({
             <span className="appt-pet__desc">{petDescription(item.pet)}</span>
           </span>
         )}
-        <span className="sep" aria-hidden="true"> · </span>
-        <span className="appt-who">{customer}</span>
-        {item.customerPhone && <ContactLink phone={item.customerPhone} name={customer} message={status === 'READY' ? readyMessage : undefined} />}
-        <span className="sep" aria-hidden="true"> · </span>
-        <span className="appt-service">{item.serviceName ?? 'Serviço'}</span>
-        {item.priceCents != null && <span className="appt-price">{formatMoney(item.priceCents)}</span>}
-        {item.pet && <PetFicha pet={item.pet} />}
-        {item.pet?.notes && <span className="appt-notes">Observações do tutor: {item.pet.notes}</span>}
-        <span className="sep" aria-hidden="true"> · </span>
         <span className="badge" data-status={status}>
           {status === 'IN_PROGRESS' ? 'em atendimento' : status === 'READY' ? 'pronto para retirada' : `chegou às ${timeIn(item.checkedInAt, timeZone)}`}
         </span>
+
+        <span className="sep" aria-hidden="true"> · </span>
+        <span className="appt-line">
+          <span className="appt-who">{customer}</span>
+          {item.customerPhone && <ContactLink phone={item.customerPhone} name={customer} message={status === 'READY' ? readyMessage : undefined} />}
+          <span className="sep" aria-hidden="true"> · </span>
+          <span className="appt-service">{item.serviceName ?? 'Serviço'}</span>
+          {item.priceCents != null && <span className="appt-price">{formatMoney(item.priceCents)}</span>}
+        </span>
+        {item.pet && <PetFicha pet={item.pet} />}
+        {item.pet?.notes && <span className="appt-notes">Observações do tutor: {item.pet.notes}</span>}
         <span className="appt-meta">
           marcado para {timeIn(item.startsAt, timeZone)} · {waitLabel(item.checkedInAt, now)}
         </span>
