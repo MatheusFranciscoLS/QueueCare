@@ -2,7 +2,7 @@ import { fireEvent, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { useState } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { Button, Choice, Field, Fio, FioItem, Notice, SlotButton, StateBadge, StateDot, Summary } from './components'
+import { Button, Choice, Field, Fio, FioItem, Notice, PetAvatar, Segmented, SlotButton, StateBadge, StateDot, Summary } from './components'
 import { STATE_LABEL, type AppointmentState } from './states'
 import { applyTheme, readThemePreference, saveThemePreference, THEME_KEY } from './theme'
 import { ThemeToggle } from './ThemeToggle'
@@ -257,5 +257,32 @@ describe('Tema', () => {
     await user.click(screen.getByRole('button', { name: 'Tema: escuro' }))
     expect(document.documentElement).not.toHaveAttribute('data-theme')
     expect(window.localStorage.getItem(THEME_KEY)).toBeNull()
+  })
+})
+
+describe('Segmented', () => {
+  it('cada opção diz se está selecionada e escolher chama onChange com o valor', async () => {
+    const onChange = vi.fn()
+    render(<Segmented label="Visão" value="day" options={[{ value: 'day', label: 'Dia' }, { value: 'week', label: 'Semana' }]} onChange={onChange} />)
+    expect(screen.getByRole('group', { name: 'Visão' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Dia' })).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.getByRole('button', { name: 'Semana' })).toHaveAttribute('aria-pressed', 'false')
+    await userEvent.setup().click(screen.getByRole('button', { name: 'Semana' }))
+    expect(onChange).toHaveBeenCalledWith('week')
+  })
+})
+
+describe('PetAvatar', () => {
+  it('desenha cachorro ou gato, é decorativo (escondido de leitores de tela) e usa o tamanho pedido', () => {
+    const { container, rerender } = render(<PetAvatar species="DOG" />)
+    const avatar = () => container.querySelector('.pp-avatar')!
+    expect(avatar()).toHaveAttribute('aria-hidden', 'true')
+    expect(avatar()).toHaveAttribute('data-size', 'md')
+    const dog = avatar().innerHTML
+    rerender(<PetAvatar species="CAT" size="sm" />)
+    expect(avatar()).toHaveAttribute('data-size', 'sm')
+    expect(avatar().innerHTML).not.toBe(dog) // o gato tem outro desenho
+    rerender(<PetAvatar species="OUTRO" />)
+    expect(avatar().innerHTML).toBe(dog) // espécie desconhecida cai no cachorro, nunca quebra
   })
 })

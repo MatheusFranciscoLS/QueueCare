@@ -182,3 +182,56 @@ export function FioItem({ time, state, children }: FioItemProps) {
 export function Summary({ children }: { children: ReactNode }) {
   return <p className="pp-summary">{children}</p>
 }
+
+// ---------- Controle segmentado (Dia / Semana) ----------
+interface SegmentedProps<T extends string> {
+  label: string
+  value: T
+  options: { value: T; label: string }[]
+  onChange: (value: T) => void
+}
+
+/** Escolha de uma opção entre poucas (ex.: Dia e Semana). Cada botão diz se está selecionado (aria-pressed) e tem 44 px de altura. */
+export function Segmented<T extends string>({ label, value, options, onChange }: SegmentedProps<T>) {
+  return (
+    <div className="pp-seg" role="group" aria-label={label}>
+      {options.map((option) => (
+        <button key={option.value} type="button" aria-pressed={option.value === value} onClick={() => onChange(option.value)}>
+          {option.label}
+        </button>
+      ))}
+    </div>
+  )
+}
+
+// ---------- Avatar do pet ----------
+/**
+ * O pet como protagonista: um círculo suave com o desenho da espécie (cachorro ou gato). Decorativo (o nome do pet está sempre ao lado).
+ * Quando o sistema guardar a foto do pet, ela entra neste mesmo lugar.
+ */
+export function PetAvatar({ species, size = 'md' }: { species: string; size?: 'sm' | 'md' }) {
+  const cat = species === 'CAT'
+  return (
+    <span className="pp-avatar" data-size={size} aria-hidden="true">
+      <svg viewBox="0 0 24 24" focusable="false">
+        {cat ? (
+          <>
+            <path d="M4.5 3.5 9 7.2H7L4 10.5Zm15 0L15 7.2h2l3 3.3Z" fill="currentColor" />
+            <circle cx="12" cy="13" r="7.2" fill="currentColor" />
+            <ellipse cx="9.2" cy="12" rx="1.1" ry="1.5" fill="var(--pp-surface)" />
+            <ellipse cx="14.8" cy="12" rx="1.1" ry="1.5" fill="var(--pp-surface)" />
+            <path d="M10.8 15.4h2.4L12 16.6Z" fill="var(--pp-surface)" />
+          </>
+        ) : (
+          <>
+            <path d="M5 4c-1.6 0-2.8 1.5-2.8 3.4 0 1.4.6 2.6 1.6 3.2L5 8.5C5 6 5.2 4 5 4Zm14 0c1.6 0 2.8 1.5 2.8 3.4 0 1.4-.6 2.6-1.6 3.2L19 8.5C19 6 18.8 4 19 4Z" fill="currentColor" />
+            <circle cx="12" cy="12.5" r="7" fill="currentColor" />
+            <circle cx="9.3" cy="11.5" r="1.1" fill="var(--pp-surface)" />
+            <circle cx="14.7" cy="11.5" r="1.1" fill="var(--pp-surface)" />
+            <ellipse cx="12" cy="15" rx="2.2" ry="1.5" fill="var(--pp-surface)" />
+          </>
+        )}
+      </svg>
+    </span>
+  )
+}

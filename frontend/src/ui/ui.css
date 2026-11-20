@@ -510,6 +510,58 @@
   font-weight: 700;
 }
 
+/* Controle segmentado */
+.pp .pp-seg {
+  display: inline-flex;
+  border: 2px solid var(--pp-field);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.pp .pp-seg button {
+  min-height: 44px;
+  min-width: 44px;
+  padding: 0 1rem;
+  border: 0;
+  background: transparent;
+  color: var(--pp-muted);
+  font: 600 1rem/1 var(--pp-body);
+  cursor: pointer;
+}
+.pp .pp-seg button[aria-pressed='true'] {
+  background: var(--pp-text);
+  color: var(--pp-bg);
+}
+.pp .pp-seg button:focus-visible {
+  outline-offset: -3px;
+}
+.pp .pp-seg button[aria-pressed='true']:focus-visible {
+  outline-color: var(--pp-bg); /* sobre o fundo escuro do selecionado, o anel precisa ser claro */
+}
+
+/* Avatar do pet */
+.pp .pp-avatar {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--pp-primary) 12%, var(--pp-surface));
+  color: var(--pp-primary);
+}
+.pp .pp-avatar svg {
+  width: 28px;
+  height: 28px;
+}
+.pp .pp-avatar[data-size='sm'] {
+  width: 26px;
+  height: 26px;
+}
+.pp .pp-avatar[data-size='sm'] svg {
+  width: 17px;
+  height: 17px;
+}
+
 /* Aviso */
 .pp .pp-notice {
   display: flex;
