@@ -207,7 +207,7 @@ public final class LocalDevServer {
 		// Faltas (ADR 0021): a Carla faltou uma vez; ontem ficou um agendamento sem desfecho (para a equipe ver o botão Faltou); amanhã há um lembrete já enviado.
 		appointment(c, provider, hygienic, carla, nina, ninaCopy, -3, LocalTime.of(10, 0), 45, "NO_SHOW", carla, attendant);
 		appointment(c, provider, bath, joao, bidu, biduCopy, -1, LocalTime.of(10, 0), 60, "SCHEDULED", joao, attendant);
-		exec(c, "UPDATE appointments SET reminded_at = now() - interval '2 hours' WHERE provider_id = ? AND status = 'SCHEDULED' AND starts_at > now() AND starts_at < now() + interval '30 hours' AND customer_id = ?", provider, marina);
+		exec(c, "UPDATE appointments SET reminded_at = now() - interval '2 hours' WHERE provider_id = ? AND status = 'SCHEDULED' AND starts_at > now() AND starts_at < now() + interval '48 hours' AND customer_id = ?", provider, marina);
 		exec(c, "UPDATE appointments a SET price_cents = COALESCE(CASE a.pet_size WHEN 'MEDIUM' THEN s.price_medium_cents WHEN 'LARGE' THEN s.price_large_cents END, s.price_cents) "
 				+ "FROM services s WHERE a.service_id = s.id");
 		exec(c, "UPDATE appointments a SET pet_coat = p.coat, pet_weight_kg = p.weight_kg, pet_temperament = p.temperament, pet_health_notes = p.health_notes, "

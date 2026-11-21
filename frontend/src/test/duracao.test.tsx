@@ -85,9 +85,9 @@ describe('duração no cadastro do serviço', () => {
       },
     })
     await user.type(await screen.findByLabelText('Nome do serviço'), 'Banho')
-    await user.type(screen.getByLabelText('Duração para porte médio (minutos, opcional)'), '90')
-    await user.type(screen.getByLabelText('Duração para porte grande (minutos, opcional)'), '120')
-    await user.type(screen.getByLabelText('Minutos a mais para pelo longo, cacheado ou duplo (opcional)'), '30')
+    await user.type(screen.getByLabelText('Duração para porte médio (min, opcional)'), '90')
+    await user.type(screen.getByLabelText('Duração para porte grande (min, opcional)'), '120')
+    await user.type(screen.getByLabelText('Extra por tipo de pelo (min, opcional)'), '30')
     await user.click(screen.getByRole('button', { name: 'Adicionar serviço' }))
 
     expect(await screen.findByText(/P 60 · M 90 · G 120 min · \+30 min para pelo longo, cacheado ou duplo/)).toBeInTheDocument()
@@ -106,14 +106,14 @@ describe('duração no cadastro do serviço', () => {
       'POST /api/provider/services': () => problem(400, 'dados inválidos', { errors: { coatExtraMinutes: 'a maior duração somada ao extra de pelo não pode passar de 480 minutos' } }),
     })
     await user.type(await screen.findByLabelText('Nome do serviço'), 'Banho')
-    await user.type(screen.getByLabelText('Duração para porte grande (minutos, opcional)'), '3')
+    await user.type(screen.getByLabelText('Duração para porte grande (min, opcional)'), '3')
     await user.click(screen.getByRole('button', { name: 'Adicionar serviço' }))
     expect(await screen.findByText('Informe de 5 a 480 minutos, ou deixe vazio.')).toBeInTheDocument()
     expect(calls.some((c) => c.method === 'POST' && c.path === '/api/provider/services')).toBe(false)
 
-    await user.clear(screen.getByLabelText('Duração para porte grande (minutos, opcional)'))
-    await user.type(screen.getByLabelText('Duração para porte grande (minutos, opcional)'), '120')
-    await user.type(screen.getByLabelText('Minutos a mais para pelo longo, cacheado ou duplo (opcional)'), '30')
+    await user.clear(screen.getByLabelText('Duração para porte grande (min, opcional)'))
+    await user.type(screen.getByLabelText('Duração para porte grande (min, opcional)'), '120')
+    await user.type(screen.getByLabelText('Extra por tipo de pelo (min, opcional)'), '30')
     await user.click(screen.getByRole('button', { name: 'Adicionar serviço' }))
     expect(await screen.findByText(/não pode passar de 480 minutos/)).toBeInTheDocument()
   })
@@ -124,7 +124,7 @@ describe('duração no cadastro do serviço', () => {
       'PUT /api/provider/services/s-1': ({ body }) => json(200, { id: 's-1', ...(body as object) }),
     })
     await user.click(await screen.findByRole('button', { name: 'Editar' }))
-    const large = screen.getAllByLabelText('Duração para porte grande (minutos, opcional)').find((el) => (el as HTMLInputElement).value === '120') as HTMLInputElement
+    const large = screen.getAllByLabelText('Duração para porte grande (min, opcional)').find((el) => (el as HTMLInputElement).value === '120') as HTMLInputElement
     expect(large).toBeTruthy()
     await user.clear(large)
     await user.type(large, '150')
