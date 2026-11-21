@@ -2,7 +2,7 @@
 
 Plataforma de agendamento e fila de atendimento para pequenos prestadores de serviço, hoje focada em **estúdios de banho e tosa** (marca "Pelo & Ponto"). English version: [README.en.md](README.en.md).
 
-> Em construção. Projeto Full Stack de portfólio: React + TypeScript, Java 21 + Spring Boot, PostgreSQL. Roteiro em [`docs/roadmap.md`](docs/roadmap.md).
+> Projeto Full Stack de portfólio, em evolução: React + TypeScript, Java 21 + Spring Boot, PostgreSQL. Funciona de ponta a ponta e é verificado a cada mudança (testes, acessibilidade, restauração de backup). Roteiro em [`docs/roadmap.md`](docs/roadmap.md).
 
 ## O que o sistema faz
 **Para o tutor (cliente):** cadastra os pets (porte, pelo, peso, comportamento, saúde, vacinas), agenda escolhendo serviço, pet, dia e horário (a duração e o valor seguem o porte e o pelo do pet; o app já mostra o primeiro dia com vaga), vê **até quando cancela ou remarca de graça** antes de confirmar e, passado o prazo, fala com o estúdio pelo WhatsApp; acompanha o atendimento (chegou, em atendimento, pronto para retirada), vê o histórico de cada pet e entra na **lista de espera** quando o dia está cheio.
@@ -10,6 +10,19 @@ Plataforma de agendamento e fila de atendimento para pequenos prestadores de ser
 **Para o estúdio (prestador e atendentes):** agenda do dia e da semana, fila com os estados do atendimento, ficha do pet na frente de quem atende (com aviso de comportamento), WhatsApp do tutor com mensagem pronta (pet pronto, **lembrete** do dia seguinte, chamada da lista de espera), registro de **faltas** com contador por tutor, serviços com preço e duração por porte e pelo, expediente, equipe, página pública e política de cancelamento configurável.
 
 **Administração:** criação e manutenção de contas.
+
+### Pronto para uso real (ADRs 0024 a 0031)
+O que separa uma demonstração de um sistema que um estúdio usa todo dia:
+
+| Frente | O que existe |
+|---|---|
+| **Operação** | [Folgas, feriados e férias](docs/adr/0024-folgas-feriados-e-ferias.md) (o tutor não agenda em dia fechado); [Clientes](docs/adr/0025-clientes-do-estudio-e-senha-temporaria.md) (busca no balcão e senha temporária gerada pelo dono, sem e-mail); [desfazer a última etapa](docs/adr/0026-desfazer-etapa-do-atendimento.md) do atendimento; [Resumo do estúdio](docs/adr/0031-resumo-do-estudio.md) (atendimentos, valores com nome honesto, faltas e clientes que sumiram) |
+| **Confiança e dados** | [Política de Privacidade, baixar os próprios dados e excluir a conta por anonimização](docs/adr/0027-lgpd-minima.md), com o [inventário de dados pessoais](docs/privacidade-dados.md) |
+| **Recuperação** | [Backup criptografado e restauração ensaiada a **cada PR**](docs/adr/0028-backup-e-restauracao.md) (a CI restaura num segundo PostgreSQL e exige que seja idêntico), com o [passo a passo](docs/backup.md) |
+| **Operação e suporte** | [Código de requisição em cada resposta e em cada linha de log](docs/adr/0029-identificador-de-requisicao-e-operacao.md), `ops/smoke.sh` e o [roteiro de deploy, rollback e incidentes](docs/operacao.md) |
+| **Uso no celular** | [App instalável que abre sem internet](docs/adr/0030-app-instalavel-e-offline.md) (o service worker nunca guarda dados da API) |
+
+Cada decisão tem um ADR com o que foi **descartado** e os **riscos conhecidos**, inclusive os limites do custo zero.
 
 Sem pagamento online e sem envio automático de mensagens (custo zero, [ADR 0013](docs/adr/0013-hospedagem-custo-zero.md)): o WhatsApp abre com a mensagem pronta e a equipe envia.
 
