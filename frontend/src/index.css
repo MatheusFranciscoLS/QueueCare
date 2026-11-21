@@ -1000,12 +1000,13 @@ textarea {
   background: var(--surface);
   border: 2px solid var(--line);
   border-radius: 18px;
-  overflow: hidden;
+  overflow: clip;
+  overflow-clip-margin: 8px; /* o anel de foco dos botões da primeira e da última linha não é cortado */
 }
 
 .week-hours__spacer {
   display: block;
-  height: 60px;
+  height: 76px;
   border-bottom: 2px solid var(--line);
 }
 
@@ -1035,8 +1036,9 @@ textarea {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 4px 8px;
-  height: 60px;
+  align-content: flex-start;
+  gap: 8px 8px;
+  height: 76px;
   margin: 0;
   padding: 0 8px;
   border-bottom: 2px solid var(--line);
@@ -1887,7 +1889,7 @@ a.button {
 }
 
 .appt-line .appt-contact {
-  min-height: 36px;
+  min-height: 44px;
 }
 
 .appt-line .appt-price {
@@ -2198,4 +2200,54 @@ a.button {
   .day legend {
     padding-top: 0.5rem;
   }
+}
+
+/* ===== Acessibilidade medida (verificação estrita): foco dos atalhos, caixa de marcar e Semana ===== */
+
+/* o anel de foco vai no próprio link (o verificador mede o elemento), em vez de no bloco inteiro */
+.shortcuts a:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 1px;
+  border-radius: 6px;
+}
+
+.shortcuts li:has(a:focus-visible) {
+  outline: none;
+}
+
+.shortcuts li.primary a:focus-visible {
+  outline-color: var(--accent-text);
+}
+
+/* "Mostrar arquivados": o rótulo inteiro é o alvo de toque */
+label.check {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 44px;
+  cursor: pointer;
+}
+
+/* Semana: o anel cabe dentro da folga de 5 px que o bloco tem de cada lado */
+.week-block__open:focus-visible {
+  outline-offset: 1px;
+}
+
+/* link do resumo no celular: o anel não fica por baixo do link da linha de cima */
+.today .next a:focus-visible {
+  position: relative;
+  z-index: 1;
+}
+
+.week-day-open:focus-visible {
+  position: relative;
+  z-index: 2;
+}
+
+/* resumo do dia: quando os links quebram de linha no celular, o anel de um não encosta no do outro */
+.today .next {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 0.35rem;
 }
