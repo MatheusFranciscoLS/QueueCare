@@ -2444,6 +2444,9 @@ label.check {
 /* Semana: o anel cabe dentro da folga de 5 px que o bloco tem de cada lado */
 .week-block__open:focus-visible {
   outline-offset: 1px;
+  /* Anel de DUAS cores: o azul do foco com um halo da cor da superfície por fora. Quando a linha dourada de "agora" cruza o bloco focado, o azul sozinho tem só
+     2,3:1 contra o dourado; o halo (claro no tema claro, escuro no escuro) garante o contraste com qualquer coisa ao lado. Cabe na folga de 5 px do bloco. */
+  box-shadow: 0 0 0 5px var(--surface);
 }
 
 /* link do resumo no celular: o anel não fica por baixo do link da linha de cima */
