@@ -30,7 +30,7 @@ Seis fatias, **cada uma um PR** (backend + telas juntos, testes leves por PR; a 
 6. **Histórico do pet e retorno.** Tela "histórico" do pet (atendimentos concluídos com serviço, data e valor) e sugestão "agendar de novo" com o mesmo serviço. **Lembrete de retorno por WhatsApp fica fora do escopo** (precisa de envio automático; só reavaliar com custo zero comprovado).
 
 ## Fora de escopo (decisões conscientes)
-- **Duração por porte/pelo** (um golden demora mais que um poodle): exige escolher o pet **antes** dos horários e recalcular os horários livres por pet. É a próxima melhoria de maior valor depois destas seis; vira ADR próprio.
+- **Duração por porte/pelo** (um golden demora mais que um poodle): exige escolher o pet **antes** dos horários e recalcular os horários livres por pet. É a próxima melhoria de maior valor depois destas seis; vira ADR próprio (feito: [ADR 0020](0020-duracao-por-porte-e-pelo.md)).
 - Pagamento online, fotos do pet, prontuário clínico, notificação automática (SMS, e-mail ou WhatsApp API), pacotes e assinaturas.
 
 ## Regras que valem para todas as fatias

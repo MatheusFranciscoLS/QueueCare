@@ -34,6 +34,17 @@ public class ServiceOffering {
 	@Column(name = "price_large_cents")
 	private Integer priceLargeCents;
 
+	/** Duração por porte (ADR 0020). Nulo = usa a base. */
+	@Column(name = "duration_medium_minutes")
+	private Integer durationMediumMinutes;
+
+	@Column(name = "duration_large_minutes")
+	private Integer durationLargeMinutes;
+
+	/** Minutos somados quando o pet tem pelo longo, cacheado ou duplo (ADR 0020). */
+	@Column(name = "coat_extra_minutes", nullable = false)
+	private int coatExtraMinutes;
+
 	@Column(nullable = false)
 	private boolean active;
 
@@ -74,6 +85,42 @@ public class ServiceOffering {
 			return priceLargeCents;
 		}
 		return priceCents;
+	}
+
+	/** Define as durações por porte e o extra de pelo (já validados pelo serviço de aplicação; o banco repete a faixa de cada campo). */
+	public void setDurations(Integer medium, Integer large, int coatExtraMinutes) {
+		this.durationMediumMinutes = medium;
+		this.durationLargeMinutes = large;
+		this.coatExtraMinutes = coatExtraMinutes;
+	}
+
+	/**
+	 * A duração para o pet (ADR 0020): a do porte (pequeno e porte não informado usam a base; médio e grande usam a própria se houver) mais
+	 * o extra de pelo longo, cacheado ou duplo. Sem pet, vale a base.
+	 */
+	public int durationFor(com.queuecare.pets.PetSize size, com.queuecare.pets.PetCoat coat) {
+		int minutes = durationMinutes;
+		if (size == com.queuecare.pets.PetSize.MEDIUM && durationMediumMinutes != null) {
+			minutes = durationMediumMinutes;
+		} else if (size == com.queuecare.pets.PetSize.LARGE && durationLargeMinutes != null) {
+			minutes = durationLargeMinutes;
+		}
+		if (coat == com.queuecare.pets.PetCoat.LONG || coat == com.queuecare.pets.PetCoat.CURLY || coat == com.queuecare.pets.PetCoat.DOUBLE) {
+			minutes += coatExtraMinutes;
+		}
+		return minutes;
+	}
+
+	public Integer getDurationMediumMinutes() {
+		return durationMediumMinutes;
+	}
+
+	public Integer getDurationLargeMinutes() {
+		return durationLargeMinutes;
+	}
+
+	public int getCoatExtraMinutes() {
+		return coatExtraMinutes;
 	}
 
 	public Integer getPriceCents() {

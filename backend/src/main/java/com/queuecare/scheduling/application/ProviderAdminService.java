@@ -149,12 +149,28 @@ public class ProviderAdminService {
 		return services.findByProviderIdOrderByName(getBusiness(ownerUserId).getId());
 	}
 
+	/** Durações por porte médio e grande (nulo = a base) e minutos a mais para pelo longo, cacheado ou duplo (nulo = 0). ADR 0020. */
+	public record Durations(Integer medium, Integer large, Integer coatExtra) {
+		public static final Durations NONE = new Durations(null, null, null);
+	}
+
+	/** Extra máximo de pelo, em minutos. O banco repete a faixa (services_coat_extra_check). */
+	static final int MAX_COAT_EXTRA_MINUTES = 240;
+
 	@Transactional
 	public ServiceOffering createService(UUID ownerUserId, String name, int durationMinutes, Integer priceCents, Integer priceMediumCents, Integer priceLargeCents) {
+		return createService(ownerUserId, name, durationMinutes, Durations.NONE, priceCents, priceMediumCents, priceLargeCents);
+	}
+
+	@Transactional
+	public ServiceOffering createService(UUID ownerUserId, String name, int durationMinutes, Durations durations, Integer priceCents, Integer priceMediumCents,
+			Integer priceLargeCents) {
 		validateService(name, durationMinutes);
+		validateDurations(durationMinutes, durations);
 		validatePrices(priceCents, priceMediumCents, priceLargeCents);
 		Provider provider = getBusiness(ownerUserId);
 		ServiceOffering service = new ServiceOffering(provider.getId(), name.trim(), durationMinutes);
+		service.setDurations(durations.medium(), durations.large(), durations.coatExtra() == null ? 0 : durations.coatExtra());
 		service.setPrices(priceCents, priceMediumCents, priceLargeCents);
 		return services.save(service);
 	}
@@ -162,11 +178,19 @@ public class ProviderAdminService {
 	@Transactional
 	public ServiceOffering updateService(UUID ownerUserId, UUID serviceId, String name, int durationMinutes, boolean active, Integer priceCents,
 			Integer priceMediumCents, Integer priceLargeCents) {
+		return updateService(ownerUserId, serviceId, name, durationMinutes, Durations.NONE, active, priceCents, priceMediumCents, priceLargeCents);
+	}
+
+	@Transactional
+	public ServiceOffering updateService(UUID ownerUserId, UUID serviceId, String name, int durationMinutes, Durations durations, boolean active,
+			Integer priceCents, Integer priceMediumCents, Integer priceLargeCents) {
 		validateService(name, durationMinutes);
+		validateDurations(durationMinutes, durations);
 		validatePrices(priceCents, priceMediumCents, priceLargeCents);
 		Provider provider = getBusiness(ownerUserId);
 		ServiceOffering service = services.findByIdAndProviderId(serviceId, provider.getId()).orElseThrow(ServiceNotFoundException::new);
 		service.update(name.trim(), durationMinutes, active);
+		service.setDurations(durations.medium(), durations.large(), durations.coatExtra() == null ? 0 : durations.coatExtra());
 		service.setPrices(priceCents, priceMediumCents, priceLargeCents);
 		return services.save(service);
 	}
@@ -246,6 +270,31 @@ public class ProviderAdminService {
 			if (values[i] != null && (values[i] < 0 || values[i] > MAX_PRICE_CENTS)) {
 				throw new InvalidConfigurationException(fields[i], "entre 0 e " + MAX_PRICE_CENTS + " centavos");
 			}
+		}
+	}
+
+	/**
+	 * Cada duração de porte fica na faixa do serviço; o extra de pelo vai de 0 a 240; e o PIOR caso (a maior duração de porte somada ao extra)
+	 * não passa de 480 minutos, para que nenhum pet gere um atendimento fora da faixa.
+	 */
+	private static void validateDurations(int base, Durations d) {
+		String[] fields = { "durationMediumMinutes", "durationLargeMinutes" };
+		Integer[] values = { d.medium(), d.large() };
+		int longest = base;
+		for (int i = 0; i < values.length; i++) {
+			if (values[i] != null) {
+				if (values[i] < MIN_SERVICE_MINUTES || values[i] > MAX_SERVICE_MINUTES) {
+					throw new InvalidConfigurationException(fields[i], "entre " + MIN_SERVICE_MINUTES + " e " + MAX_SERVICE_MINUTES);
+				}
+				longest = Math.max(longest, values[i]);
+			}
+		}
+		int extra = d.coatExtra() == null ? 0 : d.coatExtra();
+		if (extra < 0 || extra > MAX_COAT_EXTRA_MINUTES) {
+			throw new InvalidConfigurationException("coatExtraMinutes", "entre 0 e " + MAX_COAT_EXTRA_MINUTES);
+		}
+		if (longest + extra > MAX_SERVICE_MINUTES) {
+			throw new InvalidConfigurationException("coatExtraMinutes", "a maior duração somada ao extra de pelo não pode passar de " + MAX_SERVICE_MINUTES + " minutos");
 		}
 	}
 

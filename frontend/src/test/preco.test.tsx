@@ -98,6 +98,9 @@ describe('preço no cadastro do serviço', () => {
     expect(calls.find((c) => c.method === 'POST' && c.path === '/api/provider/services')?.body).toEqual({
       name: 'Banho',
       durationMinutes: 60,
+      durationMediumMinutes: null,
+      durationLargeMinutes: null,
+      coatExtraMinutes: 0,
       priceCents: 5000,
       priceMediumCents: 7050,
       priceLargeCents: 9000,
@@ -145,7 +148,7 @@ describe('preço no agendamento do cliente', () => {
       'GET /api/catalog/providers?page=0&size=50': () => json(200, [{ id: 'p-1', businessName: 'Estúdio', timeZone: ZONE }]),
       'GET /api/catalog/providers/p-1/services': () => json(200, SERVICES),
       'GET /api/customer/pets': () => json(200, pets(size)),
-      [`GET /api/providers/p-1/slots?serviceId=${serviceName.source.startsWith('Banho') ? 's-1' : serviceName.source.startsWith('Tosa') ? 's-2' : 's-3'}&date=${today}`]: () => json(200, [slot]),
+      [`GET /api/providers/p-1/slots?serviceId=${serviceName.source.startsWith('Banho') ? 's-1' : serviceName.source.startsWith('Tosa') ? 's-2' : 's-3'}&date=${today}&petId=pet-1`]: () => json(200, [slot]),
     })
     await ctx.user.click(within(screen.getByRole('navigation', { name: 'Menu do cliente' })).getByRole('link', { name: 'Agendar' }))
     await ctx.user.click(await screen.findByRole('radio', { name: 'Estúdio' }))

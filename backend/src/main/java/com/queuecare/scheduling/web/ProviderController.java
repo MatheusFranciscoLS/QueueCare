@@ -53,17 +53,20 @@ class ProviderController {
 	}
 
 	/** Preços em centavos (ADR 0019): {@code priceCents} é o base; os de porte médio e grande, quando ausentes, usam o base; todos ausentes = a combinar. */
-	record ServiceRequest(@NotNull String name, @NotNull Integer durationMinutes, Integer priceCents, Integer priceMediumCents, Integer priceLargeCents) {
+	record ServiceRequest(@NotNull String name, @NotNull Integer durationMinutes, Integer durationMediumMinutes, Integer durationLargeMinutes, Integer coatExtraMinutes,
+			Integer priceCents, Integer priceMediumCents, Integer priceLargeCents) {
 	}
 
 	/** No PUT, active é obrigatório: omitir o campo não pode reativar um serviço desativado sem querer. */
-	record ServiceUpdateRequest(@NotNull String name, @NotNull Integer durationMinutes, @NotNull Boolean active, Integer priceCents, Integer priceMediumCents,
-			Integer priceLargeCents) {
+	record ServiceUpdateRequest(@NotNull String name, @NotNull Integer durationMinutes, Integer durationMediumMinutes, Integer durationLargeMinutes,
+			Integer coatExtraMinutes, @NotNull Boolean active, Integer priceCents, Integer priceMediumCents, Integer priceLargeCents) {
 	}
 
-	record ServiceResponse(UUID id, String name, int durationMinutes, boolean active, Integer priceCents, Integer priceMediumCents, Integer priceLargeCents) {
+	record ServiceResponse(UUID id, String name, int durationMinutes, Integer durationMediumMinutes, Integer durationLargeMinutes, int coatExtraMinutes, boolean active,
+			Integer priceCents, Integer priceMediumCents, Integer priceLargeCents) {
 		static ServiceResponse from(ServiceOffering s) {
-			return new ServiceResponse(s.getId(), s.getName(), s.getDurationMinutes(), s.isActive(), s.getPriceCents(), s.getPriceMediumCents(), s.getPriceLargeCents());
+			return new ServiceResponse(s.getId(), s.getName(), s.getDurationMinutes(), s.getDurationMediumMinutes(), s.getDurationLargeMinutes(), s.getCoatExtraMinutes(),
+					s.isActive(), s.getPriceCents(), s.getPriceMediumCents(), s.getPriceLargeCents());
 		}
 	}
 
@@ -129,12 +132,16 @@ class ProviderController {
 	@PostMapping("/services")
 	@ResponseStatus(HttpStatus.CREATED)
 	ServiceResponse createService(@AuthenticationPrincipal Jwt jwt, @Valid @RequestBody ServiceRequest r) {
-		return ServiceResponse.from(admin.createService(userId(jwt), r.name(), r.durationMinutes(), r.priceCents(), r.priceMediumCents(), r.priceLargeCents()));
+		return ServiceResponse.from(admin.createService(userId(jwt), r.name(), r.durationMinutes(),
+				new ProviderAdminService.Durations(r.durationMediumMinutes(), r.durationLargeMinutes(), r.coatExtraMinutes()), r.priceCents(), r.priceMediumCents(),
+				r.priceLargeCents()));
 	}
 
 	@PutMapping("/services/{id}")
 	ServiceResponse updateService(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID id, @Valid @RequestBody ServiceUpdateRequest r) {
-		return ServiceResponse.from(admin.updateService(userId(jwt), id, r.name(), r.durationMinutes(), r.active(), r.priceCents(), r.priceMediumCents(), r.priceLargeCents()));
+		return ServiceResponse.from(admin.updateService(userId(jwt), id, r.name(), r.durationMinutes(),
+				new ProviderAdminService.Durations(r.durationMediumMinutes(), r.durationLargeMinutes(), r.coatExtraMinutes()), r.active(), r.priceCents(),
+				r.priceMediumCents(), r.priceLargeCents()));
 	}
 
 	// --- janelas de atendimento ---

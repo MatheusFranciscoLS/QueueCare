@@ -11,12 +11,25 @@ import { Loading } from '../Loading'
 const MAX_DAYS_AHEAD = 90
 
 /** Passos de dia e de horário, compartilhados por agendar e por remarcar. */
-export function DayStep({ provider, date, disabled, onChange }: { provider: CatalogProvider; date: string; disabled: boolean; onChange: (date: string) => void }) {
+export function DayStep({
+  provider,
+  date,
+  disabled,
+  onChange,
+  number = 3,
+}: {
+  provider: CatalogProvider
+  date: string
+  disabled: boolean
+  onChange: (date: string) => void
+  /** Número do passo na tela (em Agendar o pet vem antes, ADR 0020). */
+  number?: number
+}) {
   // Os limites são do DIA DO NEGÓCIO (fuso do prestador), não do aparelho.
   const today = todayIn(provider.timeZone)
   return (
     <fieldset className="step">
-      <legend>3. Escolha o dia</legend>
+      <legend>{number}. Escolha o dia</legend>
       <div className="daybar">
         <button type="button" className="button secondary" disabled={disabled || date <= today} onClick={() => onChange(addDays(date, -1))}>
           Dia anterior
@@ -51,6 +64,8 @@ export function SlotStep({
   disabled,
   onSelect,
   excludeAppointmentId,
+  petId,
+  number = 4,
 }: {
   provider: CatalogProvider
   service: CatalogService
@@ -60,17 +75,20 @@ export function SlotStep({
   onSelect: (s: FreeSlot) => void
   /** Remarcar: os horários ignoram o PRÓPRIO agendamento (a API só aceita se for do chamador). */
   excludeAppointmentId?: string
+  /** Agendar: a duração depende do pet (ADR 0020); a API só considera um pet ativo do próprio cliente. */
+  petId?: string
+  number?: number
 }) {
   const { request } = useAuth()
   const api = useMemo(() => bookingApi(request), [request])
-  const load = useCallback(() => api.slots(provider.id, service.id, date, excludeAppointmentId), [api, provider.id, service.id, date, excludeAppointmentId])
+  const load = useCallback(() => api.slots(provider.id, service.id, date, excludeAppointmentId, petId), [api, provider.id, service.id, date, excludeAppointmentId, petId])
   const { data, error, loading, reload } = useLoad<FreeSlot[]>(load)
 
   if (loading && !data) return <Loading>Carregando horários…</Loading>
   if (error && !data) return <p role="alert" className="error">{describeError(error)}</p>
   return (
     <fieldset className="step">
-      <legend>4. Escolha o horário</legend>
+      <legend>{number}. Escolha o horário</legend>
       {error !== undefined && data && <RefreshWarning onRetry={reload} />}
       {data && data.length === 0 && <p className="notice">Nenhum horário livre neste dia. Tente outro dia.</p>}
       <div className="slots" role="group" aria-label="Horários livres">

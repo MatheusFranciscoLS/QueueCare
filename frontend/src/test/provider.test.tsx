@@ -129,11 +129,11 @@ describe('serviços', () => {
     await user.type(screen.getByLabelText('Duração (minutos)'), '120')
     await user.click(screen.getByRole('button', { name: 'Adicionar serviço' }))
     expect(await screen.findByText('Revisão completa')).toBeInTheDocument()
-    expect(calls.find((c) => c.method === 'POST' && c.path === '/api/provider/services')?.body).toEqual({ name: 'Revisão completa', durationMinutes: 120, priceCents: null, priceMediumCents: null, priceLargeCents: null })
+    expect(calls.find((c) => c.method === 'POST' && c.path === '/api/provider/services')?.body).toEqual({ name: 'Revisão completa', durationMinutes: 120, durationMediumMinutes: null, durationLargeMinutes: null, coatExtraMinutes: 0, priceCents: null, priceMediumCents: null, priceLargeCents: null })
 
     await user.click(screen.getAllByRole('button', { name: 'Desativar' })[0])
     expect(await screen.findByText('Desativado')).toBeInTheDocument()
-    expect(calls.find((c) => c.method === 'PUT')?.body).toEqual({ name: 'Troca de óleo', durationMinutes: 60, active: false, priceCents: null, priceMediumCents: null, priceLargeCents: null })
+    expect(calls.find((c) => c.method === 'PUT')?.body).toEqual({ name: 'Troca de óleo', durationMinutes: 60, active: false, durationMediumMinutes: null, durationLargeMinutes: null, coatExtraMinutes: 0, priceCents: null, priceMediumCents: null, priceLargeCents: null })
   })
 
   it('valida nome e duração antes de enviar', async () => {

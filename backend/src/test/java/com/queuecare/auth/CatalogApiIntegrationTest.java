@@ -104,7 +104,7 @@ class CatalogApiIntegrationTest extends AuthIntegrationTestBase {
 
 		assertEquals(List.of("Alinhamento", "Troca de óleo"), JsonPath.<List<String>>read(body, "$[*].name"));
 		for (Map<String, Object> item : JsonPath.<List<Map<String, Object>>>read(body, "$")) {
-			assertEquals(Set.of("id", "name", "durationMinutes", "priceCents", "priceMediumCents", "priceLargeCents"), item.keySet()); // ADR 0019: o cliente vê o preço
+			assertEquals(Set.of("id", "name", "durationMinutes", "durationMediumMinutes", "durationLargeMinutes", "coatExtraMinutes", "priceCents", "priceMediumCents", "priceLargeCents"), item.keySet()); // ADR 0019: o cliente vê o preço; ADR 0020: e a duração por porte e pelo
 		}
 		assertFalse(body.contains("Serviço antigo"), "serviço desativado nunca aparece");
 		assertEquals("[]", call("/api/catalog/providers/" + providerC + "/services", customer).getContentAsString(), "prestador sem serviços: lista vazia");

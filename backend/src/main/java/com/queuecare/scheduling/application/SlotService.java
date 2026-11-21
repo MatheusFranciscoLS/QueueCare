@@ -1,5 +1,7 @@
 package com.queuecare.scheduling.application;
 
+import com.queuecare.pets.Pet;
+import com.queuecare.pets.PetService;
 import com.queuecare.scheduling.application.BookingRejectedException.Reason;
 import com.queuecare.scheduling.domain.AvailabilityPolicy;
 import com.queuecare.scheduling.domain.AvailabilityWindow;
@@ -52,12 +54,14 @@ public class SlotService {
 	private final AvailabilityWindowRepository windows;
 	private final AppointmentRepository appointments;
 	private final UserAccountRepository users;
+	private final PetService pets;
 	private final StaffAccess staffAccess;
 	private final Clock clock;
 
 	public SlotService(ProviderRepository providers, ServiceOfferingRepository services, AvailabilityWindowRepository windows,
-			AppointmentRepository appointments, UserAccountRepository users, StaffAccess staffAccess, Clock clock) {
+			AppointmentRepository appointments, UserAccountRepository users, PetService pets, StaffAccess staffAccess, Clock clock) {
 		this.users = users;
+		this.pets = pets;
 		this.staffAccess = staffAccess;
 		this.providers = providers;
 		this.services = services;
@@ -83,6 +87,16 @@ public class SlotService {
 	 */
 	@Transactional(readOnly = true)
 	public List<Slot> freeSlots(UUID providerId, UUID serviceId, LocalDate date, UUID excludeAppointmentId, UUID requesterId) {
+		return freeSlots(providerId, serviceId, date, excludeAppointmentId, requesterId, null);
+	}
+
+	/**
+	 * Como acima, com o PET do atendimento (ADR 0020): a duração do serviço depende do porte e do pelo dele. {@code petId} só vale se for um pet
+	 * ATIVO do próprio chamador (cliente dono); pet desconhecido, alheio ou arquivado é IGNORADO, sem erro e sem pista de que existe (vale a
+	 * duração base). Ao remarcar, a duração é a do próprio agendamento e {@code petId} não conta.
+	 */
+	@Transactional(readOnly = true)
+	public List<Slot> freeSlots(UUID providerId, UUID serviceId, LocalDate date, UUID excludeAppointmentId, UUID requesterId, UUID petId) {
 		Appointment ignoredAppointment = authorizedExclusion(providerId, serviceId, excludeAppointmentId, requesterId);
 		UUID ignoring = ignoredAppointment == null ? null : ignoredAppointment.getId();
 		Provider provider = providers.findActiveById(providerId).orElseThrow(() -> new BookingRejectedException(Reason.PROVIDER_NOT_FOUND));
@@ -103,7 +117,7 @@ public class SlotService {
 		Instant now = clock.instant();
 		// Ao remarcar, o atendimento tem a duração do PRÓPRIO agendamento (a mesma que a remarcação valida), mesmo que o serviço tenha sido
 		// editado depois: os horários oferecidos e os aceitos nunca divergem.
-		Duration duration = ignoredAppointment == null ? Duration.ofMinutes(service.getDurationMinutes())
+		Duration duration = ignoredAppointment == null ? Duration.ofMinutes(durationFor(service, petId, requesterId))
 				: Duration.between(ignoredAppointment.getStartsAt(), ignoredAppointment.getEndsAt());
 
 		Instant dayStart = date.atStartOfDay(zone).toInstant();
@@ -130,6 +144,15 @@ public class SlotService {
 		}
 		slots.sort(Comparator.comparing(Slot::startsAt));
 		return slots;
+	}
+
+	/** A duração para o pet do chamador (ver {@link #freeSlots(UUID, UUID, LocalDate, UUID, UUID, UUID)}); sem pet válido, a base do serviço. */
+	private int durationFor(ServiceOffering service, UUID petId, UUID requesterId) {
+		if (petId == null || requesterId == null) {
+			return service.getDurationMinutes();
+		}
+		Pet pet = pets.findActive(requesterId, petId).orElse(null);
+		return pet == null ? service.getDurationMinutes() : service.durationFor(pet.getSize(), pet.getCoat());
 	}
 
 	/** Blocos contínuos de expediente do dia: janelas coladas (uma termina quando a outra começa) formam um só bloco, como em AvailabilityPolicy. */

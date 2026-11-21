@@ -652,6 +652,18 @@
       },
       "ServiceRequest" : {
         "properties" : {
+          "coatExtraMinutes" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "durationLargeMinutes" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "durationMediumMinutes" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
           "durationMinutes" : {
             "format" : "int32",
             "type" : "integer"
@@ -691,6 +703,18 @@
         "properties" : {
           "active" : {
             "type" : "boolean"
+          },
+          "coatExtraMinutes" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "durationLargeMinutes" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "durationMediumMinutes" : {
+            "format" : "int32",
+            "type" : "integer"
           },
           "durationMinutes" : {
             "format" : "int32",
@@ -3136,6 +3160,14 @@
         }, {
           "in" : "query",
           "name" : "excludeAppointmentId",
+          "required" : false,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "petId",
           "required" : false,
           "schema" : {
             "format" : "uuid",

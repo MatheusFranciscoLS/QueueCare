@@ -3,10 +3,13 @@ import { Link } from 'react-router-dom'
 import { ApiError } from '../../api/client'
 import { isNotConfigured } from '../../api/errors'
 import { describeError } from '../../api/messages'
+import { durationLine } from '../../api/duration'
 import { formatMoney, moneyInput, parseMoney } from '../../api/money'
 import { providerApi, type Service, type ServicePrices } from '../../api/provider'
 import { useAuth } from '../../auth/session'
 import { Field } from '../Field'
+import { DurationFields } from './DurationFields'
+import { durationTextOf, EMPTY_DURATION_TEXT, readDurations, type DurationErrors, type DurationText } from './durationText'
 import { RefreshWarning } from '../RefreshWarning'
 import { useLoad } from '../useLoad'
 import { useSingleFlight } from '../useSingleFlight'
@@ -82,7 +85,8 @@ function NewService({ onCreated }: { onCreated: () => Promise<void> }) {
   const [price, setPrice] = useState('')
   const [priceMedium, setPriceMedium] = useState('')
   const [priceLarge, setPriceLarge] = useState('')
-  const [errors, setErrors] = useState<{ name?: string; duration?: string; form?: string } & PriceErrors>({})
+  const [durationText, setDurationText] = useState<DurationText>(EMPTY_DURATION_TEXT)
+  const [errors, setErrors] = useState<{ name?: string; duration?: string; form?: string } & PriceErrors & DurationErrors>({})
   const [busy, setBusy] = useState(false)
   const once = useSingleFlight()
 
@@ -91,24 +95,35 @@ function NewService({ onCreated }: { onCreated: () => Promise<void> }) {
     await once(async () => {
       const found = validate(name, duration)
       const read = readPrices(price, priceMedium, priceLarge)
-      if (found.name || found.duration || !read.prices) {
-        setErrors({ ...found, ...read.errors })
+      const readTimes = readDurations(durationText, Number(duration))
+      if (found.name || found.duration || !read.prices || !readTimes.durations) {
+        setErrors({ ...found, ...read.errors, ...readTimes.errors })
         return
       }
       setErrors({})
       setBusy(true)
       try {
-        await api.createService({ name: name.trim(), durationMinutes: Number(duration), ...read.prices })
+        await api.createService({ name: name.trim(), durationMinutes: Number(duration), ...readTimes.durations, ...read.prices })
         setName('')
         setDuration('60')
+        setDurationText(EMPTY_DURATION_TEXT)
         setPrice('')
         setPriceMedium('')
         setPriceLarge('')
         await onCreated()
       } catch (e) {
         // Erro de campo aparece no campo; o aviso geral só quando não há campo a apontar (sem repetir o mesmo texto).
-        if (e instanceof ApiError && e.status === 400 && (e.fieldErrors.name || e.fieldErrors.durationMinutes || e.fieldErrors.priceCents || e.fieldErrors.priceMediumCents || e.fieldErrors.priceLargeCents))
-          setErrors({ name: e.fieldErrors.name, duration: e.fieldErrors.durationMinutes, price: e.fieldErrors.priceCents, priceMedium: e.fieldErrors.priceMediumCents, priceLarge: e.fieldErrors.priceLargeCents })
+        if (e instanceof ApiError && e.status === 400 && (e.fieldErrors.name || e.fieldErrors.durationMinutes || e.fieldErrors.durationMediumMinutes || e.fieldErrors.durationLargeMinutes || e.fieldErrors.coatExtraMinutes || e.fieldErrors.priceCents || e.fieldErrors.priceMediumCents || e.fieldErrors.priceLargeCents))
+          setErrors({
+            name: e.fieldErrors.name,
+            duration: e.fieldErrors.durationMinutes,
+            durationMedium: e.fieldErrors.durationMediumMinutes,
+            durationLarge: e.fieldErrors.durationLargeMinutes,
+            coatExtra: e.fieldErrors.coatExtraMinutes,
+            price: e.fieldErrors.priceCents,
+            priceMedium: e.fieldErrors.priceMediumCents,
+            priceLarge: e.fieldErrors.priceLargeCents,
+          })
         else setErrors({ form: describeError(e) })
       } finally {
         setBusy(false)
@@ -134,6 +149,7 @@ function NewService({ onCreated }: { onCreated: () => Promise<void> }) {
         onChange={(e) => { setDuration(e.target.value); setErrors((x) => ({ ...x, duration: undefined })) }}
       />
       </div>
+      <DurationFields idPrefix="new" text={durationText} errors={errors} disabled={busy} onChange={(next, clear) => { setDurationText(next); setErrors((x) => ({ ...x, [clear]: undefined })) }} />
       <div className="field-row field-row--three">
       <Field label="Preço base (R$, opcional)" name="new-price" disabled={busy} inputMode="decimal" hint="Vazio = a combinar." value={price} error={errors.price} onChange={(e) => { setPrice(e.target.value); setErrors((x) => ({ ...x, price: undefined })) }} />
       <Field label="Preço para porte médio (R$, opcional)" name="new-price-medium" disabled={busy} inputMode="decimal" hint="Vazio = usa o preço base." value={priceMedium} error={errors.priceMedium} onChange={(e) => { setPriceMedium(e.target.value); setErrors((x) => ({ ...x, priceMedium: undefined })) }} />
@@ -170,7 +186,8 @@ function ServiceRow({ service, onChanged }: { service: Service; onChanged: () =>
   const [price, setPrice] = useState(moneyInput(service.priceCents))
   const [priceMedium, setPriceMedium] = useState(moneyInput(service.priceMediumCents))
   const [priceLarge, setPriceLarge] = useState(moneyInput(service.priceLargeCents))
-  const [errors, setErrors] = useState<{ name?: string; duration?: string; form?: string } & PriceErrors>({})
+  const [durationText, setDurationText] = useState<DurationText>(durationTextOf(service))
+  const [errors, setErrors] = useState<{ name?: string; duration?: string; form?: string } & PriceErrors & DurationErrors>({})
   const [busy, setBusy] = useState(false)
   const once = useSingleFlight()
 
@@ -178,14 +195,15 @@ function ServiceRow({ service, onChanged }: { service: Service; onChanged: () =>
     await once(async () => {
       const found = validate(name, duration)
       const read = readPrices(price, priceMedium, priceLarge)
-      if (found.name || found.duration || !read.prices) {
-        setErrors({ ...found, ...read.errors })
+      const readTimes = readDurations(durationText, Number(duration))
+      if (found.name || found.duration || !read.prices || !readTimes.durations) {
+        setErrors({ ...found, ...read.errors, ...readTimes.errors })
         return
       }
       setErrors({})
       setBusy(true)
       try {
-        await api.updateService(service.id, { name: name.trim(), durationMinutes: Number(duration), active, ...read.prices })
+        await api.updateService(service.id, { name: name.trim(), durationMinutes: Number(duration), active, ...readTimes.durations, ...read.prices })
         setEditing(false)
         await onChanged()
       } catch (e) {
@@ -200,7 +218,7 @@ function ServiceRow({ service, onChanged }: { service: Service; onChanged: () =>
     return (
       <li className="row">
         <span>
-          <strong>{service.name}</strong> · {service.durationMinutes} min{hasPrice(service) && <> · {priceLine(service)}</>} {!service.active && <span className="badge">Desativado</span>}
+          <strong>{service.name}</strong> · {durationLine(service)}{hasPrice(service) && <> · {priceLine(service)}</>} {!service.active && <span className="badge">Desativado</span>}
         </span>
         <span className="actions">
           <button
@@ -214,6 +232,7 @@ function ServiceRow({ service, onChanged }: { service: Service; onChanged: () =>
               setPrice(moneyInput(service.priceCents))
               setPriceMedium(moneyInput(service.priceMediumCents))
               setPriceLarge(moneyInput(service.priceLargeCents))
+              setDurationText(durationTextOf(service))
               setErrors({})
               setEditing(true)
             }}
@@ -238,6 +257,7 @@ function ServiceRow({ service, onChanged }: { service: Service; onChanged: () =>
       <Field label="Nome" name={`name-${service.id}`} disabled={busy} value={name} error={errors.name} onChange={(e) => setName(e.target.value)} />
       <Field label="Duração (minutos)" name={`duration-${service.id}`} disabled={busy} type="number" inputMode="numeric" min={MIN_MINUTES} max={MAX_MINUTES} step={5} value={duration} error={errors.duration} onChange={(e) => setDuration(e.target.value)} />
       </div>
+      <DurationFields idPrefix={service.id} text={durationText} errors={errors} disabled={busy} onChange={(next, clear) => { setDurationText(next); setErrors((x) => ({ ...x, [clear]: undefined })) }} />
       <div className="field-row field-row--three">
       <Field label="Preço base (R$, opcional)" name={`price-${service.id}`} disabled={busy} inputMode="decimal" hint="Vazio = a combinar." value={price} error={errors.price} onChange={(e) => { setPrice(e.target.value); setErrors((x) => ({ ...x, price: undefined })) }} />
       <Field label="Preço para porte médio (R$, opcional)" name={`price-medium-${service.id}`} disabled={busy} inputMode="decimal" hint="Vazio = usa o preço base." value={priceMedium} error={errors.priceMedium} onChange={(e) => { setPriceMedium(e.target.value); setErrors((x) => ({ ...x, priceMedium: undefined })) }} />
@@ -261,6 +281,7 @@ function ServiceRow({ service, onChanged }: { service: Service; onChanged: () =>
             setPrice(moneyInput(service.priceCents))
             setPriceMedium(moneyInput(service.priceMediumCents))
             setPriceLarge(moneyInput(service.priceLargeCents))
+            setDurationText(durationTextOf(service))
             setErrors({})
           }}
         >
