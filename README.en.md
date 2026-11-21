@@ -1,14 +1,14 @@
 # QueueCare
 
-Scheduling and queue management for small service providers (repair shops, small clinics, barbershops, consultancies). Portuguese version: [README.md](README.md).
+Scheduling and queue management for small service providers, now focused on **pet grooming studios** (brand "Pelo & Ponto"). Portuguese version: [README.md](README.md).
 
 > A full-stack portfolio project: React + TypeScript, Java 21 + Spring Boot, PostgreSQL. **Built with substantial AI assistance** (see "Authorship" below).
 
 ## What it does
-- **Customers** browse providers, pick a service, day and free slot, book, see "my appointments" and cancel within the provider's cancellation window.
-- **Providers** configure their business (time zone, minimum notice, cancellation window), services, working hours and team, and run the daily schedule.
-- **Attendants** (staff linked to one provider) see the day's schedule, register arrivals (check-in), complete appointments and follow the arrival-ordered queue.
-- **Administrators** create provider accounts and manage accounts (search, activate/deactivate, reset password) without any access to schedules or business data.
+- **Pet owners** register pets (size, coat, weight, temperament, health notes, vaccines) and book by service, pet, day and slot; the **duration and price follow the pet's size and coat**, and the app jumps to the first day with a free slot. They see **until when they can cancel or reschedule for free** before confirming and, after that, message the studio on WhatsApp. They follow the visit (arrived, in progress, ready for pickup), see each pet's history and join a **waiting list** when a day is full.
+- **Studios** (owner and attendants) run the day and week schedule and the queue, see the pet's file in front of whoever attends (with a behavior warning), open WhatsApp with a ready-made message (pet ready, **next-day reminder**, waiting-list call), record **no-shows** with a per-owner counter, and configure services (price and duration by size and coat), working hours, team, a public page and the cancellation window.
+- **Administrators** create and manage accounts, with no access to schedules or business data.
+- No online payment and no automatic messaging (zero-cost constraint): WhatsApp opens with the message ready and staff send it. A manual Pix deposit is proposed in ADR 0023.
 
 ## Technical highlights
 - **No double booking, even under concurrency:** two layers, application validation plus a PostgreSQL **exclusion constraint** (`btree_gist` over `tstzrange`); two simultaneous requests for the same slot yield one success and one `409`. Tested against a real PostgreSQL.
