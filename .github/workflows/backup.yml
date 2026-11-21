@@ -1,0 +1,76 @@
+name: Backup diário
+
+# Backup do banco de PRODUÇÃO (ADR 0028). Só funciona quando o dono cadastra os dois segredos abaixo; sem eles o job termina em sucesso sem fazer nada
+# (o projeto é de portfólio e não exige nenhum segredo). O arquivo sai CRIPTOGRAFADO (AES-256) e é guardado como artefato por 14 dias.
+#
+#   BACKUP_DATABASE_URL   postgresql://usuario:senha@host/banco?sslmode=require   (URL DIRETA do Neon, sem pooler; precisa de permissão de leitura)
+#   BACKUP_PASSPHRASE     frase-senha com 16+ caracteres: guarde-a FORA do GitHub também, sem ela o backup não abre
+
+on:
+  schedule:
+    - cron: '17 6 * * *'   # todo dia, 06:17 UTC (03:17 em Brasília)
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: backup
+  cancel-in-progress: false
+
+jobs:
+  backup:
+    name: Backup e prova de restauração
+    runs-on: ubuntu-latest
+    services:
+      prova:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: prova
+          POSTGRES_DB: prova
+        ports: ['5433:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres" --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      DATABASE_URL: ${{ secrets.BACKUP_DATABASE_URL }}
+      BACKUP_PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
+    steps:
+      - name: Os segredos estão cadastrados?
+        id: segredos
+        run: |
+          if [ -z "$DATABASE_URL" ] || [ -z "$BACKUP_PASSPHRASE" ]; then
+            echo "Backup desativado: cadastre BACKUP_DATABASE_URL e BACKUP_PASSPHRASE (veja docs/backup.md). Nada foi feito."
+            echo "ativo=nao" >> "$GITHUB_OUTPUT"
+          else
+            echo "ativo=sim" >> "$GITHUB_OUTPUT"
+          fi
+      - uses: actions/checkout@v4
+        if: steps.segredos.outputs.ativo == 'sim'
+      - name: Cliente PostgreSQL 16 e GPG
+        if: steps.segredos.outputs.ativo == 'sim'
+        # O Ubuntu do runner traz só a versão mais nova do PostgreSQL (hoje a 18): o cliente 16 vem do repositório oficial do PostgreSQL (PGDG).
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq postgresql-common gnupg
+          sudo /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y
+          sudo apt-get install -y -qq postgresql-client-16
+          # O runner já tem o 18 no PATH: o 16 vai na frente para os passos seguintes.
+          echo "/usr/lib/postgresql/16/bin" >> "$GITHUB_PATH"
+          /usr/lib/postgresql/16/bin/pg_dump --version
+      - name: Backup criptografado
+        if: steps.segredos.outputs.ativo == 'sim'
+        run: bash ops/backup/backup.sh "$RUNNER_TEMP/backups"
+      - name: Prova de restauração (num banco descartável) e conferência
+        if: steps.segredos.outputs.ativo == 'sim'
+        run: |
+          file="$(ls "$RUNNER_TEMP"/backups/*.gpg)"
+          TARGET_DATABASE_URL="postgresql://postgres:prova@localhost:5433/prova" CONFIRM_RESTORE=yes bash ops/backup/restore.sh "$file"
+          bash ops/backup/verify.sh smoke "postgresql://postgres:prova@localhost:5433/prova"
+      - name: Guardar o backup (criptografado) por 14 dias
+        if: steps.segredos.outputs.ativo == 'sim'
+        uses: actions/upload-artifact@v4
+        with:
+          name: backup-${{ github.run_id }}
+          path: ${{ runner.temp }}/backups/
+          retention-days: 14
+          if-no-files-found: error

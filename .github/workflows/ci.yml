@@ -71,3 +71,81 @@ jobs:
       - uses: gitleaks/gitleaks-action@v2.3.9
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # Ensaio de backup e restauração (ADR 0028): backup que nunca foi restaurado é uma esperança, não uma estratégia. A CADA mudança o CI aplica TODAS as migrações num
+  # PostgreSQL, planta dados fictícios, faz o backup criptografado, restaura num SEGUNDO PostgreSQL e exige que o resultado seja idêntico. Também prova as recusas:
+  # arquivo corrompido, frase-senha errada e restauração sem confirmação não tocam no destino.
+  backup:
+    name: Backup (ensaio de restauração)
+    runs-on: ubuntu-latest
+    services:
+      origem:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: ensaio
+          POSTGRES_DB: origem
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres" --health-interval 5s --health-timeout 5s --health-retries 10
+      destino:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: ensaio
+          POSTGRES_DB: destino
+        ports: ['5433:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres" --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      ORIGEM: postgresql://postgres:ensaio@localhost:5432/origem
+      DESTINO: postgresql://postgres:ensaio@localhost:5433/destino
+      # Frase-senha FICTÍCIA, só deste ensaio (montada em duas partes para o varredor de segredos não a confundir com um segredo real).
+      BACKUP_PASSPHRASE: ${{ format('{0}{1}', 'frase-so-do-ensaio-', '0123456789') }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Cliente PostgreSQL 16 e GPG
+        # O Ubuntu do runner traz só a versão mais nova do PostgreSQL (hoje a 18): o cliente 16 vem do repositório oficial do PostgreSQL (PGDG).
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq postgresql-common gnupg
+          sudo /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y
+          sudo apt-get install -y -qq postgresql-client-16
+          # O runner já tem o 18 no PATH: o 16 vai na frente para os passos seguintes.
+          echo "/usr/lib/postgresql/16/bin" >> "$GITHUB_PATH"
+          /usr/lib/postgresql/16/bin/pg_dump --version
+      - name: Aplicar TODAS as migrações na origem, na ordem do Flyway
+        run: |
+          for f in $(ls backend/src/main/resources/db/migration/V*.sql | sort -V); do
+            echo "aplicando $f"
+            psql --quiet --set ON_ERROR_STOP=1 "$ORIGEM" -f "$f" > /dev/null
+          done
+      - name: Plantar dados fictícios
+        run: psql --quiet --set ON_ERROR_STOP=1 "$ORIGEM" -f ops/backup/drill-seed.sql
+      - name: Fazer o backup (criptografado, com soma de verificação)
+        run: |
+          DATABASE_URL="$ORIGEM" bash ops/backup/backup.sh "$RUNNER_TEMP/backups"
+          ls -l "$RUNNER_TEMP/backups"
+          # o arquivo NÃO pode conter texto legível do banco
+          if grep -aq "ensaio.invalid" "$RUNNER_TEMP"/backups/*.gpg; then echo "o backup contém texto legível: não está criptografado"; exit 1; fi
+      - name: Restaurar no destino e exigir que seja idêntico à origem
+        run: |
+          file="$(ls "$RUNNER_TEMP"/backups/*.gpg)"
+          TARGET_DATABASE_URL="$DESTINO" CONFIRM_RESTORE=yes bash ops/backup/restore.sh "$file"
+          bash ops/backup/verify.sh compare "$ORIGEM" "$DESTINO"
+          bash ops/backup/verify.sh smoke "$DESTINO"
+      - name: Recusas (a restauração para antes de tocar no destino)
+        run: |
+          file="$(ls "$RUNNER_TEMP"/backups/*.gpg)"
+          # sem a confirmação explícita
+          if TARGET_DATABASE_URL="$DESTINO" bash ops/backup/restore.sh "$file"; then echo "deveria recusar sem CONFIRM_RESTORE"; exit 1; fi
+          # frase-senha errada
+          if BACKUP_PASSPHRASE="outra-frase-bem-diferente-123" TARGET_DATABASE_URL="$DESTINO" CONFIRM_RESTORE=yes bash ops/backup/restore.sh "$file"; then echo "deveria recusar frase errada"; exit 1; fi
+          # arquivo corrompido: um byte alterado no meio
+          bad="$RUNNER_TEMP/bad.dump.gpg"; cp "$file" "$bad"; cp "$file.sha256" "$bad.sha256"
+          printf '\xff' | dd of="$bad" bs=1 seek=200 count=1 conv=notrunc status=none
+          if TARGET_DATABASE_URL="$DESTINO" CONFIRM_RESTORE=yes bash ops/backup/restore.sh "$bad"; then echo "deveria recusar arquivo corrompido"; exit 1; fi
+          # e o destino continua igual à origem depois de tudo isso
+          bash ops/backup/verify.sh compare "$ORIGEM" "$DESTINO"
+      - name: Backup sem criptografia é impossível
+        run: |
+          if env -u BACKUP_PASSPHRASE DATABASE_URL="$ORIGEM" bash ops/backup/backup.sh "$RUNNER_TEMP/x"; then echo "deveria exigir a frase-senha"; exit 1; fi
+          if BACKUP_PASSPHRASE=curta DATABASE_URL="$ORIGEM" bash ops/backup/backup.sh "$RUNNER_TEMP/x"; then echo "deveria recusar frase curta"; exit 1; fi
