@@ -1,6 +1,6 @@
 # ADR 0022: lista de espera para reaproveitar horário que vagou
 
-- **Status:** Proposed (continuação do ADR 0021; implementar depois de ver o número real de faltas e cancelamentos do estúdio)
+- **Status:** Accepted (continuação do ADR 0021; implementado em 21/11/2026 dentro da autonomia dada pelo Matheus: "finalize todo o projeto e o que temos em mente")
 - **Data:** 21/11/2026
 - **Esforço:** ALTO (tabela nova, quatro endpoints, duas telas)
 
@@ -25,3 +25,6 @@ Lista de espera **conduzida pela equipe**, sem envio automático (custo zero, AD
 ## Consequências
 - "Sem horário" deixa de ser o fim da conversa para o tutor, e o estúdio reaproveita horários sem custo.
 - Mais uma lista para a equipe cuidar: por isso fica visível só na Agenda do dia e some sozinha.
+
+## Andamento
+Implementado em 21/11/2026 (V20, `WaitlistService`, `/api/waitlist`): o tutor entra pelo Agendar quando o dia está cheio, vê e sai em Meus agendamentos, e a equipe vê a lista na Agenda do dia (com a duração prevista para cada pet), chama pelo WhatsApp e tira. Quem já tem agendamento ativo no estúdio naquele dia **sai da lista sozinho** (a lista deixa de mostrar; a entrada continua guardada, e volta a aparecer se o agendamento for cancelado ou o tutor faltar). Limite de 10 entradas ativas por tutor. Sem prazo de validade explícito: a entrada some da tela do tutor quando o dia passa.

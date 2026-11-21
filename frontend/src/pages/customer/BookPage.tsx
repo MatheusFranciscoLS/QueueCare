@@ -15,6 +15,7 @@ import { useSingleFlight } from '../useSingleFlight'
 import { Loading } from '../Loading'
 import { DayStep, SlotStep } from './BookingSteps'
 import { PetForm } from './PetForm'
+import { WaitlistOffer } from './WaitlistOffer'
 
 const PAGE_SIZE = 50
 /** Quantos dias, a partir de hoje, a busca do primeiro dia com horário livre olha (a API oferece até 90). */
@@ -228,6 +229,7 @@ export function BookPage() {
             key={`${provider.id}|${service.id}|${pet.id}|${date}|${slotsVersion}`}
             number={5}
             petId={pet.id}
+            emptyExtra={<WaitlistOffer providerId={provider.id} serviceId={service.id} petId={pet.id} date={date} disabled={submitting} />}
             provider={provider}
             service={service}
             date={date}

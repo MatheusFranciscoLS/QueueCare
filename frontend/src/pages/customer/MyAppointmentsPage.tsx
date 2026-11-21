@@ -13,6 +13,7 @@ import { useLoad } from '../useLoad'
 import { useSingleFlight } from '../useSingleFlight'
 import { Loading } from '../Loading'
 import { AppointmentHistory } from './AppointmentHistory'
+import { WaitlistMine } from './WaitlistMine'
 import { RescheduleBox } from './RescheduleBox'
 import { PetAvatar } from '../../ui/components'
 
@@ -70,6 +71,7 @@ export function MyAppointmentsPage() {
         ))}
       </ul>
       {data && data.length === PAGE_SIZE && <p className="hint">Mostrando os {PAGE_SIZE} agendamentos mais recentes.</p>}
+      <WaitlistMine />
     </section>
   )
 }

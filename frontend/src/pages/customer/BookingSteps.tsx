@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from 'react'
+import { useCallback, useMemo, type ReactNode } from 'react'
 import { addDays, isDate, longDate, todayIn } from '../../api/dates'
 import { describeError } from '../../api/messages'
 import { bookingApi, type CatalogProvider, type CatalogService, type FreeSlot } from '../../api/booking'
@@ -66,6 +66,7 @@ export function SlotStep({
   excludeAppointmentId,
   petId,
   number = 4,
+  emptyExtra,
 }: {
   provider: CatalogProvider
   service: CatalogService
@@ -78,6 +79,8 @@ export function SlotStep({
   /** Agendar: a duração depende do pet (ADR 0020); a API só considera um pet ativo do próprio cliente. */
   petId?: string
   number?: number
+  /** O que mostrar junto do aviso de dia sem horários (Agendar: entrar na lista de espera, ADR 0022). */
+  emptyExtra?: ReactNode
 }) {
   const { request } = useAuth()
   const api = useMemo(() => bookingApi(request), [request])
@@ -91,6 +94,7 @@ export function SlotStep({
       <legend>{number}. Escolha o horário</legend>
       {error !== undefined && data && <RefreshWarning onRetry={reload} />}
       {data && data.length === 0 && <p className="notice">Nenhum horário livre neste dia. Tente outro dia.</p>}
+      {data && data.length === 0 && emptyExtra}
       <div className="slots" role="group" aria-label="Horários livres">
         {data?.map((s) => (
           <button

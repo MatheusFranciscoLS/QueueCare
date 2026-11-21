@@ -137,6 +137,27 @@ body {
   background: var(--st-waiting-bg);
 }
 
+/* lista de espera (ADR 0022) */
+.waitlist-offer {
+  margin-top: 0.75rem;
+}
+
+.waitlist-mine,
+.waitlist-day {
+  margin-top: 1.5rem;
+}
+
+.waitlist-day .row > .actions a.button,
+.waitlist-mine .row > .actions .button {
+  min-height: 44px;
+}
+
+.waitlist-day .row > .actions a.button {
+  display: inline-flex;
+  align-items: center;
+  text-decoration: none;
+}
+
 .appt-reminded {
   font-size: 0.8125rem;
   color: var(--muted, var(--pp-muted));
