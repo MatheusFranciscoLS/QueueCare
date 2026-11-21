@@ -3,9 +3,10 @@ import { Link, useSearchParams } from 'react-router-dom'
 import { addDays, longDate, todayIn } from '../../api/dates'
 import { describeError } from '../../api/messages'
 import { ApiError } from '../../api/client'
-import { bookingApi, type BookedAppointment, type CatalogProvider, type CatalogService, type FreeSlot } from '../../api/booking'
+import { bookingApi, type BookedAppointment, type CatalogProvider, type CatalogService, type DepositTerms, type FreeSlot } from '../../api/booking'
 import { durationForPet, durationSummary } from '../../api/duration'
 import { bookingPolicyText } from '../../api/policy'
+import { whatsappLink } from '../../api/phone'
 import { formatMoney, priceForSize, priceSummary } from '../../api/money'
 import { petDescription, petsApi, type Pet, type PetInput } from '../../api/pets'
 import { useAuth } from '../../auth/session'
@@ -44,7 +45,7 @@ export function BookPage() {
   const [settledKey, setSettledKey] = useState<string | null>(null)
   const [jumped, setJumped] = useState(false)
   // O que foi CONFIRMADO, copiado no instante do envio: o resumo mostra exatamente o que a API recebeu, mesmo que a tela mude depois.
-  const [done, setDone] = useState<{ appointment: BookedAppointment; serviceName: string; businessName: string; localStart: string; petName: string } | null>(null)
+  const [done, setDone] = useState<{ appointment: BookedAppointment; serviceName: string; businessName: string; localStart: string; petName: string; studioPhone: string | null } | null>(null)
   // Enquanto uma reserva está em andamento NENHUMA escolha pode mudar (prestador, serviço, dia, horário): o estado fica aqui, no pai.
   const [submitting, setSubmitting] = useState(false)
   const once = useSingleFlight()
@@ -62,6 +63,9 @@ export function BookPage() {
   const pet = !petsFresh ? null : (petList.data?.find((p) => p.id === petChoice) ?? (petList.data?.length === 1 ? petList.data[0] : null))
   // Sobe quando a API recusa o horário escolhido: a lista de horários é refeita do zero.
   const [slotsVersion, setSlotsVersion] = useState(0)
+  // O sinal por Pix que ESTE tutor deve neste estúdio (ADR 0023): o servidor decide; se não der para saber, a confirmação segue sem o aviso (a reserva mostra depois).
+  const depositLoad = useCallback(() => (provider ? api.depositTerms(provider.id) : Promise.resolve<DepositTerms>({ required: false })), [api, provider])
+  const deposit = useLoad<DepositTerms>(depositLoad)
   const [bookingError, setBookingError] = useState<string | null>(null)
 
   const comboKey = provider && service && pet ? provider.id + '|' + service.id + '|' + pet.id : null
@@ -103,7 +107,7 @@ export function BookPage() {
       try {
         const appointment = await api.book({ providerId: sent.provider.id, serviceId: sent.service.id, localStart: sent.slot.localStart, petId: sent.pet.id })
         setWanted({ provider: null, service: null })
-        setDone({ appointment, serviceName: sent.service.name, businessName: sent.provider.businessName, localStart: sent.slot.localStart, petName: sent.pet.name })
+        setDone({ appointment, serviceName: sent.service.name, businessName: sent.provider.businessName, localStart: sent.slot.localStart, petName: sent.pet.name, studioPhone: sent.provider.phone ?? null })
       } catch (e) {
         // A API recusou este horário: mostra o motivo e refaz a lista de horários (o escolhido pode não existir mais).
         setBookingError(describeError(e))
@@ -131,6 +135,23 @@ export function BookPage() {
         <p role="status" className="notice">
           {done.serviceName} para {done.petName} em {done.businessName}, {longDate(done.localStart.slice(0, 10))}, às {done.localStart.slice(11, 16)} (horário do negócio).
         </p>
+        {done.appointment.depositStatus === 'REQUESTED' && done.appointment.depositCents != null && (
+          <p role="status" className="notice confirm-deposit">
+            Falta o sinal de <strong>{formatMoney(done.appointment.depositCents)}</strong> por Pix.{' '}
+            {done.appointment.studioPixKey && (
+              <>
+                Chave Pix: <strong>{done.appointment.studioPixKey}</strong>.{' '}
+              </>
+            )}
+            {done.studioPhone ? (
+              <a href={whatsappLink(done.studioPhone, 'Olá! Fiz o agendamento e estou enviando o comprovante do sinal.')} target="_blank" rel="noopener noreferrer">
+                Enviar comprovante pelo WhatsApp
+              </a>
+            ) : (
+              'Envie o comprovante ao estúdio.'
+            )}
+          </p>
+        )}
         <button
           type="button"
           className="button"
@@ -243,7 +264,7 @@ export function BookPage() {
         </>
       )}
       {provider && service && pet && slot && (
-        <ConfirmStep provider={provider} service={service} slot={slot} pet={pet} busy={submitting} onConfirm={confirm} onCancel={() => setSlot(null)} />
+        <ConfirmStep provider={provider} service={service} slot={slot} pet={pet} deposit={deposit.data} busy={submitting} onConfirm={confirm} onCancel={() => setSlot(null)} />
       )}
     </section>
   )
@@ -343,6 +364,7 @@ function ConfirmStep({
   service,
   slot,
   pet,
+  deposit,
   busy,
   onConfirm,
   onCancel,
@@ -351,6 +373,7 @@ function ConfirmStep({
   service: CatalogService
   slot: FreeSlot
   pet: Pet | null
+  deposit?: DepositTerms
   busy: boolean
   onConfirm: () => void
   onCancel: () => void
@@ -369,6 +392,17 @@ function ConfirmStep({
         })()}</strong>
         {pet?.size == null && (service.priceMediumCents != null || service.priceLargeCents != null) && <span className="hint"> Informe o porte do pet para ver o valor exato.</span>}
       </p>
+      {deposit?.required && deposit.depositCents != null && (
+        <p className="confirm-deposit">
+          Este estúdio pede um <strong>sinal de {formatMoney(deposit.depositCents)}</strong> por Pix para segurar o horário.{' '}
+          {deposit.pixKey && (
+            <>
+              Chave Pix: <strong>{deposit.pixKey}</strong>.{' '}
+            </>
+          )}
+          Depois de reservar, envie o comprovante ao estúdio. O valor abate do preço.
+        </p>
+      )}
       {provider.cancellationDeadlineMinutes != null && (
         <p className="confirm-policy hint">{bookingPolicyText(slot.startsAt, provider.cancellationDeadlineMinutes, provider.timeZone)}</p>
       )}

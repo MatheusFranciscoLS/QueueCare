@@ -368,6 +368,11 @@ function AppointmentRow({
       setProblem(describeError(e))
     }
   }
+  const depositReceived = () =>
+    act(async () => {
+      await api.depositReceived(item.id)
+      setNotice(`Sinal de ${customer} registrado como recebido.`)
+    })
   const noShow = () =>
     act(async () => {
       await api.noShow(item.id)
@@ -438,6 +443,8 @@ function AppointmentRow({
           )}
           <span className="appt-service">{item.serviceName ?? 'Serviço'}</span>
           {item.priceCents != null && <span className="appt-price">{formatMoney(item.priceCents)}</span>}
+          {item.depositStatus === 'REQUESTED' && item.depositCents != null && <span className="appt-deposit">Sinal pendente · {formatMoney(item.depositCents)}</span>}
+          {item.depositStatus === 'RECEIVED' && <span className="appt-deposit appt-deposit--ok">Sinal recebido</span>}
           {status === 'SCHEDULED' && item.remindedAt && <span className="appt-reminded">Lembrete enviado em {reminderStamp(item.remindedAt, timeZone)}</span>}
         </span>
         {item.pet && <PetFicha pet={item.pet} />}
@@ -470,6 +477,11 @@ function AppointmentRow({
                 >
                   Lembrar
                 </a>
+              )}
+              {item.depositStatus === 'REQUESTED' && (
+                <button type="button" className="button secondary" disabled={busy} aria-label={`Marcar sinal de ${customer} como recebido`} onClick={depositReceived}>
+                  Sinal recebido
+                </button>
               )}
               {canCheckIn && (
                 <button type="button" className="button" disabled={busy} onClick={checkIn}>

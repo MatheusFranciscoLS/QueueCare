@@ -47,6 +47,17 @@ export interface BookedAppointment {
   /** Até quando cancelar ou remarcar de graça (só enquanto agendado) e o WhatsApp do estúdio (ADR 0021). */
   freeChangeUntil?: string | null
   studioPhone?: string | null
+  /** Sinal por Pix (ADR 0023): valor pedido (congelado na reserva), situação e a chave (só enquanto pendente). */
+  depositCents?: number | null
+  depositStatus?: 'NONE' | 'REQUESTED' | 'RECEIVED'
+  studioPixKey?: string | null
+}
+
+/** O sinal que ESTE tutor deve neste estúdio (o servidor decide; sem sinal, sem chave). */
+export interface DepositTerms {
+  required: boolean
+  depositCents?: number | null
+  pixKey?: string | null
 }
 
 /** Uma linha do histórico. `by`: quem agiu, sem nomes de funcionários para o cliente. Horários só nas remarcações. */
@@ -65,6 +76,7 @@ type Request = AuthApi['request']
 export function bookingApi(request: Request) {
   return {
     providers: (page = 0, size = 50) => request<CatalogProvider[]>(`/api/catalog/providers?page=${page}&size=${size}`),
+    depositTerms: (providerId: string) => request<DepositTerms>(`/api/catalog/providers/${encodeURIComponent(providerId)}/deposit-terms`),
     services: (providerId: string) => request<CatalogService[]>(`/api/catalog/providers/${encodeURIComponent(providerId)}/services`),
     slots: (providerId: string, serviceId: string, date: string, excludeAppointmentId?: string, petId?: string) =>
       request<FreeSlot[]>(

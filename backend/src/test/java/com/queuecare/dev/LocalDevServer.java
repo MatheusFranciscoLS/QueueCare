@@ -204,6 +204,10 @@ public final class LocalDevServer {
 		exec(c, "UPDATE providers SET phone = '5511987654321', cancellation_deadline_minutes = 720 WHERE id = ?", provider);
 		exec(c, "UPDATE services SET duration_medium_minutes = 75, duration_large_minutes = 90, coat_extra_minutes = 30 WHERE id = ?", bath);
 		exec(c, "UPDATE services SET duration_large_minutes = 60, coat_extra_minutes = 15 WHERE id = ?", hygienic);
+		// Sinal por Pix (ADR 0023): o estúdio de demonstração pede de quem ainda não foi atendido aqui ou já faltou 2 vezes; a Carla tem um sinal pendente e o João um já recebido.
+		exec(c, "UPDATE providers SET pix_key = 'estudio@bemtevi.test', deposit_cents = 3000, deposit_rule = 'NEW_OR_REPEAT_NO_SHOW' WHERE id = ?", provider);
+		exec(c, "UPDATE appointments SET deposit_cents = 3000, deposit_status = 'REQUESTED' WHERE provider_id = ? AND customer_id = ? AND status = 'SCHEDULED' AND starts_at > now()", provider, carla);
+		exec(c, "UPDATE appointments SET deposit_cents = 3000, deposit_status = 'RECEIVED', deposit_received_at = now() WHERE provider_id = ? AND customer_id = ? AND status = 'SCHEDULED' AND starts_at > now()", provider, joao);
 		// Faltas (ADR 0021): a Carla faltou uma vez; ontem ficou um agendamento sem desfecho (para a equipe ver o botão Faltou); amanhã há um lembrete já enviado.
 		appointment(c, provider, hygienic, carla, nina, ninaCopy, -3, LocalTime.of(10, 0), 45, "NO_SHOW", carla, attendant);
 		appointment(c, provider, bath, joao, bidu, biduCopy, -1, LocalTime.of(10, 0), 60, "SCHEDULED", joao, attendant);

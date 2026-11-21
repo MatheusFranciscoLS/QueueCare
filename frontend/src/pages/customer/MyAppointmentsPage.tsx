@@ -5,6 +5,7 @@ import { longDate, timeIn, todayIn } from '../../api/dates'
 import { describeError } from '../../api/messages'
 import { bookingApi, type BookedAppointment } from '../../api/booking'
 import { formatMoney } from '../../api/money'
+import { whatsappLink } from '../../api/phone'
 import { freeChangePassed, studioChangeLink, whenText } from '../../api/policy'
 import { SPECIES_LABEL } from '../../api/pets'
 import { useAuth } from '../../auth/session'
@@ -216,6 +217,20 @@ function Row({
           {error}
         </p>
       )}
+      {status !== 'CANCELLED' && item.depositStatus === 'REQUESTED' && item.depositCents != null && (
+        <p className="policy-line deposit-line">
+          <strong>Sinal pendente: {formatMoney(item.depositCents)} por Pix.</strong>{' '}
+          {item.studioPixKey && <>Chave: {item.studioPixKey}. </>}
+          {item.studioPhone ? (
+            <a href={whatsappLink(item.studioPhone, 'Olá! Estou enviando o comprovante do sinal do meu agendamento.')} target="_blank" rel="noopener noreferrer">
+              Enviar comprovante
+            </a>
+          ) : (
+            'Envie o comprovante ao estúdio.'
+          )}
+        </p>
+      )}
+      {status !== 'CANCELLED' && item.depositStatus === 'RECEIVED' && <p className="policy-line deposit-line">Sinal recebido.</p>}
       {status === 'SCHEDULED' && item.freeChangeUntil && (
         <p className="policy-line hint">
           {late ? (

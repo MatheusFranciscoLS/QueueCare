@@ -137,6 +137,31 @@ body {
   background: var(--st-waiting-bg);
 }
 
+/* sinal por Pix (ADR 0023): texto + tom, nunca só cor */
+.appt-deposit {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.0625rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--st-waiting);
+  background: var(--st-waiting-bg);
+}
+
+.appt-deposit--ok {
+  color: var(--st-done);
+  background: var(--st-done-bg);
+}
+
+.confirm-deposit {
+  margin: 0.5rem 0;
+}
+
+.deposit-form {
+  margin-top: 1.5rem;
+}
+
 /* lista de espera (ADR 0022) */
 .waitlist-offer {
   margin-top: 0.75rem;

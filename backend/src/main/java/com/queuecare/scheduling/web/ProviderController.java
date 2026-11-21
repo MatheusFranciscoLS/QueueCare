@@ -47,9 +47,11 @@ class ProviderController {
 			@NotNull Integer cancellationDeadlineMinutes, String phone) {
 	}
 
-	record BusinessResponse(UUID id, String businessName, String timeZone, int minimumNoticeMinutes, int cancellationDeadlineMinutes, String phone) {
+	record BusinessResponse(UUID id, String businessName, String timeZone, int minimumNoticeMinutes, int cancellationDeadlineMinutes, String phone, String pixKey,
+			Integer depositCents, String depositRule) {
 		static BusinessResponse from(Provider p) {
-			return new BusinessResponse(p.getId(), p.getBusinessName(), p.getTimeZone(), p.getMinimumNoticeMinutes(), p.getCancellationDeadlineMinutes(), p.getPhone());
+			return new BusinessResponse(p.getId(), p.getBusinessName(), p.getTimeZone(), p.getMinimumNoticeMinutes(), p.getCancellationDeadlineMinutes(), p.getPhone(), p.getPixKey(),
+					p.getDepositCents(), p.getDepositRule().name());
 		}
 	}
 
@@ -96,6 +98,15 @@ class ProviderController {
 	@PutMapping
 	BusinessResponse update(@AuthenticationPrincipal Jwt jwt, @Valid @RequestBody BusinessRequest r) {
 		return BusinessResponse.from(admin.updateBusiness(userId(jwt), r.businessName(), r.timeZone(), r.minimumNoticeMinutes(), r.cancellationDeadlineMinutes(), r.phone()));
+	}
+
+	/** Sinal por Pix (ADR 0023): {@code depositRule} NEVER, NEW_CUSTOMERS ou NEW_OR_REPEAT_NO_SHOW; chave vazia limpa; regra ligada exige chave e valor. */
+	record DepositRequest(String pixKey, Integer depositCents, @NotNull String depositRule) {
+	}
+
+	@PutMapping("/deposit")
+	BusinessResponse updateDeposit(@AuthenticationPrincipal Jwt jwt, @Valid @RequestBody DepositRequest r) {
+		return BusinessResponse.from(admin.updateDeposit(userId(jwt), r.pixKey(), r.depositCents(), r.depositRule()));
 	}
 
 	// --- página pública (ADR 0015) ---

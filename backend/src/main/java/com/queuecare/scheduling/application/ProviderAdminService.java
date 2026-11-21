@@ -101,6 +101,43 @@ public class ProviderAdminService {
 		return providers.save(provider);
 	}
 
+	// --- sinal por Pix (ADR 0023) ---
+
+	static final int MAX_DEPOSIT_CENTS = 10_000_000;
+	static final int MAX_PIX_KEY_LENGTH = 140;
+
+	/**
+	 * Configura o sinal por Pix: chave, valor em centavos e quando pedir. Chave vazia limpa; a regra ligada exige chave E valor (o banco repete).
+	 * A mensagem de erro nunca repete a chave (é dado do estúdio, mas pode ser CPF, telefone ou e-mail).
+	 */
+	@Transactional
+	public Provider updateDeposit(UUID ownerUserId, String pixKey, Integer depositCents, String rule) {
+		com.queuecare.scheduling.persistence.DepositRule parsed;
+		try {
+			parsed = com.queuecare.scheduling.persistence.DepositRule.valueOf(rule == null ? "" : rule.trim());
+		} catch (IllegalArgumentException e) {
+			throw new InvalidConfigurationException("depositRule", "uma das regras oferecidas");
+		}
+		String key = pixKey == null || pixKey.isBlank() ? null : pixKey.trim();
+		if (key != null && (key.length() > MAX_PIX_KEY_LENGTH || key.codePoints().anyMatch(Character::isISOControl))) {
+			throw new InvalidConfigurationException("pixKey", "até " + MAX_PIX_KEY_LENGTH + " caracteres, sem quebras de linha");
+		}
+		if (depositCents != null && (depositCents < 1 || depositCents > MAX_DEPOSIT_CENTS)) {
+			throw new InvalidConfigurationException("depositCents", "entre 1 e " + MAX_DEPOSIT_CENTS + " centavos");
+		}
+		if (parsed != com.queuecare.scheduling.persistence.DepositRule.NEVER) {
+			if (key == null) {
+				throw new InvalidConfigurationException("pixKey", "informe a chave Pix para pedir sinal");
+			}
+			if (depositCents == null) {
+				throw new InvalidConfigurationException("depositCents", "informe o valor do sinal para pedir sinal");
+			}
+		}
+		Provider provider = lockBusiness(ownerUserId);
+		provider.setDeposit(key, depositCents, parsed);
+		return providers.save(provider);
+	}
+
 	// --- página pública (ADR 0015) ---
 
 	static final java.util.Set<String> RESERVED_SLUGS = java.util.Set.of("admin", "api", "app", "entrar", "cadastro", "agendar", "agenda", "fila", "p", "pelo-e-ponto",

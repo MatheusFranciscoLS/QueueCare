@@ -51,6 +51,9 @@ public interface AppointmentRepository extends JpaRepository<Appointment, UUID> 
 			+ "and a.status = com.queuecare.scheduling.persistence.AppointmentStatus.NO_SHOW and a.customerId in :customerIds group by a.customerId")
 	java.util.List<NoShowCount> countNoShows(@Param("providerId") UUID providerId, @Param("customerIds") java.util.Collection<UUID> customerIds);
 
+	/** Quantos agendamentos de um tutor neste prestador estão numa situação (ADR 0023: atendimentos concluídos e faltas). */
+	long countByProviderIdAndCustomerIdAndStatus(UUID providerId, UUID customerId, AppointmentStatus status);
+
 	/** Linha da fila: o agendamento e o instante do check-in. */
 	record QueueRow(Appointment appointment, Instant checkedInAt) {
 	}

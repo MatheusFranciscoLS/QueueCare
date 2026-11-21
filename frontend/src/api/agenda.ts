@@ -27,6 +27,9 @@ export interface AgendaItem {
   customerNoShows?: number
   /** Quando a equipe lembrou o tutor pelo WhatsApp (ADR 0021); só na agenda do dia; nulo = ainda não. */
   remindedAt?: string | null
+  /** Sinal por Pix (ADR 0023): só na agenda do dia. */
+  depositCents?: number | null
+  depositStatus?: 'NONE' | 'REQUESTED' | 'RECEIVED'
   /** O pet (cópia gravada no agendamento); nulo em agendamento sem pet. Raça e observações vêm na agenda do dia e na fila. */
   pet?: PetOnAppointment | null
 }
@@ -75,6 +78,8 @@ export function agendaApi(request: Request) {
     ready: (appointmentId: string) => request<unknown>(`/api/appointments/${encodeURIComponent(appointmentId)}/ready`, { method: 'POST' }),
     /** Guarda que a equipe lembrou o tutor pelo WhatsApp (ADR 0021); só de quem está agendado e ainda não começou. */
     reminded: (appointmentId: string) => request<unknown>(`/api/appointments/${encodeURIComponent(appointmentId)}/reminded`, { method: 'POST' }),
+    /** A equipe confirma que o Pix do sinal chegou (ADR 0023). */
+    depositReceived: (appointmentId: string) => request<unknown>(`/api/appointments/${encodeURIComponent(appointmentId)}/deposit-received`, { method: 'POST' }),
     /** A pessoa faltou (ADR 0021): só a partir do horário marcado; estado final. */
     noShow: (appointmentId: string) => request<unknown>(`/api/appointments/${encodeURIComponent(appointmentId)}/no-show`, { method: 'POST' }),
     complete: (appointmentId: string) => request<unknown>(`/api/appointments/${encodeURIComponent(appointmentId)}/complete`, { method: 'POST' }),

@@ -44,6 +44,16 @@ class CatalogController {
 		}
 	}
 
+	/** Sinal por Pix que ESTE tutor deve neste estúdio (ADR 0023): {@code required} falso = nada a pagar (e sem chave). */
+	record DepositTermsResponse(boolean required, Integer depositCents, String pixKey) {
+	}
+
+	@GetMapping("/providers/{providerId}/deposit-terms")
+	DepositTermsResponse depositTerms(@org.springframework.security.core.annotation.AuthenticationPrincipal org.springframework.security.oauth2.jwt.Jwt jwt, @PathVariable UUID providerId) {
+		var t = catalog.depositTerms(providerId, UUID.fromString(jwt.getSubject()));
+		return new DepositTermsResponse(t.required(), t.depositCents(), t.pixKey());
+	}
+
 	@GetMapping("/providers")
 	List<ProviderResponse> providers(@RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "20") int size) {
 		if (page < 0 || size < 1 || size > MAX_PAGE_SIZE) {

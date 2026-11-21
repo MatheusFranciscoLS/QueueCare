@@ -28,10 +28,23 @@ public class CatalogService {
 
 	private final ProviderRepository providers;
 	private final ServiceOfferingRepository services;
+	private final DepositPolicy depositPolicy;
 
-	public CatalogService(ProviderRepository providers, ServiceOfferingRepository services) {
+	public CatalogService(ProviderRepository providers, ServiceOfferingRepository services, DepositPolicy depositPolicy) {
 		this.providers = providers;
 		this.services = services;
+		this.depositPolicy = depositPolicy;
+	}
+
+	/** O sinal que ESTE tutor deve neste estúdio (ADR 0023): o servidor decide; a contagem de faltas nunca sai. Sem sinal, a chave também não sai. */
+	public record DepositTerms(boolean required, Integer depositCents, String pixKey) {
+	}
+
+	@Transactional(readOnly = true)
+	public DepositTerms depositTerms(UUID providerId, UUID customerId) {
+		com.queuecare.scheduling.persistence.Provider provider = providers.findActiveById(providerId).orElseThrow(() -> new BookingRejectedException(Reason.PROVIDER_NOT_FOUND));
+		Integer cents = depositPolicy.requiredCents(provider, customerId);
+		return cents == null ? new DepositTerms(false, null, null) : new DepositTerms(true, cents, provider.getPixKey());
 	}
 
 	@Transactional(readOnly = true)

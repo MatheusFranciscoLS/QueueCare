@@ -7,6 +7,7 @@ import { minutesText } from '../../api/policy'
 import { providerApi, type Business, type BusinessInput } from '../../api/provider'
 import { DEFAULT_TIME_ZONE, timeZones } from '../../api/timezones'
 import { useAuth } from '../../auth/session'
+import { DepositForm } from './DepositForm'
 import { Field } from '../Field'
 import { useFocusFirstInvalid } from '../useFocusFirstInvalid'
 import { RefreshWarning } from '../RefreshWarning'
@@ -25,6 +26,7 @@ export function BusinessPage() {
   const { data, error, loading, reload, version } = useLoad<Business>(load)
   // O aviso "salvo" fica aqui porque o formulário é refeito a cada carregamento bem-sucedido.
   const [saved, setSaved] = useState(false)
+  const [depositSaved, setDepositSaved] = useState(false)
 
   if (loading && !data) return <Loading />
   if (error && !data && !isNotConfigured(error)) return <p role="alert" className="error">{describeError(error)}</p>
@@ -32,6 +34,7 @@ export function BusinessPage() {
     <>
       {error !== undefined && data && <RefreshWarning onRetry={reload} />}
       <BusinessForm key={version} business={data} saved={saved} setSaved={setSaved} onSaved={reload} />
+      {data && <DepositForm key={'deposit-' + version} business={data} saved={depositSaved} setSaved={setDepositSaved} onSaved={reload} />}
     </>
   )
 }
