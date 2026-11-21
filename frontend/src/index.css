@@ -137,6 +137,19 @@ body {
   background: var(--st-waiting-bg);
 }
 
+.appt-reminded {
+  font-size: 0.8125rem;
+  color: var(--muted, var(--pp-muted));
+}
+
+.appt .actions a.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  text-decoration: none;
+}
+
 .week-block[data-state='missed'] .week-block__open {
   border-color: var(--st-cancelled);
   background: var(--st-cancelled-bg);

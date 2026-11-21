@@ -73,6 +73,30 @@ public class AttendanceService {
 		return run(() -> inTransaction(appointmentId, actorId, EnumSet.of(AppointmentStatus.SCHEDULED), AppointmentEventType.NO_SHOW, Appointment::markNoShow, false));
 	}
 
+	/**
+	 * Lembrete enviado (ADR 0021): a equipe abriu o WhatsApp com a mensagem pronta e o agendamento guarda quando. Só de quem ainda está SCHEDULED e
+	 * cujo horário não passou (depois disso lembrar não faz sentido: INVALID_STATE). Sem evento no histórico: pode se repetir.
+	 */
+	public Appointment remind(UUID appointmentId, UUID actorId) {
+		return run(() -> {
+			UserAccount actor = users.findById(actorId).filter(UserAccount::isActive).orElseThrow(() -> new AccessDeniedException("usuário inválido"));
+			if (actor.getRole() != UserRole.PROVIDER && actor.getRole() != UserRole.ATTENDANT) {
+				throw new AccessDeniedException("perfil sem acesso ao atendimento");
+			}
+			UUID providerId = staffAccess.providerIdOf(actor).orElseThrow(() -> new AccessDeniedException("sem vínculo com um prestador"));
+			Appointment appointment = appointments.findById(appointmentId).filter(a -> a.getProviderId().equals(providerId)).orElseThrow(AppointmentNotFoundException::new);
+			if (appointment.getStatus() == AppointmentStatus.CANCELLED) {
+				throw new AttendanceRejectedException(Reason.ALREADY_CANCELLED);
+			}
+			Instant now = clock.instant();
+			if (appointment.getStatus() != AppointmentStatus.SCHEDULED || !now.isBefore(appointment.getStartsAt())) {
+				throw new AttendanceRejectedException(Reason.INVALID_STATE);
+			}
+			appointment.markReminded(now);
+			return appointments.saveAndFlush(appointment);
+		});
+	}
+
 	/** Começa o atendimento (ADR 0019): só de quem chegou. */
 	public Appointment start(UUID appointmentId, UUID actorId) {
 		return run(() -> inTransaction(appointmentId, actorId, EnumSet.of(AppointmentStatus.CHECKED_IN), AppointmentEventType.STARTED, Appointment::start, false));

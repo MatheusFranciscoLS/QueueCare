@@ -200,6 +200,14 @@ public final class LocalDevServer {
 		exec(c, "UPDATE services SET price_cents = 5000, price_medium_cents = 7000, price_large_cents = 9000 WHERE id = ?", bath);
 		exec(c, "UPDATE services SET price_cents = 4500 WHERE id = ?", hygienic);
 		exec(c, "UPDATE services SET price_cents = 9000, price_large_cents = 12000 WHERE id = ?", full);
+		// Política e contato (ADR 0021) e duração por porte e pelo (ADR 0020): o banho de porte grande ou de pelo longo leva mais tempo.
+		exec(c, "UPDATE providers SET phone = '5511987654321', cancellation_deadline_minutes = 720 WHERE id = ?", provider);
+		exec(c, "UPDATE services SET duration_medium_minutes = 75, duration_large_minutes = 90, coat_extra_minutes = 30 WHERE id = ?", bath);
+		exec(c, "UPDATE services SET duration_large_minutes = 60, coat_extra_minutes = 15 WHERE id = ?", hygienic);
+		// Faltas (ADR 0021): a Carla faltou uma vez; ontem ficou um agendamento sem desfecho (para a equipe ver o botão Faltou); amanhã há um lembrete já enviado.
+		appointment(c, provider, hygienic, carla, nina, ninaCopy, -3, LocalTime.of(10, 0), 45, "NO_SHOW", carla, attendant);
+		appointment(c, provider, bath, joao, bidu, biduCopy, -1, LocalTime.of(10, 0), 60, "SCHEDULED", joao, attendant);
+		exec(c, "UPDATE appointments SET reminded_at = now() - interval '2 hours' WHERE provider_id = ? AND status = 'SCHEDULED' AND starts_at > now() AND starts_at < now() + interval '30 hours' AND customer_id = ?", provider, marina);
 		exec(c, "UPDATE appointments a SET price_cents = COALESCE(CASE a.pet_size WHEN 'MEDIUM' THEN s.price_medium_cents WHEN 'LARGE' THEN s.price_large_cents END, s.price_cents) "
 				+ "FROM services s WHERE a.service_id = s.id");
 		exec(c, "UPDATE appointments a SET pet_coat = p.coat, pet_weight_kg = p.weight_kg, pet_temperament = p.temperament, pet_health_notes = p.health_notes, "

@@ -6,6 +6,8 @@ export interface Workplace {
   providerId: string
   businessName: string
   timeZone: string
+  /** Prazo de cancelamento do estúdio, em minutos (ADR 0021): a mensagem do lembrete diz até quando mudar de graça. */
+  cancellationDeadlineMinutes?: number
 }
 
 export interface AgendaItem {
@@ -23,6 +25,8 @@ export interface AgendaItem {
   customerPhone?: string | null
   /** Quantas vezes o tutor faltou NESTE estúdio (ADR 0021); só na agenda do dia. */
   customerNoShows?: number
+  /** Quando a equipe lembrou o tutor pelo WhatsApp (ADR 0021); só na agenda do dia; nulo = ainda não. */
+  remindedAt?: string | null
   /** O pet (cópia gravada no agendamento); nulo em agendamento sem pet. Raça e observações vêm na agenda do dia e na fila. */
   pet?: PetOnAppointment | null
 }
@@ -69,6 +73,8 @@ export function agendaApi(request: Request) {
     start: (appointmentId: string) => request<unknown>(`/api/appointments/${encodeURIComponent(appointmentId)}/start`, { method: 'POST' }),
     /** O pet está pronto para retirada (de quem chegou ou está em atendimento). */
     ready: (appointmentId: string) => request<unknown>(`/api/appointments/${encodeURIComponent(appointmentId)}/ready`, { method: 'POST' }),
+    /** Guarda que a equipe lembrou o tutor pelo WhatsApp (ADR 0021); só de quem está agendado e ainda não começou. */
+    reminded: (appointmentId: string) => request<unknown>(`/api/appointments/${encodeURIComponent(appointmentId)}/reminded`, { method: 'POST' }),
     /** A pessoa faltou (ADR 0021): só a partir do horário marcado; estado final. */
     noShow: (appointmentId: string) => request<unknown>(`/api/appointments/${encodeURIComponent(appointmentId)}/no-show`, { method: 'POST' }),
     complete: (appointmentId: string) => request<unknown>(`/api/appointments/${encodeURIComponent(appointmentId)}/complete`, { method: 'POST' }),

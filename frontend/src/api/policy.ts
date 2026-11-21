@@ -41,3 +41,30 @@ export function minutesText(minutes: number): string {
   if (h === 0) return `${m} min antes`
   return m === 0 ? `${h} h antes` : `${h} h ${m} min antes`
 }
+
+/** Primeiro nome para cumprimentar ("Joana Lima" vira "Joana"); vazio se não houver nome. */
+export function firstName(name: string | null | undefined): string {
+  return (name ?? '').trim().split(/\s+/)[0] ?? ''
+}
+
+/**
+ * Mensagem do lembrete pelo WhatsApp (ADR 0021): estúdio, o que está marcado e para quando, pedido de confirmação e até quando mudar de graça.
+ * Sem artigos antes do serviço, do pet ou do estúdio (não dá para acertar masculino e feminino sem saber o nome).
+ */
+export function reminderMessage(a: {
+  tutorName: string | null | undefined
+  studioName: string
+  serviceName: string | null | undefined
+  petName: string | null | undefined
+  startsAt: string
+  timeZone: string
+  deadlineMinutes?: number | null
+}): string {
+  const hello = firstName(a.tutorName) ? `Olá, ${firstName(a.tutorName)}!` : 'Olá!'
+  const what = [a.serviceName ?? 'Atendimento', a.petName ? `de ${a.petName}` : ''].filter(Boolean).join(' ')
+  const change =
+    a.deadlineMinutes != null && a.deadlineMinutes > 0
+      ? ` Se precisar mudar, avise até ${whenText(freeChangeInstant(a.startsAt, a.deadlineMinutes), a.timeZone)}.`
+      : ' Se precisar mudar, é só avisar.'
+  return `${hello} Aqui é ${a.studioName}. Lembrete do seu agendamento: ${what}, ${whenText(a.startsAt, a.timeZone)}. Você confirma que vem?${change}`
+}

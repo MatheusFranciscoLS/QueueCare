@@ -113,6 +113,6 @@ describe('WhatsApp na agenda do dia e na fila', () => {
     expect(link).toHaveAttribute('href', 'https://wa.me/5511912345678')
     expect(link).toHaveAttribute('target', '_blank')
     expect(link).toHaveAttribute('rel', expect.stringContaining('noopener'))
-    expect(screen.getAllByRole('link', { name: /WhatsApp/ })).toHaveLength(1) // a Carla não informou: sem link
+    expect(screen.getAllByRole('link', { name: /\(\d\d\) \d{4,5}-\d{4}/ })).toHaveLength(1) // a Carla não informou: sem link do número (o "Lembrar" tem teste próprio)
   })
 })

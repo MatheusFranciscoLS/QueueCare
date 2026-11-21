@@ -46,14 +46,15 @@ class AgendaController {
 
 	/**
 	 * {@code customerPhone}: só dígitos com DDI; presente na agenda do dia e na fila, nulo na semana e quando o tutor não informou.
+	 * {@code remindedAt}: quando a equipe lembrou o tutor pelo WhatsApp (ADR 0021); só na agenda do dia, nulo se ainda não.
 	 * {@code customerNoShows}: quantas vezes o tutor faltou NESTE estúdio (ADR 0021); só na agenda do dia, zero na semana.
 	 * {@code priceCents}: valor congelado na reserva (ADR 0019), também só no dia e na fila; nulo na semana e quando era "a combinar".
 	 */
 	record AgendaResponse(UUID id, Instant startsAt, Instant endsAt, String status, UUID serviceId, String serviceName, UUID customerId,
-			String customerName, String customerPhone, Integer priceCents, AgendaPetResponse pet, int customerNoShows) {
+			String customerName, String customerPhone, Integer priceCents, AgendaPetResponse pet, int customerNoShows, Instant remindedAt) {
 		static AgendaResponse from(AgendaItem i) {
 			return new AgendaResponse(i.id(), i.startsAt(), i.endsAt(), i.status().name(), i.serviceId(), i.serviceName(), i.customerId(), i.customerName(),
-					i.customerPhone(), i.priceCents(), AgendaPetResponse.from(i.pet()), i.customerNoShows());
+					i.customerPhone(), i.priceCents(), AgendaPetResponse.from(i.pet()), i.customerNoShows(), i.remindedAt());
 		}
 	}
 
@@ -67,7 +68,7 @@ class AgendaController {
 	}
 
 	/** O id do prestador serve para a equipe consultar horários livres (remarcar); é o mesmo id público do catálogo. */
-	record WorkplaceResponse(UUID providerId, String businessName, String timeZone) {
+	record WorkplaceResponse(UUID providerId, String businessName, String timeZone, int cancellationDeadlineMinutes) {
 	}
 
 	/** Negócio e fuso do lugar onde a pessoa trabalha (dono ou atendente vinculado); os horários da agenda valem nesse fuso. */
@@ -75,7 +76,7 @@ class AgendaController {
 	@PreAuthorize("hasAnyRole('PROVIDER','ATTENDANT')")
 	WorkplaceResponse workplace(@AuthenticationPrincipal Jwt jwt) {
 		AgendaService.Workplace w = agendaService.workplace(UUID.fromString(jwt.getSubject()));
-		return new WorkplaceResponse(w.providerId(), w.businessName(), w.timeZone());
+		return new WorkplaceResponse(w.providerId(), w.businessName(), w.timeZone(), w.cancellationDeadlineMinutes());
 	}
 
 	@ApiResponse(responseCode = "200", description = "Agendamentos não cancelados, por horário.", content = @Content(array = @ArraySchema(schema = @Schema(implementation = AgendaResponse.class))))
