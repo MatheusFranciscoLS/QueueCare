@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-import { longDate, todayIn } from '../../api/dates'
+import { addDays, longDate, todayIn } from '../../api/dates'
 import { describeError } from '../../api/messages'
 import { ApiError } from '../../api/client'
 import { bookingApi, type BookedAppointment, type CatalogProvider, type CatalogService, type FreeSlot } from '../../api/booking'
@@ -16,6 +16,8 @@ import { DayStep, SlotStep } from './BookingSteps'
 import { PetForm } from './PetForm'
 
 const PAGE_SIZE = 50
+/** Quantos dias, a partir de hoje, a busca do primeiro dia com horário livre olha (a API oferece até 90). */
+const SEARCH_DAYS = 14
 /** Recusas da API que dizem respeito ao PET (não ao horário): o horário escolhido continua valendo. */
 const PET_REASONS = new Set(['PET_NOT_FOUND', 'PET_INACTIVE'])
 
@@ -35,6 +37,10 @@ export function BookPage() {
   const [service, setService] = useState<CatalogService | null>(null)
   const [date, setDate] = useState<string | null>(null)
   const [slot, setSlot] = useState<FreeSlot | null>(null)
+  // Busca do primeiro dia com horário livre (feita uma vez por combinação estúdio + serviço + pet): `settledKey` é a combinação já resolvida,
+  // e `jumped` diz que o dia mostrado não é hoje porque hoje não tinha vaga (sai assim que a pessoa escolhe um dia).
+  const [settledKey, setSettledKey] = useState<string | null>(null)
+  const [jumped, setJumped] = useState(false)
   // O que foi CONFIRMADO, copiado no instante do envio: o resumo mostra exatamente o que a API recebeu, mesmo que a tela mude depois.
   const [done, setDone] = useState<{ appointment: BookedAppointment; serviceName: string; businessName: string; localStart: string; petName: string } | null>(null)
   // Enquanto uma reserva está em andamento NENHUMA escolha pode mudar (prestador, serviço, dia, horário): o estado fica aqui, no pai.
@@ -55,6 +61,37 @@ export function BookPage() {
   // Sobe quando a API recusa o horário escolhido: a lista de horários é refeita do zero.
   const [slotsVersion, setSlotsVersion] = useState(0)
   const [bookingError, setBookingError] = useState<string | null>(null)
+
+  const comboKey = provider && service && pet ? provider.id + '|' + service.id + '|' + pet.id : null
+  const searching = comboKey !== null && settledKey !== comboKey
+  useEffect(() => {
+    if (!comboKey || settledKey === comboKey || !provider || !service || !pet) return
+    let cancelled = false
+    void (async () => {
+      const start = todayIn(provider.timeZone)
+      let found = start
+      try {
+        for (let i = 0; i < SEARCH_DAYS; i++) {
+          const day = addDays(start, i)
+          const free = await api.slots(provider.id, service.id, day, undefined, pet.id)
+          if (cancelled) return
+          if (free.length > 0) {
+            found = day
+            break
+          }
+        }
+      } catch {
+        found = start // não conseguiu procurar: fica em hoje, e a lista de horários mostra o erro se for o caso
+      }
+      if (cancelled) return
+      setDate(found)
+      setJumped(found !== start)
+      setSettledKey(comboKey)
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [comboKey, settledKey, provider, service, pet, api])
 
   async function confirm() {
     if (!provider || !service || !slot || !pet) return
@@ -101,6 +138,7 @@ export function BookPage() {
             setDate(null)
             setSlot(null)
             setDone(null)
+            setSettledKey(null)
             setBookingError(null)
           }}
         >
@@ -165,8 +203,14 @@ export function BookPage() {
           }}
         />
       )}
-      {provider && service && pet && date && (
+      {provider && service && pet && searching && <Loading>Procurando o primeiro dia com horários livres…</Loading>}
+      {provider && service && pet && !searching && date && (
         <>
+          {jumped && (
+            <p role="status" className="notice">
+              Hoje não há horários livres. Mostrando o primeiro dia com vagas.
+            </p>
+          )}
           <DayStep
             number={4}
             disabled={submitting}
@@ -174,6 +218,7 @@ export function BookPage() {
             date={date}
             onChange={(d) => {
               setDate(d)
+              setJumped(false)
               setSlot(null)
               setBookingError(null)
             }}

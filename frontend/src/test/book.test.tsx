@@ -85,20 +85,48 @@ describe('agendar: escolha passo a passo', () => {
     expect(screen.queryByText('4. Escolha o horário')).not.toBeInTheDocument()
   })
 
-  it('dia sem horários avisa; navegar pelos dias pede a data certa e respeita o limite de hoje', async () => {
+  it('hoje sem horários: pula para o primeiro dia com vagas e avisa; voltar a hoje mostra o aviso de dia vazio', async () => {
     const { calls, user } = await loginAsCustomer({
       [`GET /api/providers/p-1/slots?serviceId=s-1&date=${today}&petId=pet-1`]: () => json(200, []),
       [`GET /api/providers/p-1/slots?serviceId=s-1&date=${tomorrow}&petId=pet-1`]: () => json(200, [slot(tomorrow, '14:00')]),
     })
     await reachSlots(user)
+
+    expect(await screen.findByRole('button', { name: '14:00' })).toBeInTheDocument()
+    expect(screen.getByText('Hoje não há horários livres. Mostrando o primeiro dia com vagas.')).toBeInTheDocument()
+    expect(screen.getByLabelText('Data')).toHaveValue(tomorrow)
+    expect(screen.getByRole('button', { name: 'Dia anterior' })).toBeEnabled()
+
+    await user.click(screen.getByRole('button', { name: 'Dia anterior' })) // escolha manual: sem pulo e sem o aviso de pulo
+
     expect(await screen.findByText('Nenhum horário livre neste dia. Tente outro dia.')).toBeInTheDocument()
+    expect(screen.queryByText('Hoje não há horários livres. Mostrando o primeiro dia com vagas.')).not.toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Dia anterior' })).toBeDisabled() // não se agenda no passado
 
     await user.click(screen.getByRole('button', { name: 'Próximo dia' }))
 
     expect(await screen.findByRole('button', { name: '14:00' })).toBeInTheDocument()
     expect(calls.at(-1)?.path).toBe(`/api/providers/p-1/slots?serviceId=s-1&date=${tomorrow}&petId=pet-1`)
-    expect(screen.queryByText('Nenhum horário livre neste dia. Tente outro dia.')).not.toBeInTheDocument()
+  })
+
+  it('sem vaga nos próximos dias: fica em hoje com o aviso de dia vazio, sem aviso de pulo', async () => {
+    const routes: Routes = {}
+    for (let i = 0; i < 14; i++) routes[`GET /api/providers/p-1/slots?serviceId=s-1&date=${addDays(today, i)}&petId=pet-1`] = () => json(200, [])
+    const { user } = await loginAsCustomer(routes)
+    await reachSlots(user)
+
+    expect(await screen.findByText('Nenhum horário livre neste dia. Tente outro dia.')).toBeInTheDocument()
+    expect(screen.getByLabelText('Data')).toHaveValue(today)
+    expect(screen.queryByText(/Mostrando o primeiro dia com vagas/)).not.toBeInTheDocument()
+  })
+
+  it('hoje com vagas não pula e não mostra aviso de pulo', async () => {
+    const { user } = await loginAsCustomer({ [`GET /api/providers/p-1/slots?serviceId=s-1&date=${today}&petId=pet-1`]: () => json(200, [slot(today, '09:00')]) })
+    await reachSlots(user)
+
+    expect(await screen.findByRole('button', { name: '09:00' })).toBeInTheDocument()
+    expect(screen.getByLabelText('Data')).toHaveValue(today)
+    expect(screen.queryByText(/Mostrando o primeiro dia com vagas/)).not.toBeInTheDocument()
   })
 
   it('a data do negócio tem limite de 90 dias à frente', async () => {
@@ -132,7 +160,7 @@ describe('agendar: escolha passo a passo', () => {
     let gets = 0
     const { user } = await loginAsCustomer({
       'GET /api/catalog/providers?page=0&size=50': () => json(200, PROVIDERS),
-      [`GET /api/providers/p-1/slots?serviceId=s-1&date=${today}&petId=pet-1`]: () => (++gets === 1 ? json(200, [slot(today, '09:00')]) : problem(500, 'x')),
+      [`GET /api/providers/p-1/slots?serviceId=s-1&date=${today}&petId=pet-1`]: () => (++gets <= 2 ? json(200, [slot(today, '09:00')]) : problem(500, 'x')), // 1ª: busca do primeiro dia; 2ª: a lista; 3ª: Atualizar
     })
     await reachSlots(user)
     await screen.findByRole('button', { name: '09:00' })
@@ -180,10 +208,13 @@ describe('agendar: reservar', () => {
   })
 
   it('horário tomado por outra pessoa (409): mostra o motivo, descarta a escolha e refaz a lista', async () => {
-    let slotCalls = 0
+    let taken = false
     const { calls, user } = await loginAsCustomer({
-      [`GET /api/providers/p-1/slots?serviceId=s-1&date=${today}&petId=pet-1`]: () => json(200, ++slotCalls === 1 ? [slot(today, '09:00'), slot(today, '09:30')] : [slot(today, '09:30')]),
-      'POST /api/appointments': () => problem(409, 'o horário já está ocupado', { reason: 'SLOT_TAKEN' }),
+      [`GET /api/providers/p-1/slots?serviceId=s-1&date=${today}&petId=pet-1`]: () => json(200, taken ? [slot(today, '09:30')] : [slot(today, '09:00'), slot(today, '09:30')]),
+      'POST /api/appointments': () => {
+        taken = true
+        return problem(409, 'o horário já está ocupado', { reason: 'SLOT_TAKEN' })
+      },
     })
     await reachSlots(user)
     await user.click(await screen.findByRole('button', { name: '09:00' }))
@@ -194,7 +225,7 @@ describe('agendar: reservar', () => {
     expect(screen.queryByRole('button', { name: 'Confirmar agendamento' })).not.toBeInTheDocument()
     await waitFor(() => expect(screen.queryByRole('button', { name: '09:00' })).not.toBeInTheDocument()) // a lista nova não o traz
     expect(screen.getByRole('button', { name: '09:30' })).toBeInTheDocument()
-    expect(calls.filter((c) => c.path.startsWith('/api/providers/p-1/slots'))).toHaveLength(2)
+    expect(calls.filter((c) => c.path.startsWith('/api/providers/p-1/slots'))).toHaveLength(3) // busca do primeiro dia, lista, lista refeita
   })
 
   it.each([
