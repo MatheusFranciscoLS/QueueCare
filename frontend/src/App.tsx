@@ -20,6 +20,7 @@ import { BookPage } from './pages/customer/BookPage'
 import { MyAppointmentsPage } from './pages/customer/MyAppointmentsPage'
 import { PetsPage } from './pages/customer/PetsPage'
 import { TeamPage } from './pages/provider/TeamPage'
+import { PublicStudioPage } from './pages/PublicStudioPage'
 import { RegisterPage } from './pages/RegisterPage'
 
 // Página de demonstração da fundação visual (ADR 0018, R2): só em desenvolvimento. Em produção o valor é null e o código nem entra no pacote.
@@ -39,6 +40,8 @@ export function App() {
         />
       )}
       <Route element={<Layout />}>
+        {/* Página pública do estúdio (ADR 0015): aberta a todos, com ou sem login. */}
+        <Route path="/p/:slug" element={<PublicStudioPage />} />
         <Route element={<PublicOnly />}>
           <Route path="/entrar" element={<LoginPage />} />
           <Route path="/cadastro" element={<RegisterPage />} />

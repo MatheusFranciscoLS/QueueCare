@@ -860,6 +860,9 @@
             "format" : "int32",
             "type" : "integer"
           },
+          "durationVaries" : {
+            "type" : "boolean"
+          },
           "name" : {
             "type" : "string"
           }
@@ -942,6 +945,10 @@
         "properties" : {
           "businessName" : {
             "type" : "string"
+          },
+          "cancellationDeadlineMinutes" : {
+            "format" : "int32",
+            "type" : "integer"
           },
           "services" : {
             "items" : {

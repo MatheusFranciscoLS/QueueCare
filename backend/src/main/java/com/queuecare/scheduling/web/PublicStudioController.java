@@ -23,15 +23,15 @@ class PublicStudioController {
 		this.studios = studios;
 	}
 
-	record ServiceResponse(String name, int durationMinutes) {
+	record ServiceResponse(String name, int durationMinutes, boolean durationVaries) {
 		static ServiceResponse from(PublicService s) {
-			return new ServiceResponse(s.name(), s.durationMinutes());
+			return new ServiceResponse(s.name(), s.durationMinutes(), s.durationVaries());
 		}
 	}
 
-	record StudioResponse(String slug, String businessName, String timeZone, List<ServiceResponse> services) {
+	record StudioResponse(String slug, String businessName, String timeZone, int cancellationDeadlineMinutes, List<ServiceResponse> services) {
 		static StudioResponse from(PublicStudio s) {
-			return new StudioResponse(s.slug(), s.businessName(), s.timeZone(), s.services().stream().map(ServiceResponse::from).toList());
+			return new StudioResponse(s.slug(), s.businessName(), s.timeZone(), s.cancellationDeadlineMinutes(), s.services().stream().map(ServiceResponse::from).toList());
 		}
 	}
 

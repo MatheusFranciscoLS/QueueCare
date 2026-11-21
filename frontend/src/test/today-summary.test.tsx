@@ -123,14 +123,14 @@ describe('resumo do dia na tela inicial', () => {
         'GET /api/agenda/queue': () => json(200, []),
       })
       expect(await screen.findByRole('region', { name: /Hoje, sábado, 14/ })).toBeInTheDocument()
-      expect(asked).toEqual(['2026-11-14'])
+      expect(asked).toEqual(['2026-11-14', '2026-11-15']) // hoje e, para os lembretes, amanhã
 
       await act(async () => {
         vi.setSystemTime(new Date('2026-11-15T03:01:00Z')) // já é domingo 15/11 às 00:01 em São Paulo
         vi.advanceTimersByTime(60_000)
       })
       expect(await screen.findByRole('region', { name: /Hoje, domingo, 15/ })).toBeInTheDocument()
-      expect(asked).toEqual(['2026-11-14', '2026-11-15'])
+      expect(asked).toEqual(['2026-11-14', '2026-11-15', '2026-11-15']) // o dia novo (15) é lido como hoje; amanhã (16) não tem rota e é tolerado
     } finally {
       vi.useRealTimers()
     }
@@ -140,14 +140,16 @@ describe('resumo do dia na tela inicial', () => {
     try {
       vi.setSystemTime(new Date('2026-11-15T01:59:30Z')) // sábado 14/11, 22:59:30 em São Paulo
       let newDayTries = 0
+      let rolled = false // só depois da virada a leitura do dia novo falha (antes, 15/11 é só o "amanhã" dos lembretes)
       const user = await homeAs('PROVIDER', {
         'GET /api/agenda/workplace': () => json(200, WORKPLACE),
         'GET /api/agenda?date=2026-11-14': () => json(200, []),
-        'GET /api/agenda?date=2026-11-15': () => (++newDayTries <= 1 ? problem(500, 'x') : json(200, [])),
+        'GET /api/agenda?date=2026-11-15': () => (rolled && ++newDayTries <= 1 ? problem(500, 'x') : json(200, [])),
         'GET /api/agenda/queue': () => json(200, []),
       })
       await screen.findByRole('region', { name: /Hoje, sábado, 14/ })
       await act(async () => {
+        rolled = true
         vi.setSystemTime(new Date('2026-11-15T03:01:00Z'))
         vi.advanceTimersByTime(60_000)
       })

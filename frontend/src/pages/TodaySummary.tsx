@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { agendaApi, type AgendaItem, type QueueItem } from '../api/agenda'
-import { longDate, timeIn, todayIn } from '../api/dates'
-import { summarize } from '../api/summary'
+import { addDays, longDate, timeIn, todayIn } from '../api/dates'
+import { summarize, tomorrowReminders } from '../api/summary'
 import { isNotConfigured } from '../api/errors'
 import { ApiError } from '../api/client'
 import { useAuth } from '../auth/session'
@@ -16,6 +16,8 @@ interface Today {
   date: string
   items: AgendaItem[]
   queue: QueueItem[]
+  /** Os agendamentos de amanhã (para os lembretes); nulo se não deu para ler: o resumo de hoje nunca depende disto. */
+  tomorrow: AgendaItem[] | null
 }
 
 /** Resumo do dia do prestador e do atendente. Falhar aqui nunca esconde os atalhos da tela inicial: só avisa e oferece atualizar. */
@@ -25,8 +27,8 @@ export function TodaySummary() {
   const load = useCallback(async (): Promise<Today> => {
     const workplace = await api.workplace()
     const date = todayIn(workplace.timeZone)
-    const [items, queue] = await Promise.all([api.day(date), api.queue()])
-    return { ...workplace, date, items, queue }
+    const [items, queue, tomorrow] = await Promise.all([api.day(date), api.queue(), api.day(addDays(date, 1)).catch(() => null)])
+    return { ...workplace, date, items, queue, tomorrow }
   }, [api])
   const { data, error, loading, reload } = useLoad<Today>(load)
   // O relógio anda com a tela aberta: a cada minuto (e ao voltar à aba) o "próximo" é recalculado e, se o dia do NEGÓCIO virou, o resumo é refeito.
@@ -62,6 +64,7 @@ export function TodaySummary() {
     )
   }
   const { scheduled, checkedIn, completed, next } = summarize(data.items, now)
+  const reminders = data.tomorrow ? tomorrowReminders(data.tomorrow) : null
   return (
     <section className="today" aria-labelledby="today-title">
       <h2 id="today-title">Hoje, {longDate(data.date)}</h2>
@@ -95,6 +98,21 @@ export function TodaySummary() {
           </>
         )}
       </p>
+      {reminders && reminders.scheduled > 0 && (
+        <p className="tomorrow">
+          <strong>Amanhã:</strong> {reminders.scheduled} {reminders.scheduled === 1 ? 'agendado' : 'agendados'}
+          {reminders.pending > 0 ? (
+            <>
+              ; <strong>{reminders.pending} sem lembrete</strong>.{' '}
+              <Link to={`/agenda?data=${addDays(data.date, 1)}`}>Lembrar pelo WhatsApp</Link>
+            </>
+          ) : (
+            <>
+              , todos já lembrados. <Link to={`/agenda?data=${addDays(data.date, 1)}`}>Ver amanhã</Link>
+            </>
+          )}
+        </p>
+      )}
     </section>
   )
 }

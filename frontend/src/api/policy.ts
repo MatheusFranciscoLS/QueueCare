@@ -68,3 +68,9 @@ export function reminderMessage(a: {
       : ' Se precisar mudar, é só avisar.'
   return `${hello} Aqui é ${a.studioName}. Lembrete do seu agendamento: ${what}, ${whenText(a.startsAt, a.timeZone)}. Você confirma que vem?${change}`
 }
+
+/** A regra de cancelamento em frase, para quem ainda não agendou (página pública): o cliente novo precisa saber ANTES (ADR 0021). */
+export function publicPolicyText(deadlineMinutes: number): string {
+  if (deadlineMinutes <= 0) return 'Você pode cancelar ou remarcar de graça até o horário marcado. Depois disso, é só falar com o estúdio.'
+  return `Você pode cancelar ou remarcar de graça até ${minutesText(deadlineMinutes)} do horário marcado. Depois disso, é só falar com o estúdio.`
+}

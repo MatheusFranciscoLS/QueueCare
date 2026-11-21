@@ -28,10 +28,20 @@ public class PublicStudioService {
 		this.services = services;
 	}
 
-	public record PublicService(String name, int durationMinutes) {
+	/** {@code durationMinutes} é a MENOR duração possível (o "a partir de"); {@code durationVaries} diz que ela muda com o porte ou o pelo do pet (ADR 0020). */
+	public record PublicService(String name, int durationMinutes, boolean durationVaries) {
 	}
 
-	public record PublicStudio(String slug, String businessName, String timeZone, List<PublicService> services) {
+	/** {@code cancellationDeadlineMinutes}: até quanto tempo antes o cliente cancela ou remarca de graça (ADR 0021): a regra vale também para quem ainda não agendou. */
+	public record PublicStudio(String slug, String businessName, String timeZone, int cancellationDeadlineMinutes, List<PublicService> services) {
+	}
+
+	private static PublicService view(ServiceOffering s) {
+		int base = s.getDurationMinutes();
+		int shortest = Math.min(base, Math.min(s.getDurationMediumMinutes() == null ? base : s.getDurationMediumMinutes(), s.getDurationLargeMinutes() == null ? base : s.getDurationLargeMinutes()));
+		boolean varies = shortest != base || (s.getDurationMediumMinutes() != null && s.getDurationMediumMinutes() != base) || (s.getDurationLargeMinutes() != null && s.getDurationLargeMinutes() != base)
+				|| s.getCoatExtraMinutes() > 0;
+		return new PublicService(s.getName(), shortest, varies);
 	}
 
 	@Transactional(readOnly = true)
@@ -41,7 +51,7 @@ public class PublicStudioService {
 		}
 		Provider provider = providers.findPublishedBySlug(slug).orElseThrow(StudioNotFoundException::new);
 		List<PublicService> offered = services.findByProviderIdAndActiveTrueOrderByNameAscIdAsc(provider.getId()).stream()
-				.map((ServiceOffering s) -> new PublicService(s.getName(), s.getDurationMinutes())).toList();
-		return new PublicStudio(provider.getSlug(), provider.getBusinessName(), provider.getTimeZone(), offered);
+				.map(PublicStudioService::view).toList();
+		return new PublicStudio(provider.getSlug(), provider.getBusinessName(), provider.getTimeZone(), provider.getCancellationDeadlineMinutes(), offered);
 	}
 }
