@@ -119,3 +119,17 @@ Docker nem sempre está ligado, então o ambiente local usa um **servidor de des
 
 ## Riscos a atacar na revisão
 Redesign tocando comportamento por engano (os testes de front são o freio); o peso de fontes e pacotes; o foco e a gaveta no celular; a semana em 7 colunas em telas médias; a página pública e o redirecionamento ao agendar já no estúdio; ícones sem nome acessível; contraste real no navegador diferente do medido; a "perfeição" como critério subjetivo (por isso os critérios mensuráveis e a aprovação visual do dono por capturas).
+
+## Atualização de 21/11/2026: medição de peso depois dos ADRs 0019 a 0023 e carregamento sob demanda
+Medido com `npm run e2e:peso` (build de produção, gzip -9 de cada resposta, mesma metodologia do baseline):
+
+| Momento | JS | CSS | Fontes | **Primeira visita a `/entrar`** |
+|---|---|---|---|---|
+| Baseline do R1 (17/11) | 103,2 kB | 6,8 kB | 73,1 kB | 183,4 kB |
+| Depois dos ADRs 0019 a 0023 (pacote único) | 122,3 kB | 11,1 kB | 75,4 kB | **209,3 kB** |
+| **Com as telas sob demanda (este PR)** | **99,8 kB** | 11,1 kB | 75,4 kB | **186,8 kB** |
+
+- Todas as metas do R1 continuam cumpridas (JS ≤ 130, CSS ≤ 14, fontes ≤ 80, primeira visita ≤ 230 kB). O JS estava a 8 kB do limite com o pacote único: o produto cresceu (duração por pet, política, faltas, lembrete, lista de espera, sinal por Pix, página pública) sem folga para a próxima fatia.
+- **Decisão:** as telas da equipe, do administrador e do agendamento (agenda, fila, serviços, expediente, equipe, meu negócio, contas, novo prestador, agendar, meus agendamentos, pets, perfil) viram **pacotes sob demanda** (`React.lazy` por rota, com o espaço da tela mantido pelo `Loading`). Entrar, cadastro, Início, página pública e troca de senha ficam no pacote inicial. É o que o item 7 já dizia ("código das rotas menos usadas é carregado sob demanda") e que o pacote único não cumpria.
+- **Por quê importa:** o visitante da página pública (link compartilhado, quase sempre no celular e em rede móvel) baixa só o essencial, sem o código da agenda e do administrador. Cada tela chega depois com 1 a 6 kB (a maior, a Agenda, 6,1 kB gzip).
+- Limitação do `e2e:peso`: as linhas "depois de entrar" e "/agenda" mostram 0,0 kB a mais (a medição não contabiliza os pacotes preguiçosos carregados por navegação interna); os tamanhos por tela vêm da saída do `vite build`.
