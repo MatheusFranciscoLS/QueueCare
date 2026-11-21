@@ -35,7 +35,7 @@ O app **não** usa cookies de rastreamento, não tem analytics de terceiros nem 
 - **Conta e pets:** enquanto existirem. Não há exclusão automática por inatividade (decisão consciente: sem rotina agendada nesta fase). Recomendação para um uso real: revisar contas sem acesso há mais de 24 meses.
 - **Agendamentos e eventos:** ficam, sem identificar a pessoa depois da exclusão (registro operacional e financeiro do estúdio).
 - **Auditoria:** permanente por desenho.
-- **Backups:** as cópias antigas guardam o dado como era até expirarem; a retenção deles está em `docs/backup.md` (quando existir). Restaurar um backup **não pode** reativar uma conta já excluída: depois de restaurar, repetir as exclusões pedidas desde a data do backup.
+- **Backups:** as cópias antigas guardam o dado como era até expirarem; a retenção deles (14 dias) está em `docs/backup.md`. Restaurar um backup **não pode** reativar uma conta já excluída: depois de restaurar, repetir as exclusões pedidas desde a data do backup.
 
 ## 4. Incidente com dados pessoais (resposta mínima)
 
