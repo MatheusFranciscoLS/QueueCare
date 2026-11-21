@@ -2180,3 +2180,22 @@ a.button {
     margin-bottom: 0;
   }
 }
+
+/* ===== Visual, rodada 4: Equipe e Expediente ===== */
+
+/* formulários curtos não precisam da largura inteira: campos soltos ficam num meio-termo legível */
+.form-narrow {
+  max-width: 34rem;
+}
+
+.form-narrow .field-row {
+  max-width: none;
+}
+
+/* Expediente no celular: o nome do dia não encosta na borda da folha */
+@media (max-width: 720px) {
+  fieldset.day legend,
+  .day legend {
+    padding-top: 0.5rem;
+  }
+}
