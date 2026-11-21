@@ -28,9 +28,10 @@ class CatalogController {
 		this.catalog = catalog;
 	}
 
-	record ProviderResponse(UUID id, String businessName, String timeZone) {
+	/** Prazo de cancelamento e telefone do estúdio (ADR 0021): a regra aparece ANTES de reservar, e o telefone é o canal quando o prazo passa. */
+	record ProviderResponse(UUID id, String businessName, String timeZone, int cancellationDeadlineMinutes, String phone) {
 		static ProviderResponse from(ProviderView v) {
-			return new ProviderResponse(v.id(), v.businessName(), v.timeZone());
+			return new ProviderResponse(v.id(), v.businessName(), v.timeZone(), v.cancellationDeadlineMinutes(), v.phone());
 		}
 	}
 

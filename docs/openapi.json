@@ -100,6 +100,10 @@
             "format" : "date-time",
             "type" : "string"
           },
+          "freeChangeUntil" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
           "id" : {
             "format" : "uuid",
             "type" : "string"
@@ -129,6 +133,9 @@
           "status" : {
             "type" : "string"
           },
+          "studioPhone" : {
+            "type" : "string"
+          },
           "timeZone" : {
             "type" : "string"
           }
@@ -147,6 +154,9 @@
           "minimumNoticeMinutes" : {
             "format" : "int32",
             "type" : "integer"
+          },
+          "phone" : {
+            "type" : "string"
           },
           "timeZone" : {
             "type" : "string"
@@ -171,6 +181,9 @@
           "minimumNoticeMinutes" : {
             "format" : "int32",
             "type" : "integer"
+          },
+          "phone" : {
+            "type" : "string"
           },
           "timeZone" : {
             "type" : "string"
@@ -517,8 +530,15 @@
           "businessName" : {
             "type" : "string"
           },
+          "cancellationDeadlineMinutes" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
           "id" : {
             "format" : "uuid",
+            "type" : "string"
+          },
+          "phone" : {
             "type" : "string"
           },
           "timeZone" : {

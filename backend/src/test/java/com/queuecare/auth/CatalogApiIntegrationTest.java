@@ -69,9 +69,9 @@ class CatalogApiIntegrationTest extends AuthIntegrationTestBase {
 		String body = call("/api/catalog/providers", customer).getContentAsString();
 
 		for (Map<String, Object> item : JsonPath.<List<Map<String, Object>>>read(body, "$")) {
-			assertEquals(Set.of("id", "businessName", "timeZone"), item.keySet(), "só id, nome do negócio e fuso");
+			assertEquals(Set.of("id", "businessName", "timeZone", "cancellationDeadlineMinutes", "phone"), item.keySet(), "só id, nome, fuso e, desde o ADR 0021, o prazo de cancelamento e o telefone do estúdio");
 		}
-		assertFalse(body.contains("@exemplo.test") || body.contains("userId") || body.contains("minimumNotice") || body.contains("cancellationDeadline"), body);
+		assertFalse(body.contains("@exemplo.test") || body.contains("userId") || body.contains("minimumNotice"), body);
 	}
 
 	@Test

@@ -6,9 +6,11 @@ export interface Business {
   timeZone: string
   minimumNoticeMinutes: number
   cancellationDeadlineMinutes: number
+  /** WhatsApp do estúdio (só dígitos com DDI); nulo = não informado (ADR 0021). */
+  phone?: string | null
 }
 
-export type BusinessInput = Omit<Business, 'id'>
+export type BusinessInput = Omit<Business, 'id' | 'phone'> & { phone?: string }
 
 export interface Service {
   id: string

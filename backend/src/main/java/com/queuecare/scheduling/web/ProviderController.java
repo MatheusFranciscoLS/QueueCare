@@ -42,13 +42,14 @@ class ProviderController {
 		this.admin = admin;
 	}
 
+	/** {@code phone} (ADR 0021): WhatsApp do estúdio, com ou sem máscara; vazio ou ausente limpa. A API devolve só dígitos com DDI. */
 	record BusinessRequest(@NotNull String businessName, @NotNull String timeZone, @NotNull Integer minimumNoticeMinutes,
-			@NotNull Integer cancellationDeadlineMinutes) {
+			@NotNull Integer cancellationDeadlineMinutes, String phone) {
 	}
 
-	record BusinessResponse(UUID id, String businessName, String timeZone, int minimumNoticeMinutes, int cancellationDeadlineMinutes) {
+	record BusinessResponse(UUID id, String businessName, String timeZone, int minimumNoticeMinutes, int cancellationDeadlineMinutes, String phone) {
 		static BusinessResponse from(Provider p) {
-			return new BusinessResponse(p.getId(), p.getBusinessName(), p.getTimeZone(), p.getMinimumNoticeMinutes(), p.getCancellationDeadlineMinutes());
+			return new BusinessResponse(p.getId(), p.getBusinessName(), p.getTimeZone(), p.getMinimumNoticeMinutes(), p.getCancellationDeadlineMinutes(), p.getPhone());
 		}
 	}
 
@@ -84,7 +85,7 @@ class ProviderController {
 	@PostMapping
 	@ResponseStatus(HttpStatus.CREATED)
 	BusinessResponse create(@AuthenticationPrincipal Jwt jwt, @Valid @RequestBody BusinessRequest r) {
-		return BusinessResponse.from(admin.createBusiness(userId(jwt), r.businessName(), r.timeZone(), r.minimumNoticeMinutes(), r.cancellationDeadlineMinutes()));
+		return BusinessResponse.from(admin.createBusiness(userId(jwt), r.businessName(), r.timeZone(), r.minimumNoticeMinutes(), r.cancellationDeadlineMinutes(), r.phone()));
 	}
 
 	@GetMapping
@@ -94,7 +95,7 @@ class ProviderController {
 
 	@PutMapping
 	BusinessResponse update(@AuthenticationPrincipal Jwt jwt, @Valid @RequestBody BusinessRequest r) {
-		return BusinessResponse.from(admin.updateBusiness(userId(jwt), r.businessName(), r.timeZone(), r.minimumNoticeMinutes(), r.cancellationDeadlineMinutes()));
+		return BusinessResponse.from(admin.updateBusiness(userId(jwt), r.businessName(), r.timeZone(), r.minimumNoticeMinutes(), r.cancellationDeadlineMinutes(), r.phone()));
 	}
 
 	// --- página pública (ADR 0015) ---

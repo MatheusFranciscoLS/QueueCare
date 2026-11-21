@@ -71,11 +71,12 @@ class AppointmentController {
 	}
 
 	/**
+	 * {@code freeChangeUntil}: até quando o cliente cancela ou remarca sem falar com o estúdio; {@code studioPhone}: o WhatsApp do estúdio (ADR 0021).
 	 * Agendamento do próprio cliente, com o nome do negócio, o fuso (para mostrar o horário local) e o nome do serviço. Os nomes
 	 * vêm do histórico: continuam aparecendo mesmo se o prestador ou o serviço forem desativados depois.
 	 */
 	record AppointmentResponse(UUID id, UUID providerId, UUID serviceId, Instant startsAt, Instant endsAt, String status, String businessName,
-			String timeZone, String serviceName, Integer priceCents, AppointmentPetResponse pet) {
+			String timeZone, String serviceName, Integer priceCents, AppointmentPetResponse pet, Instant freeChangeUntil, String studioPhone) {
 	}
 
 	/** Pet do agendamento (cópia gravada nele): só nome e espécie; ausente (nulo) em agendamento sem pet. */
@@ -94,7 +95,11 @@ class AppointmentController {
 			var service = byService.get(a.getServiceId());
 			return new AppointmentResponse(a.getId(), a.getProviderId(), a.getServiceId(), a.getStartsAt(), a.getEndsAt(), a.getStatus().name(),
 					provider == null ? null : provider.getBusinessName(), provider == null ? null : provider.getTimeZone(), service == null ? null : service.getName(), a.getPriceCents(),
-					a.getPetId() == null ? null : new AppointmentPetResponse(a.getPetName(), a.getPetSpecies().name()));
+					a.getPetId() == null ? null : new AppointmentPetResponse(a.getPetName(), a.getPetSpecies().name()),
+					// Limite para cancelar ou remarcar de graça (ADR 0021): só enquanto agendado; depois dele, o tutor fala com o estúdio.
+					provider == null || a.getStatus() != com.queuecare.scheduling.persistence.AppointmentStatus.SCHEDULED ? null
+							: a.getStartsAt().minusSeconds(60L * provider.getCancellationDeadlineMinutes()),
+					provider == null ? null : provider.getPhone());
 		}).toList();
 	}
 

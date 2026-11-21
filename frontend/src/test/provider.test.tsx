@@ -63,7 +63,7 @@ describe('meu negócio', () => {
 
     expect(await screen.findByText('Salvo.')).toBeVisible()
     const post = calls.find((c) => c.method === 'POST' && c.path === '/api/provider')!
-    expect(post.body).toEqual({ businessName: 'Oficina Central', timeZone: 'America/Sao_Paulo', minimumNoticeMinutes: 60, cancellationDeadlineMinutes: 120 })
+    expect(post.body).toEqual({ businessName: 'Oficina Central', timeZone: 'America/Sao_Paulo', minimumNoticeMinutes: 60, cancellationDeadlineMinutes: 120, phone: '' })
   })
 
   it('com negócio, edita com PUT; erros de campo da API aparecem no campo', async () => {

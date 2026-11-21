@@ -1466,8 +1466,21 @@ textarea {
 
 .rows .row:has(> .pp-avatar) > .row-extra,
 .rows .row:has(> .pp-avatar) > .error,
-.rows .row:has(> .pp-avatar) > .notice {
+.rows .row:has(> .pp-avatar) > .notice,
+.rows .row:has(> .pp-avatar) > .policy-line {
   grid-column: 2 / -1;
+}
+
+/* política visível (ADR 0021): o limite de graça e o caminho depois dele, em letra de apoio, na coluna do texto */
+.policy-line,
+.confirm-policy {
+  margin: 0.25rem 0 0;
+}
+
+.policy-line a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
 }
 
 .pet-info strong,
