@@ -24,6 +24,8 @@ export function PetsPage() {
   const [notice, setNotice] = useState<string | null>(null)
   // O erro de uma ação mora na LISTA (não na linha): a linha pode sumir (arquivar) ou mudar de lugar depois de recarregar.
   const [problem, setProblem] = useState<string | null>(null)
+  // O formulário completo não fica sempre aberto (a tela parecia interminável): abre em "Adicionar pet", ou já aberto para quem ainda não tem pet ativo.
+  const [adding, setAdding] = useState(false)
   const headingRef = useRef<HTMLHeadingElement>(null)
   // Pedido de foco feito por uma ação: atendido quando a PRÓXIMA carga bem-sucedida da lista (a versão muda) já foi desenhada, para saber
   // se a linha ainda existe. Se a atualização falhar, a linha continua e o foco já foi para ela na hora da ação.
@@ -40,6 +42,8 @@ export function PetsPage() {
   if (error && !data) return <p role="alert" className="error">{describeError(error)}</p>
 
   const activeCount = data?.filter((pet) => pet.active).length ?? 0
+  const noPetsYet = data !== undefined && activeCount === 0 && !showArchived
+  const formOpen = adding || noPetsYet
   return (
     <section className="card">
       <h1 ref={headingRef} tabIndex={-1}>
@@ -55,6 +59,13 @@ export function PetsPage() {
       <p role="alert" className="error" hidden={!problem}>
         {problem}
       </p>
+      {!formOpen && (
+        <p>
+          <button type="button" className="button" onClick={() => setAdding(true)}>
+            Adicionar pet
+          </button>
+        </p>
+      )}
       <label className="check">
         <input type="checkbox" checked={showArchived} onChange={(e) => setShowArchived(e.target.checked)} /> Mostrar arquivados
       </label>
@@ -73,18 +84,24 @@ export function PetsPage() {
           />
         ))}
       </ul>
-      <h2>Novo pet</h2>
-      <PetForm
-        idPrefix="new-pet"
-        submitLabel="Cadastrar pet"
-        busyLabel="Cadastrando…"
-        onSubmit={async (input) => {
-          setProblem(null)
-          const created = await api.create(input)
-          setNotice(`${created.name} cadastrado.`)
-          await reload()
-        }}
-      />
+      {formOpen && (
+        <>
+          <h2>Novo pet</h2>
+          <PetForm
+            idPrefix="new-pet"
+            submitLabel="Cadastrar pet"
+            busyLabel="Cadastrando…"
+            onCancel={noPetsYet ? undefined : () => setAdding(false)}
+            onSubmit={async (input) => {
+              setProblem(null)
+              const created = await api.create(input)
+              setNotice(`${created.name} cadastrado.`)
+              setAdding(false)
+              await reload()
+            }}
+          />
+        </>
+      )}
     </section>
   )
 }

@@ -72,8 +72,9 @@ test('visitante vê a página pública com a política, e o endereço que não e
   await expect(page.getByRole('heading', { level: 1, name: 'Estúdio Bem-te-vi' })).toBeVisible()
   await expect(page.getByText('a partir de 60 min')).toBeVisible() // o Banho varia com o porte e o pelo
   await expect(page.getByText(/de graça até 12 h antes do horário marcado/)).toBeVisible()
-  await expect(page.getByRole('link', { name: 'Entrar para agendar' })).toHaveAttribute('href', '/entrar')
-  await expect(page.getByRole('link', { name: 'Criar conta de cliente' })).toHaveAttribute('href', '/cadastro')
+  await expect(page.getByRole('link', { name: 'Entrar para agendar' })).toHaveCount(2) // no topo e no fim da página
+  await expect(page.getByRole('link', { name: 'Entrar para agendar' }).first()).toHaveAttribute('href', '/entrar')
+  await expect(page.getByRole('link', { name: 'Criar conta de cliente' }).first()).toHaveAttribute('href', '/cadastro')
 
   await page.goto('/p/nao-existe-mesmo')
   await expect(page.getByRole('heading', { level: 1, name: 'Estúdio não encontrado' })).toBeVisible()

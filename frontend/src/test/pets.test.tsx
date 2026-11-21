@@ -116,6 +116,8 @@ describe('meus pets: cadastrar', () => {
       },
     })
     await screen.findByText('Mel')
+    expect(screen.queryByLabelText('Nome do pet')).not.toBeInTheDocument() // o formulário só abre em "Adicionar pet" (quem já tem pet vê a lista primeiro)
+    await user.click(screen.getByRole('button', { name: 'Adicionar pet' }))
     await fillNewPet(user, { name: '  Rex  ', species: 'DOG', breed: 'Poodle', size: 'MEDIUM', notes: 'Tem coceira na pata.' })
 
     await user.click(screen.getByRole('button', { name: 'Cadastrar pet' }))
@@ -123,7 +125,30 @@ describe('meus pets: cadastrar', () => {
     expect(await screen.findByText('Rex cadastrado.')).toBeInTheDocument()
     expect(calls(all, 'POST', '/api/customer/pets')[0].body).toEqual({ name: '  Rex  ', species: 'DOG', breed: 'Poodle', size: 'MEDIUM', notes: 'Tem coceira na pata.', coat: '', weightKg: null, temperament: '', healthNotes: '', vaccinated: null })
     expect(await screen.findByText('Observações: Tem coceira na pata.')).toBeInTheDocument()
-    expect(screen.getByLabelText('Nome do pet')).toHaveValue('')
+    // depois de cadastrar, o formulário fecha (a lista volta a ser o foco) e o botão de adicionar outro reaparece
+    expect(screen.queryByLabelText('Nome do pet')).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Adicionar pet' })).toBeInTheDocument()
+  })
+
+  it('"Cancelar" fecha o formulário de quem já tem pet, sem enviar nada', async () => {
+    const { calls: all, user } = await openPets({ 'GET /api/customer/pets': () => json(200, [MEL]) })
+    await screen.findByText('Mel')
+    await user.click(screen.getByRole('button', { name: 'Adicionar pet' }))
+    expect(screen.getByLabelText('Nome do pet')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Adicionar pet' })).not.toBeInTheDocument() // enquanto o formulário está aberto, não há dois caminhos
+
+    await user.click(screen.getByRole('button', { name: 'Cancelar' }))
+
+    expect(screen.queryByLabelText('Nome do pet')).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Adicionar pet' })).toBeInTheDocument()
+    expect(calls(all, 'POST', '/api/customer/pets')).toHaveLength(0)
+  })
+
+  it('quem ainda não tem pet já vê o formulário aberto, sem botão de adicionar nem de cancelar', async () => {
+    await openPets({ 'GET /api/customer/pets': () => json(200, []) })
+    expect(await screen.findByLabelText('Nome do pet')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Adicionar pet' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Cancelar' })).not.toBeInTheDocument()
   })
 
   it('confere nome e espécie antes de enviar e não chama a API', async () => {

@@ -50,11 +50,6 @@ export function CustomerPanel() {
         <div className="panel-card">
           <h2>Próximo agendamento</h2>
           <p>Você não tem nenhum horário marcado.</p>
-          <p>
-            <Link className="button" to="/agendar">
-              Agendar um horário
-            </Link>
-          </p>
         </div>
       )}
       {myPets && myPets.length === 0 && (

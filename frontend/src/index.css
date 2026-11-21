@@ -137,6 +137,20 @@ body {
   background: var(--st-waiting-bg);
 }
 
+/* Início do tutor: um único chamado forte (revisão de 21/11/2026) */
+.home-cta {
+  margin-top: 1.5rem;
+}
+
+.home-cta .button {
+  display: inline-flex;
+  align-items: center;
+  min-height: 48px;
+  padding-inline: 1.75rem;
+  font-size: 1.0625rem;
+  text-decoration: none;
+}
+
 /* página pública do estúdio (ADR 0015): a tela do visitante e o formulário do dono */
 .public-studio h2 {
   margin-top: 1.75rem;
