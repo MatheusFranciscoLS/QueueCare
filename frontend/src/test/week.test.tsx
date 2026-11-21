@@ -2,7 +2,7 @@ import { act, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { addDays, shortWeekday, startOfWeek, todayIn, weekTitle } from '../api/dates'
-import { json, mockApi, PASSWORD, problem, renderWithHarness, token, USER, type Call } from './helpers'
+import { json, mockApi, PASSWORD, problem, renderWithHarness, token, USER, type Call, openMore } from './helpers'
 
 vi.mock('../pages/TodaySummary', () => ({ TodaySummary: () => null }))
 afterEach(() => vi.unstubAllGlobals())
@@ -107,6 +107,7 @@ describe('agenda: semana', () => {
     })
     const week = await screen.findByRole('region', { name: /^Semana de / })
     await user.click(within(week).getByRole('button', { name: /^Qua .*abrir o dia/ }))
+    await openMore(user)
     expect(await screen.findByRole('button', { name: 'Cancelar agendamento' })).toBeInTheDocument() // a linha do dia, com as ações
     expect(screen.getByRole('button', { name: 'Dia' })).toHaveAttribute('aria-pressed', 'true')
     expect(screen.getByRole('button', { name: 'Semana' })).toHaveAttribute('aria-pressed', 'false')

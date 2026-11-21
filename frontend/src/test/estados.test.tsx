@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { todayIn } from '../api/dates'
 import { summarize } from '../api/summary'
-import { json, mockApi, PASSWORD, problem, renderWithHarness, token, USER, type Call } from './helpers'
+import { json, mockApi, PASSWORD, problem, renderWithHarness, token, USER, type Call, openMore } from './helpers'
 
 vi.mock('../pages/TodaySummary', () => ({ TodaySummary: () => null }))
 afterEach(() => vi.unstubAllGlobals())
@@ -60,6 +60,7 @@ describe('fila: passos do atendimento', () => {
     await waitFor(() => expect(screen.getByText('em atendimento')).toBeInTheDocument())
     expect(calls.filter((c) => c.path === '/api/appointments/a-1/start')).toHaveLength(1)
     expect(screen.queryByRole('button', { name: 'Começar atendimento' })).not.toBeInTheDocument()
+    await openMore(user)
     expect(screen.getByRole('button', { name: 'Pronto para retirada' })).toBeInTheDocument()
   })
 
@@ -72,6 +73,7 @@ describe('fila: passos do atendimento', () => {
         return json(200, { id: 'a-1', status })
       },
     })
+    await openMore(user)
     await user.click(await screen.findByRole('button', { name: 'Pronto para retirada' }))
     expect(await screen.findByText('Thor está pronto para retirada.')).toBeInTheDocument()
     await waitFor(() => expect(screen.getByText('pronto para retirada')).toBeInTheDocument())
@@ -148,6 +150,7 @@ describe('estados nas outras telas', () => {
     await user.click(within(screen.getByRole('navigation', { name: 'Menu do prestador' })).getByRole('link', { name: 'Agenda' }))
     expect(await screen.findByText('Em atendimento')).toBeInTheDocument()
     expect(screen.getByText('Pronto para retirada')).toBeInTheDocument()
+    await openMore(user)
     expect(screen.getAllByRole('button', { name: 'Concluir atendimento' })).toHaveLength(3) // chegou, em atendimento e pronto
     expect(screen.getByText('2 em atendimento')).toBeInTheDocument()
     expect(screen.getByText('1 esperando')).toBeInTheDocument()

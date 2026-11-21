@@ -1,4 +1,5 @@
-import { render } from '@testing-library/react'
+import { render, screen, type BoundFunctions, type queries } from '@testing-library/react'
+import type userEvent from '@testing-library/user-event'
 import { MemoryRouter, useNavigate } from 'react-router-dom'
 import { vi } from 'vitest'
 import { App } from '../App'
@@ -79,4 +80,15 @@ export function renderWithHarness(path = '/entrar') {
     </MemoryRouter>,
   )
   return { api: () => api, navigate: () => navigate }
+}
+
+/**
+ * Abre "Mais ações" para alcançar as ações menos frequentes da Agenda e da Fila (remarcar, cancelar, faltou, sinal recebido, concluir sem passar pelas etapas).
+ * Sem `scope`, abre o PRIMEIRO grupo fechado da tela; com `within(linha)`, o da linha dada. Se não há o botão (a ação já é a principal) ou já está aberto, não faz nada.
+ */
+export async function openMore(user: ReturnType<typeof userEvent.setup>, scope: BoundFunctions<typeof queries> | typeof screen = screen): Promise<void> {
+  // A lista pode ainda estar carregando: espera um instante curto pelo botão (se a ação já é a principal, não há botão e segue sem abrir nada).
+  const toggles = await scope.findAllByRole('button', { name: /^Mais ações/ }, { timeout: 700 }).catch(() => [] as HTMLElement[])
+  const closed = toggles.find((t) => t.getAttribute('aria-expanded') !== 'true')
+  if (closed) await user.click(closed)
 }

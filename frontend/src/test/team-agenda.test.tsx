@@ -4,7 +4,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { addDays, isDate, longDate, timeIn, todayIn } from '../api/dates'
 import { generatePassword } from '../auth/generatePassword'
 import { validateNewPassword } from '../auth/passwordPolicy'
-import { json, mockApi, PASSWORD, problem, renderWithHarness, token, USER, type Call } from './helpers'
+import { json, mockApi, PASSWORD, problem, renderWithHarness, token, USER, type Call, openMore } from './helpers'
 
 // O resumo da tela inicial tem testes próprios (today-summary.test.tsx); aqui ele sairia do caminho das contagens de chamadas à agenda.
 vi.mock('../pages/TodaySummary', () => ({ TodaySummary: () => null }))
@@ -335,11 +335,14 @@ describe('agenda', () => {
     await user.click(menu('Agenda'))
     await screen.findByText('12:00–13:00')
 
+    await openMore(user)
     await user.click(screen.getByRole('button', { name: 'Cancelar agendamento' }))
     expect(calls.some((c) => c.method === 'POST' && c.path.includes('/cancel'))).toBe(false)
     await user.click(screen.getByRole('button', { name: 'Voltar' }))
+    await openMore(user)
     expect(screen.getByRole('button', { name: 'Cancelar agendamento' })).toBeInTheDocument()
 
+    await openMore(user)
     await user.click(screen.getByRole('button', { name: 'Cancelar agendamento' }))
     await user.click(screen.getByRole('button', { name: 'Confirmar cancelamento' }))
 
@@ -360,12 +363,14 @@ describe('agenda', () => {
     })
     await user.click(menu('Agenda'))
     await screen.findByText('12:00–13:00')
+    await openMore(user)
     await user.click(screen.getByRole('button', { name: 'Cancelar agendamento' }))
 
     await user.click(screen.getByRole('button', { name: 'Confirmar cancelamento' }))
 
     expect(await screen.findByText(message)).toBeInTheDocument()
     expect(screen.getByText('12:00–13:00')).toBeInTheDocument()
+    await openMore(user)
     expect(screen.getByRole('button', { name: 'Cancelar agendamento' })).toBeEnabled() // pode tentar de novo
   })
 
@@ -432,6 +437,7 @@ describe('depois de gravar com sucesso, o registro afetado deixa de oferecer aç
     })
     await user.click(menu('Agenda'))
     await screen.findByText('12:00–13:00')
+    await openMore(user)
     await user.click(screen.getByRole('button', { name: 'Cancelar agendamento' }))
 
     await user.click(screen.getByRole('button', { name: 'Confirmar cancelamento' }))

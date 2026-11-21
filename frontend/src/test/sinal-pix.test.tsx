@@ -2,7 +2,7 @@ import { act, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { todayIn } from '../api/dates'
-import { json, mockApi, PASSWORD, problem, renderWithHarness, token, USER, type Call } from './helpers'
+import { json, mockApi, PASSWORD, problem, renderWithHarness, token, USER, type Call, openMore } from './helpers'
 
 vi.mock('../pages/customer/CustomerPanel', () => ({ CustomerPanel: () => null }))
 vi.mock('../pages/provider/SetupPanel', () => ({ SetupPanel: () => null }))
@@ -208,9 +208,10 @@ describe('agenda: sinal para a equipe', () => {
   }
 
   it('mostra "Sinal pendente" e "Sinal recebido" por linha, só com botão no pendente', async () => {
-    await open({ [AGENDA]: () => json(200, [item('a-1', { depositCents: 3000, depositStatus: 'REQUESTED' }), item('a-2', { customerName: 'Pedro Alves', depositCents: 3000, depositStatus: 'RECEIVED' }), item('a-3', { customerName: 'Ana Costa', depositStatus: 'NONE' })]) })
+    const user = await open({ [AGENDA]: () => json(200, [item('a-1', { depositCents: 3000, depositStatus: 'REQUESTED' }), item('a-2', { customerName: 'Pedro Alves', depositCents: 3000, depositStatus: 'RECEIVED' }), item('a-3', { customerName: 'Ana Costa', depositStatus: 'NONE' })]) })
     const rows = await screen.findAllByRole('listitem')
     expect(within(rows[0]).getByText('Sinal pendente · R$ 30,00')).toBeInTheDocument()
+    await openMore(user, within(rows[0]))
     expect(within(rows[0]).getByRole('button', { name: 'Sinal recebido de Joana Lima' })).toBeInTheDocument()
     expect(within(rows[1]).getByText('Sinal recebido')).toBeInTheDocument()
     expect(within(rows[1]).queryByRole('button', { name: /Sinal recebido de/ })).not.toBeInTheDocument()
@@ -226,6 +227,7 @@ describe('agenda: sinal para a equipe', () => {
         return json(200, { id: 'a-1', depositStatus: 'RECEIVED' })
       },
     })
+    await openMore(user)
     await user.click(await screen.findByRole('button', { name: 'Sinal recebido de Joana Lima' }))
     expect(await screen.findByText('Sinal de Joana Lima registrado como recebido.')).toBeInTheDocument()
     await waitFor(() => expect(screen.getByText('Sinal recebido')).toBeInTheDocument())
