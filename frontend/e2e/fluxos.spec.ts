@@ -234,3 +234,35 @@ test('estúdio fecha dois dias pelo Expediente e o tutor, em outro navegador, v�
   await expect(page.getByRole('button', { name: 'Avise-me se vagar um horário neste dia' })).toHaveCount(0)
   await estudio.close()
 })
+
+test('o dono acha a tutora em Clientes, gera a senha temporária uma vez, e ela entra com ela e é obrigada a criar outra (ADR 0025)', async ({ page, browser }) => {
+  await entrar(page, 'prestador')
+  await irPeloMenu(page, 'Clientes', 1280)
+  await page.getByRole('heading', { level: 1, name: 'Clientes' }).waitFor()
+  await page.getByLabel('Buscar cliente').fill('marina')
+  const linha = page.getByRole('listitem').filter({ hasText: 'Marina' }).first()
+  await expect(linha).toContainText('atendimento')
+  await expect(linha).toContainText(/Pets: .*Thor/)
+
+  await linha.getByRole('button', { name: /^Redefinir senha de/ }).click()
+  await linha.getByRole('button', { name: 'Gerar senha temporária' }).click()
+  const grupo = page.getByRole('group', { name: /^Senha temporária de/ })
+  await expect(grupo).toContainText('aparece só agora')
+  const senha = (await grupo.locator('code').innerText()).trim()
+  expect(senha).toMatch(/^[A-HJ-NP-Za-km-z2-9]{12}$/)
+  await grupo.getByRole('button', { name: 'Concluir' }).click()
+  await expect(page.getByText(senha)).toHaveCount(0) // a senha some da tela
+
+  // A tutora, em outro navegador: a senha antiga não vale mais, a temporária entra e pede uma nova.
+  const tutora = await (await browser.newContext({ baseURL: 'http://127.0.0.1:5173' })).newPage()
+  await tutora.goto('/entrar')
+  await tutora.getByLabel('E-mail').fill(ACCOUNTS.cliente)
+  await tutora.getByLabel('Senha').fill(PASSWORD)
+  await tutora.getByRole('button', { name: 'Entrar' }).click()
+  await expect(tutora.getByRole('alert')).toBeVisible() // credenciais recusadas
+
+  await tutora.getByLabel('Senha').fill(senha)
+  await tutora.getByRole('button', { name: 'Entrar' }).click()
+  await expect(tutora.getByRole('heading', { level: 1, name: 'Defina a sua senha' })).toBeVisible()
+  await tutora.context().close()
+})

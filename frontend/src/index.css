@@ -2464,3 +2464,80 @@ label.check {
   align-items: center;
   gap: 8px 0.35rem;
 }
+
+/* Clientes do estúdio (ADR 0025): busca no balcão e senha temporária. Mesma folha de linhas do resto; a senha é o único elemento em destaque. */
+.customers__search {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+}
+
+.customers__search .field {
+  flex: 1 1 16rem;
+  margin: 0;
+}
+
+.customers__search .button {
+  min-height: 44px;
+}
+
+.customer {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.5rem 1rem;
+  align-items: center;
+}
+
+.customer__info {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.25rem 0.75rem;
+  min-width: 0;
+}
+
+.customer__name {
+  font: 700 1.125rem/1.2 var(--font-heading);
+}
+
+.customer__meta,
+.customer__pets {
+  flex-basis: 100%;
+  color: var(--muted);
+}
+
+.customer__confirm,
+.customer__password,
+.customer__problem {
+  grid-column: 1 / -1;
+}
+
+.customer__password {
+  padding: 0.875rem 1rem;
+  border: 2px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+}
+
+.customer__code {
+  display: inline-block;
+  padding: 0.125rem 0.5rem;
+  border-radius: 8px;
+  background: var(--accent-soft, var(--line));
+  font: 700 1.25rem/1.4 ui-monospace, 'Cascadia Mono', Consolas, monospace;
+  letter-spacing: 0.04em;
+  user-select: all;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 720px) {
+  .customer {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .customer > .actions .button {
+    width: 100%;
+  }
+}

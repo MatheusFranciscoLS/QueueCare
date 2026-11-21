@@ -30,7 +30,10 @@ public final class RateLimitedRoutes {
 	/** Responde 429 por OUTRO mecanismo: o limite de tentativas de troca de senha (PasswordService); o login também tem o bloqueio por tentativas. */
 	static final Route CHANGE_PASSWORD = new Route(HttpMethod.POST, "/api/auth/change-password");
 
-	private static final List<Route> ALL = List.of(LOGIN, REGISTER, CREATE_PROVIDER, CREATE_ATTENDANT, CATALOG, PUBLIC, SLOTS, CHANGE_PASSWORD);
+	/** Responde 429 pelo limite por estúdio de senhas temporárias geradas (PasswordService, ADR 0025). */
+	static final Route RESET_CUSTOMER_PASSWORD = new Route(HttpMethod.POST, "/api/provider/customers/*/reset-password");
+
+	private static final List<Route> ALL = List.of(LOGIN, REGISTER, CREATE_PROVIDER, CREATE_ATTENDANT, CATALOG, PUBLIC, SLOTS, CHANGE_PASSWORD, RESET_CUSTOMER_PASSWORD);
 
 	private RateLimitedRoutes() {
 	}

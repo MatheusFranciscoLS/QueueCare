@@ -23,6 +23,7 @@ const CreateProviderPage = lazyPage(() => import('./pages/admin/CreateProviderPa
 const UsersPage = lazyPage(() => import('./pages/admin/UsersPage'), 'UsersPage')
 const AgendaPage = lazyPage(() => import('./pages/agenda/AgendaPage'), 'AgendaPage')
 const QueuePage = lazyPage(() => import('./pages/agenda/QueuePage'), 'QueuePage')
+const CustomersPage = lazyPage(() => import('./pages/agenda/CustomersPage'), 'CustomersPage')
 const BookPage = lazyPage(() => import('./pages/customer/BookPage'), 'BookPage')
 const MyAppointmentsPage = lazyPage(() => import('./pages/customer/MyAppointmentsPage'), 'MyAppointmentsPage')
 const PetsPage = lazyPage(() => import('./pages/customer/PetsPage'), 'PetsPage')
@@ -78,6 +79,7 @@ export function App() {
           <Route element={<RequireRole roles={['PROVIDER', 'ATTENDANT']} />}>
             <Route path="/agenda" element={<Lazy><AgendaPage /></Lazy>} />
             <Route path="/fila" element={<Lazy><QueuePage /></Lazy>} />
+            <Route path="/clientes" element={<Lazy><CustomersPage /></Lazy>} />
           </Route>
         </Route>
         <Route path="*" element={<NotFound />} />
