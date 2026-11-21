@@ -8,6 +8,8 @@ import '../ui/shell.css'
 import { navigationFor } from './navigation'
 import { useRouteFocus } from './useRouteFocus'
 import { WakingBanner } from './WakingBanner'
+import { InstallButton } from '../pwa/install'
+import { OfflineBanner } from '../pwa/OfflineBanner'
 
 function Brand({ onNavigate }: { onNavigate?: () => void }) {
   return (
@@ -51,6 +53,7 @@ function Account({ user, onNavigate }: { user: User; onNavigate?: () => void }) 
           <Link to="/privacidade" className="pp-who__link" onClick={onNavigate}>
             Privacidade
           </Link>
+          <InstallButton onNavigate={onNavigate} />
         </>
       )}
       <ThemeToggle />
@@ -100,6 +103,7 @@ export function Layout() {
           Pular para o conteúdo
         </a>
         <main id="conteudo" ref={mainRef} tabIndex={-1} className="pp-main pp-main--public">
+          <OfflineBanner />
           <WakingBanner />
           <Outlet />
         </main>
@@ -124,6 +128,7 @@ export function Layout() {
           {user && <Account user={user} />}
         </header>
         <main id="conteudo" ref={mainRef} tabIndex={-1} className="pp-main">
+          <OfflineBanner />
           <WakingBanner />
           <div className="pp-content">
             <Outlet />
