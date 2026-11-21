@@ -2,6 +2,7 @@ import { formatMoney } from '../../api/money'
 import { reminderMessage } from '../../api/policy'
 import { whatsappLink } from '../../api/phone'
 import { ContactLink } from './ContactLink'
+import { MoreActions } from './MoreActions'
 import { WaitlistDay } from './WaitlistDay'
 import { PetFicha } from './PetFicha'
 import { PetVisitsList } from './PetVisitsList'
@@ -306,12 +307,16 @@ function AppointmentRow({
   const [confirming, setConfirming] = useState(false)
   // O que a confirmação pede: cancelar o agendamento ou registrar que a pessoa faltou (estado final, por isso também pede confirmação).
   const [kind, setKind] = useState<'cancel' | 'noshow'>('cancel')
+  // As ações menos frequentes ficam em "Mais ações"; o grupo continua aberto durante uma confirmação, para o foco voltar ao botão que a abriu.
+  const [moreOpen, setMoreOpen] = useState(false)
   const [busy, setBusy] = useState(false)
   const [rescheduling, setRescheduling] = useState(false)
   const [historyOpen, setHistoryOpen] = useState(false)
   const [visitsOpen, setVisitsOpen] = useState(false)
   const once = useSingleFlight()
   const customer = item.customerName ?? 'Cliente'
+  const hasFlags =
+    (item.customerNoShows ?? 0) > 0 || item.depositStatus === 'REQUESTED' || item.depositStatus === 'RECEIVED' || (status === 'SCHEDULED' && !!item.remindedAt)
   // Foco (teclado e leitor de tela): a confirmação abre em "Voltar" (a opção segura); ao fechar volta para "Cancelar agendamento";
   // quando o botão pressionado some (a situação mudou), o foco vai para a própria linha.
   const rowRef = useRef<HTMLLIElement>(null)
@@ -440,17 +445,21 @@ function AppointmentRow({
         <span className="appt-line">
           <span className="appt-who">{customer}</span>
           {item.customerPhone && <ContactLink phone={item.customerPhone} name={customer} />}
-          {item.customerNoShows != null && item.customerNoShows > 0 && (
-            <span className="appt-noshows">
-              {item.customerNoShows} {item.customerNoShows === 1 ? 'falta' : 'faltas'}
-            </span>
-          )}
           <span className="appt-service">{item.serviceName ?? 'Serviço'}</span>
           {item.priceCents != null && <span className="appt-price">{formatMoney(item.priceCents)}</span>}
-          {item.depositStatus === 'REQUESTED' && item.depositCents != null && <span className="appt-deposit">Sinal pendente · {formatMoney(item.depositCents)}</span>}
-          {item.depositStatus === 'RECEIVED' && <span className="appt-deposit appt-deposit--ok">Sinal recebido</span>}
-          {status === 'SCHEDULED' && item.remindedAt && <span className="appt-reminded">Lembrete enviado em {reminderStamp(item.remindedAt, timeZone)}</span>}
         </span>
+        {(hasFlags) && (
+          <span className="appt-flags">
+            {item.customerNoShows != null && item.customerNoShows > 0 && (
+              <span className="appt-noshows">
+                {item.customerNoShows} {item.customerNoShows === 1 ? 'falta' : 'faltas'}
+              </span>
+            )}
+            {item.depositStatus === 'REQUESTED' && item.depositCents != null && <span className="appt-deposit">Sinal pendente · {formatMoney(item.depositCents)}</span>}
+            {item.depositStatus === 'RECEIVED' && <span className="appt-deposit appt-deposit--ok">Sinal recebido</span>}
+            {status === 'SCHEDULED' && item.remindedAt && <span className="appt-reminded">Lembrete enviado em {reminderStamp(item.remindedAt, timeZone)}</span>}
+          </span>
+        )}
         {item.pet && <PetFicha pet={item.pet} />}
         {item.pet?.notes && <span className="appt-notes">Observações do tutor: {item.pet.notes}</span>}
         <span className="badge" data-status={status}>{STATUS_LABEL[status] ?? status}</span>
@@ -482,45 +491,47 @@ function AppointmentRow({
                   Lembrar
                 </a>
               )}
-              {item.depositStatus === 'REQUESTED' && (
-                <button type="button" className="button secondary" disabled={busy} aria-label={`Sinal recebido de ${customer}`} onClick={depositReceived}>
-                  Sinal recebido
-                </button>
-              )}
               {canCheckIn && (
                 <button type="button" className="button" disabled={busy} onClick={checkIn}>
                   {busy ? 'Enviando…' : 'Chegou'}
                 </button>
               )}
-              <button type="button" className="button secondary" ref={rescheduleRef} disabled={busy} aria-expanded={rescheduling} onClick={() => setRescheduling((open) => !open)}>
-                Remarcar
-              </button>
-              <button
-                type="button"
-                className="button secondary"
-                ref={openRef}
-                disabled={busy}
-                onClick={() => {
-                  setKind('cancel')
-                  setConfirming(true)
-                }}
-              >
-                Cancelar agendamento
-              </button>
-              {started && (
+              <MoreActions who={customer} open={moreOpen} onOpenChange={setMoreOpen} disabled={busy}>
+                {item.depositStatus === 'REQUESTED' && (
+                  <button type="button" className="button secondary" disabled={busy} aria-label={`Sinal recebido de ${customer}`} onClick={depositReceived}>
+                    Sinal recebido
+                  </button>
+                )}
+                <button type="button" className="button secondary" ref={rescheduleRef} disabled={busy} aria-expanded={rescheduling} onClick={() => setRescheduling((open) => !open)}>
+                  Remarcar
+                </button>
+                {started && (
+                  <button
+                    type="button"
+                    className="button secondary"
+                    ref={noShowRef}
+                    disabled={busy}
+                    onClick={() => {
+                      setKind('noshow')
+                      setConfirming(true)
+                    }}
+                  >
+                    Faltou
+                  </button>
+                )}
                 <button
                   type="button"
                   className="button secondary"
-                  ref={noShowRef}
+                  ref={openRef}
                   disabled={busy}
                   onClick={() => {
-                    setKind('noshow')
+                    setKind('cancel')
                     setConfirming(true)
                   }}
                 >
-                  Faltou
+                  Cancelar agendamento
                 </button>
-              )}
+              </MoreActions>
             </>
           ) : kind === 'noshow' ? (
             <>

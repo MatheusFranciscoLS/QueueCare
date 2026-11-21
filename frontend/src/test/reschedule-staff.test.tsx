@@ -2,7 +2,7 @@ import { act, fireEvent, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { addDays, todayIn } from '../api/dates'
-import { json, mockApi, PASSWORD, problem, renderWithHarness, token, USER, type Call } from './helpers'
+import { json, mockApi, PASSWORD, problem, renderWithHarness, token, USER, type Call, openMore } from './helpers'
 
 // O resumo da tela inicial tem testes próprios; aqui ele sairia do caminho das contagens de chamadas à agenda.
 vi.mock('../pages/TodaySummary', () => ({ TodaySummary: () => null }))
@@ -58,6 +58,7 @@ const gets = (calls: Call[], path: string) => calls.filter((c) => c.method === '
 const posts = (calls: Call[], suffix: string) => calls.filter((c) => c.method === 'POST' && c.path.endsWith(suffix))
 
 async function openBox(user: ReturnType<typeof userEvent.setup>) {
+  await openMore(user)
   await user.click(await screen.findByRole('button', { name: 'Remarcar' }))
   return screen.findByRole('region', { name: 'Remarcar agendamento' })
 }
@@ -69,6 +70,7 @@ describe('agenda da equipe: remarcar', () => {
       [`GET ${slotsPath(today)}`]: () => json(200, [slot(today, '16:00')]),
     })
     await screen.findAllByRole('listitem')
+    await openMore(user)
     expect(screen.getAllByRole('button', { name: 'Remarcar' })).toHaveLength(1)
     const box = await openBox(user)
     await within(box).findByRole('button', { name: '16:00' })

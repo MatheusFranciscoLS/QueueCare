@@ -2,7 +2,7 @@ import { act, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { todayIn } from '../api/dates'
-import { json, mockApi, PASSWORD, problem, renderWithHarness, token, USER, type Call } from './helpers'
+import { json, mockApi, PASSWORD, problem, renderWithHarness, token, USER, type Call, openMore } from './helpers'
 
 vi.mock('../pages/customer/CustomerPanel', () => ({ CustomerPanel: () => null }))
 vi.mock('../pages/provider/SetupPanel', () => ({ SetupPanel: () => null }))
@@ -48,8 +48,9 @@ const AGENDA = `GET /api/agenda?date=${today}`
 
 describe('agenda: faltou', () => {
   it('só oferece "Faltou" quando o horário marcado já chegou', async () => {
-    await openAgenda({ [AGENDA]: () => json(200, [item('a-1', hoursFromNow(-2)), item('a-2', hoursFromNow(3), { customerName: 'Pedro Alves' })]) })
+    const { user } = await openAgenda({ [AGENDA]: () => json(200, [item('a-1', hoursFromNow(-2)), item('a-2', hoursFromNow(3), { customerName: 'Pedro Alves' })]) })
     const rows = await screen.findAllByRole('listitem')
+    await openMore(user, within(rows[0]))
     expect(within(rows[0]).getByRole('button', { name: 'Faltou' })).toBeInTheDocument()
     expect(within(rows[1]).queryByRole('button', { name: 'Faltou' })).not.toBeInTheDocument()
   })
@@ -63,6 +64,7 @@ describe('agenda: faltou', () => {
         return json(200, { id: 'a-1', status: 'NO_SHOW' })
       },
     })
+    await openMore(user)
     await user.click(await screen.findByRole('button', { name: 'Faltou' }))
     expect(screen.getByText('Registrar que Joana Lima faltou? Não dá para desfazer.')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Voltar' })).toHaveFocus() // a opção segura
@@ -71,6 +73,7 @@ describe('agenda: faltou', () => {
     expect(calls.some((c) => c.path.endsWith('/no-show'))).toBe(false)
     await waitFor(() => expect(screen.getByRole('button', { name: 'Faltou' })).toHaveFocus()) // o foco volta para quem abriu
 
+    await openMore(user)
     await user.click(screen.getByRole('button', { name: 'Faltou' }))
     await user.click(screen.getByRole('button', { name: 'Confirmar falta' }))
 
@@ -87,9 +90,11 @@ describe('agenda: faltou', () => {
       [AGENDA]: () => json(200, [item('a-1', hoursFromNow(-1))]),
       'POST /api/appointments/a-1/no-show': () => problem(422, 'operação recusada', { reason: 'TOO_EARLY' }),
     })
+    await openMore(user)
     await user.click(await screen.findByRole('button', { name: 'Faltou' }))
     await user.click(screen.getByRole('button', { name: 'Confirmar falta' }))
     expect(await screen.findByText('Só dá para registrar a falta a partir do horário do agendamento.')).toBeInTheDocument()
+    await openMore(user)
     expect(screen.getByRole('button', { name: 'Faltou' })).toBeInTheDocument()
   })
 

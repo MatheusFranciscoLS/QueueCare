@@ -2,7 +2,7 @@ import { act, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { addDays, todayIn } from '../api/dates'
-import { json, mockApi, PASSWORD, problem, renderWithHarness, token, USER, type Call } from './helpers'
+import { json, mockApi, PASSWORD, problem, renderWithHarness, token, USER, type Call, openMore } from './helpers'
 
 // O painel do Início tem testes próprios; aqui ele sairia do caminho das contagens de chamadas.
 vi.mock('../pages/customer/CustomerPanel', () => ({ CustomerPanel: () => null }))
@@ -77,6 +77,7 @@ describe('agenda: chegada e conclusão', () => {
     expect(screen.getByText('Chegou')).toHaveClass('badge')
     expect(screen.queryByRole('button', { name: 'Chegou' })).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Cancelar agendamento' })).not.toBeInTheDocument() // quem chegou não se cancela
+    await openMore(user)
     expect(screen.getByRole('button', { name: 'Concluir atendimento' })).toBeInTheDocument()
     expect(posts(calls, '/check-in')).toHaveLength(1)
   })
@@ -87,6 +88,7 @@ describe('agenda: chegada e conclusão', () => {
       'POST /api/appointments/a-1/complete': () => json(200, { id: 'a-1', status: 'COMPLETED' }),
     })
     await user.click(menu('Agenda'))
+    await openMore(user)
     await user.click(await screen.findByRole('button', { name: 'Concluir atendimento' }))
 
     expect(await screen.findByText('Atendimento de Maria Souza concluído.')).toBeInTheDocument()
@@ -107,6 +109,7 @@ describe('agenda: chegada e conclusão', () => {
     await user.click(screen.getByRole('button', { name: 'Próximo dia' }))
     await screen.findByText('12:00–13:00')
     expect(screen.queryByRole('button', { name: 'Chegou' })).not.toBeInTheDocument()
+    await openMore(user)
     expect(screen.getByRole('button', { name: 'Cancelar agendamento' })).toBeInTheDocument()
   })
 
@@ -117,6 +120,7 @@ describe('agenda: chegada e conclusão', () => {
       'POST /api/appointments/a-1/check-in': () => slow.promise,
     })
     await user.click(menu('Agenda'))
+    await openMore(user) // (aberto antes do envio: com o envio em andamento "Mais ações" também fica bloqueado)
     await user.dblClick(await screen.findByRole('button', { name: 'Chegou' }))
     expect(screen.getByRole('button', { name: 'Enviando…' })).toBeDisabled()
     expect(screen.getByRole('button', { name: 'Cancelar agendamento' })).toBeDisabled()
@@ -157,6 +161,7 @@ describe('agenda: chegada e conclusão', () => {
       'POST /api/appointments/a-1/cancel': () => json(200, { id: 'a-1', status: 'CANCELLED' }),
     })
     await user.click(menu('Agenda'))
+    await openMore(user)
     await user.click(await screen.findByRole('button', { name: 'Cancelar agendamento' }))
     await user.click(screen.getByRole('button', { name: 'Confirmar cancelamento' }))
 
@@ -179,9 +184,11 @@ describe('agenda: chegada e conclusão', () => {
   it('a confirmação do cancelamento abre com o foco em "Voltar" e devolve o foco a "Cancelar agendamento"', async () => {
     const { user } = await loginAs('ATTENDANT', { [`GET /api/agenda?date=${today}`]: () => json(200, [item('a-1', 'SCHEDULED')]) })
     await user.click(menu('Agenda'))
+    await openMore(user)
     await user.click(await screen.findByRole('button', { name: 'Cancelar agendamento' }))
     expect(screen.getByRole('button', { name: 'Voltar' })).toHaveFocus()
     await user.click(screen.getByRole('button', { name: 'Voltar' }))
+    await openMore(user)
     expect(screen.getByRole('button', { name: 'Cancelar agendamento' })).toHaveFocus()
   })
 
@@ -238,6 +245,7 @@ describe('agenda: chegada e conclusão', () => {
       'POST /api/appointments/a-1/complete': () => problem(409, 'x', { reason: 'INVALID_STATE' }),
     })
     await user.click(menu('Agenda'))
+    await openMore(user)
     await user.click(await screen.findByRole('button', { name: 'Concluir atendimento' }))
 
     expect(await screen.findByText('Esse agendamento já mudou de situação. Atualize a agenda.')).toBeInTheDocument()
@@ -281,6 +289,7 @@ describe('fila', () => {
     })
     await user.click(menu('Fila'))
     const first = (await screen.findAllByRole('listitem'))[0]
+    await openMore(user, within(first))
     await user.click(within(first).getByRole('button', { name: 'Concluir atendimento' }))
 
     expect(await screen.findByText('Atendimento de Joana Lima concluído.')).toBeInTheDocument()
@@ -297,6 +306,7 @@ describe('fila', () => {
     })
     await user.click(menu('Fila'))
     const first = (await screen.findAllByRole('listitem'))[0]
+    await openMore(user, within(first))
     await user.click(within(first).getByRole('button', { name: 'Concluir atendimento' }))
 
     const notice = await screen.findByText('Atendimento de Joana Lima concluído.')
@@ -310,6 +320,7 @@ describe('fila', () => {
       'POST /api/appointments/a-2/complete': () => slow.promise,
     })
     await user.click(menu('Fila'))
+    await openMore(user)
     await user.dblClick(await screen.findByRole('button', { name: 'Concluir atendimento' }))
     expect(screen.getByRole('button', { name: 'Enviando…' })).toBeDisabled()
     await act(async () => slow.resolve(json(200, { id: 'a-2', status: 'COMPLETED' })))
@@ -325,6 +336,7 @@ describe('fila', () => {
     })
     await user.click(menu('Fila'))
     const first = (await screen.findAllByRole('listitem'))[0]
+    await openMore(user, within(first))
     await user.click(within(first).getByRole('button', { name: 'Concluir atendimento' }))
 
     expect(await screen.findByText('Esse agendamento já mudou de situação. Atualize a agenda.')).toBeInTheDocument()

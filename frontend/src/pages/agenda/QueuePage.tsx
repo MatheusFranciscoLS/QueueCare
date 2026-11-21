@@ -1,6 +1,7 @@
 import { formatMoney } from '../../api/money'
 import { whatsappLink } from '../../api/phone'
 import { ContactLink } from './ContactLink'
+import { MoreActions } from './MoreActions'
 import { PetFicha } from './PetFicha'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
@@ -154,6 +155,7 @@ function QueueRow({
   const { request } = useAuth()
   const api = useMemo(() => agendaApi(request), [request])
   const [busy, setBusy] = useState<'start' | 'ready' | 'complete' | null>(null)
+  const [moreOpen, setMoreOpen] = useState(false) // pular etapas (ex.: concluir sem passar por "em atendimento") fica atrás de "Mais ações"
   const once = useSingleFlight()
   const customer = item.customerName ?? 'Cliente'
   const status = item.status ?? 'CHECKED_IN'
@@ -216,25 +218,40 @@ function QueueRow({
         </span>
       </span>
       <span className="actions">
-        {status === 'CHECKED_IN' && (
-          <button type="button" className="button" disabled={busy !== null} onClick={start}>
-            {busy === 'start' ? 'Enviando…' : 'Começar atendimento'}
-          </button>
-        )}
-        {(status === 'CHECKED_IN' || status === 'IN_PROGRESS') && (
-          <button type="button" className={status === 'IN_PROGRESS' ? 'button' : 'button secondary'} disabled={busy !== null} onClick={ready}>
-            {busy === 'ready' ? 'Enviando…' : 'Pronto para retirada'}
-          </button>
-        )}
+        {/* UMA ação principal por estado (revisão do ChatGPT, 21/11/2026): esperando = começar; em atendimento = pronto; pronto = retirado. O resto, atrás de "Mais ações". */}
         {status === 'READY' && item.customerPhone && (
           <a className="button secondary" href={whatsappLink(item.customerPhone, readyMessage)} target="_blank" rel="noopener noreferrer">
             Avisar no WhatsApp
             <span className="pp-sr"> ({customer})</span>
           </a>
         )}
-        <button type="button" className={status === 'READY' ? 'button' : 'button secondary'} disabled={busy !== null} onClick={complete}>
-          {busy === 'complete' ? 'Enviando…' : status === 'READY' ? 'Pet retirado (concluir)' : 'Concluir atendimento'}
-        </button>
+        {status === 'CHECKED_IN' && (
+          <button type="button" className="button" disabled={busy !== null} onClick={start}>
+            {busy === 'start' ? 'Enviando…' : 'Começar atendimento'}
+          </button>
+        )}
+        {status === 'IN_PROGRESS' && (
+          <button type="button" className="button" disabled={busy !== null} onClick={ready}>
+            {busy === 'ready' ? 'Enviando…' : 'Pronto para retirada'}
+          </button>
+        )}
+        {status === 'READY' && (
+          <button type="button" className="button" disabled={busy !== null} onClick={complete}>
+            {busy === 'complete' ? 'Enviando…' : 'Pet retirado (concluir)'}
+          </button>
+        )}
+        {status !== 'READY' && (
+          <MoreActions who={customer} open={moreOpen} onOpenChange={setMoreOpen} disabled={busy !== null}>
+            {status === 'CHECKED_IN' && (
+              <button type="button" className="button secondary" disabled={busy !== null} onClick={ready}>
+                {busy === 'ready' ? 'Enviando…' : 'Pronto para retirada'}
+              </button>
+            )}
+            <button type="button" className="button secondary" disabled={busy !== null} onClick={complete}>
+              {busy === 'complete' ? 'Enviando…' : 'Concluir atendimento'}
+            </button>
+          </MoreActions>
+        )}
       </span>
     </li>
   )
