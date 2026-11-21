@@ -1,11 +1,11 @@
 /** Altura-base de uma hora na grade da semana, em px. */
 export const BASE_HOUR_PX = 68
-/** Menor altura que um bloco curto pode ter e ainda mostrar horário e nome em uma linha. */
-export const MIN_BLOCK_PX = 34
+/** Menor altura de um bloco: é um botão, e alvo de toque tem pelo menos 44 px (o portão estrito de acessibilidade mede isso); cabe horário e nome em uma linha. */
+export const MIN_BLOCK_PX = 44
 /** Folga entre blocos vizinhos (dois atendimentos seguidos nunca se encostam nem se sobrepõem). */
 export const GAP_PX = 3
 /** Limite da altura da hora: uma semana com atendimentos de 15 minutos fica mais alta, mas não infinita. */
-export const MAX_HOUR_PX = 132
+export const MAX_HOUR_PX = 188
 
 /**
  * Altura da hora da grade para a semana: a base (68 px), ou maior se houver atendimento curto, para que o MENOR bloco tenha pelo menos

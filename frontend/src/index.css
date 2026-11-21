@@ -211,6 +211,24 @@ section.card.deposit-form {
   overflow-wrap: anywhere;
 }
 
+/* o link público é longo e ocupa a linha inteira: folga em volta para o anel de foco não ser cortado */
+.public-link a {
+  display: flex;
+  align-items: center;
+  width: fit-content;
+  max-width: 100%;
+  min-height: 44px;
+  padding: 0 0.375rem;
+  margin: 0.25rem 0 0.5rem;
+}
+
+/* "Lembrar pelo WhatsApp" / "Ver amanhã" do painel do Início: link de 44 px de altura (alvo de toque) */
+.today .tomorrow a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+}
+
 /* "Mais ações" e indicadores discretos da Agenda (revisão do ChatGPT, 21/11/2026): uma ação principal por momento e o resto atrás de um botão; faltas, sinal e lembrete numa linha só, mais quieta que o estado */
 .more-actions {
   display: inline-flex;
