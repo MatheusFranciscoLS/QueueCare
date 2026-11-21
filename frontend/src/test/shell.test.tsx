@@ -33,7 +33,7 @@ async function loginAs(role: string, extra: Record<string, () => Response> = {},
 
 describe('navegação por perfil (ADR 0018, seção 4)', () => {
   it.each([
-    ['PROVIDER', ['Início', 'Agenda', 'Fila', 'Clientes', 'Serviços', 'Expediente', 'Equipe', 'Meu negócio']],
+    ['PROVIDER', ['Início', 'Agenda', 'Fila', 'Clientes', 'Resumo', 'Serviços', 'Expediente', 'Equipe', 'Meu negócio']],
     ['ATTENDANT', ['Início', 'Agenda', 'Fila', 'Clientes']],
     ['CUSTOMER', ['Início', 'Agendar', 'Meus agendamentos', 'Meus pets']],
     ['ADMIN', ['Contas', 'Novo prestador']],
