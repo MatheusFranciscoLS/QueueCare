@@ -5,6 +5,7 @@ import { describeError } from '../../api/messages'
 import { ApiError } from '../../api/client'
 import { bookingApi, type BookedAppointment, type CatalogProvider, type CatalogService, type FreeSlot } from '../../api/booking'
 import { durationForPet, durationSummary } from '../../api/duration'
+import { bookingPolicyText } from '../../api/policy'
 import { formatMoney, priceForSize, priceSummary } from '../../api/money'
 import { petDescription, petsApi, type Pet, type PetInput } from '../../api/pets'
 import { useAuth } from '../../auth/session'
@@ -366,6 +367,9 @@ function ConfirmStep({
         })()}</strong>
         {pet?.size == null && (service.priceMediumCents != null || service.priceLargeCents != null) && <span className="hint"> Informe o porte do pet para ver o valor exato.</span>}
       </p>
+      {provider.cancellationDeadlineMinutes != null && (
+        <p className="confirm-policy hint">{bookingPolicyText(slot.startsAt, provider.cancellationDeadlineMinutes, provider.timeZone)}</p>
+      )}
       <span className="actions">
         <button type="button" className="button" disabled={busy || !pet} onClick={onConfirm}>
           {busy ? 'Agendando…' : 'Confirmar agendamento'}

@@ -5,6 +5,7 @@ import { longDate, timeIn, todayIn } from '../../api/dates'
 import { describeError } from '../../api/messages'
 import { bookingApi, type BookedAppointment } from '../../api/booking'
 import { formatMoney } from '../../api/money'
+import { freeChangePassed, studioChangeLink, whenText } from '../../api/policy'
 import { SPECIES_LABEL } from '../../api/pets'
 import { useAuth } from '../../auth/session'
 import { RefreshWarning } from '../RefreshWarning'
@@ -115,6 +116,8 @@ function Row({
   const zone = item.timeZone ?? 'UTC'
   const status = cancelled ? 'CANCELLED' : item.status
   const what = `${item.serviceName ?? 'Serviço'} em ${item.businessName ?? 'o negócio'}`
+  // Política (ADR 0021): passado o limite de graça, o tutor não vê botões que a API recusaria: vê o caminho para falar com o estúdio.
+  const late = status === 'SCHEDULED' && freeChangePassed(item.freeChangeUntil)
 
   async function cancel() {
     await once(async () => {
@@ -180,7 +183,7 @@ function Row({
           <span className="badge" data-status={status}>{STATUS_LABEL[status] ?? status}</span>
         </span>
       </span>
-      {status === 'SCHEDULED' && (
+      {status === 'SCHEDULED' && !late && (
         <span className="actions">
           {!confirming ? (
             <>
@@ -209,6 +212,24 @@ function Row({
       {error && (
         <p role="alert" className="error">
           {error}
+        </p>
+      )}
+      {status === 'SCHEDULED' && item.freeChangeUntil && (
+        <p className="policy-line hint">
+          {late ? (
+            <>
+              O prazo para cancelar ou remarcar sozinho já passou.{' '}
+              {item.studioPhone ? (
+                <a href={studioChangeLink(item.studioPhone, item.pet?.name, item.serviceName, item.startsAt, zone)} target="_blank" rel="noreferrer">
+                  Falar com o estúdio
+                </a>
+              ) : (
+                'Fale com o estúdio.'
+              )}
+            </>
+          ) : (
+            <>Cancelar ou remarcar de graça até {whenText(item.freeChangeUntil, zone)}.</>
+          )}
         </p>
       )}
       <span className="row-extra">

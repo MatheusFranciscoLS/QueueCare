@@ -18,7 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class CatalogService {
 
 	/** Prestador visível ao cliente. */
-	public record ProviderView(UUID id, String businessName, String timeZone) {
+	public record ProviderView(UUID id, String businessName, String timeZone, int cancellationDeadlineMinutes, String phone) {
 	}
 
 	/** Serviço ativo visível ao cliente. */
@@ -36,7 +36,7 @@ public class CatalogService {
 
 	@Transactional(readOnly = true)
 	public List<ProviderView> providers(int page, int size) {
-		return providers.findAllActive(PageRequest.of(page, size)).stream().map(p -> new ProviderView(p.getId(), p.getBusinessName(), p.getTimeZone())).toList();
+		return providers.findAllActive(PageRequest.of(page, size)).stream().map(p -> new ProviderView(p.getId(), p.getBusinessName(), p.getTimeZone(), p.getCancellationDeadlineMinutes(), p.getPhone())).toList();
 	}
 
 	@Transactional(readOnly = true)

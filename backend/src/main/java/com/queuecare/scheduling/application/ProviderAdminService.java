@@ -68,13 +68,17 @@ public class ProviderAdminService {
 	// --- negócio ---
 
 	@Transactional
-	public Provider createBusiness(UUID ownerUserId, String businessName, String timeZone, int minimumNoticeMinutes, int cancellationDeadlineMinutes) {
+	public Provider createBusiness(UUID ownerUserId, String businessName, String timeZone, int minimumNoticeMinutes, int cancellationDeadlineMinutes,
+			String phone) {
 		validateBusiness(businessName, timeZone, minimumNoticeMinutes, cancellationDeadlineMinutes);
+		String normalizedPhone = com.queuecare.auth.PhoneNumber.normalize(phone);
 		if (providers.findByUserId(ownerUserId).isPresent()) {
 			throw new ProviderAlreadyConfiguredException();
 		}
 		try {
-			return providers.saveAndFlush(new Provider(ownerUserId, businessName.trim(), timeZone, minimumNoticeMinutes, cancellationDeadlineMinutes));
+			Provider created = new Provider(ownerUserId, businessName.trim(), timeZone, minimumNoticeMinutes, cancellationDeadlineMinutes);
+			created.setPhone(normalizedPhone);
+			return providers.saveAndFlush(created);
 		} catch (DataIntegrityViolationException e) {
 			// Dois cadastros simultâneos do mesmo usuário: a restrição UNIQUE(user_id) do banco decide.
 			throw new ProviderAlreadyConfiguredException();
@@ -87,10 +91,13 @@ public class ProviderAdminService {
 	}
 
 	@Transactional
-	public Provider updateBusiness(UUID ownerUserId, String businessName, String timeZone, int minimumNoticeMinutes, int cancellationDeadlineMinutes) {
+	public Provider updateBusiness(UUID ownerUserId, String businessName, String timeZone, int minimumNoticeMinutes, int cancellationDeadlineMinutes,
+			String phone) {
 		validateBusiness(businessName, timeZone, minimumNoticeMinutes, cancellationDeadlineMinutes);
+		String normalizedPhone = com.queuecare.auth.PhoneNumber.normalize(phone);
 		Provider provider = lockBusiness(ownerUserId);
 		provider.update(businessName.trim(), timeZone, minimumNoticeMinutes, cancellationDeadlineMinutes);
+		provider.setPhone(normalizedPhone);
 		return providers.save(provider);
 	}
 

@@ -104,7 +104,7 @@ describe('Início do tutor', () => {
 })
 
 describe('Início do estúdio: configuração', () => {
-  const BUSINESS = { id: 'p-1', businessName: 'Estúdio', timeZone: ZONE, minimumNoticeMinutes: 0, cancellationDeadlineMinutes: 60 }
+  const BUSINESS = { id: 'p-1', businessName: 'Estúdio', timeZone: ZONE, minimumNoticeMinutes: 0, cancellationDeadlineMinutes: 60, phone: '5511912345678' }
   const SERVICE = { id: 's-1', name: 'Banho', durationMinutes: 60, active: true }
   const WINDOW = { dayOfWeek: 'MONDAY', start: '08:00:00', end: '12:00:00' }
 
@@ -131,6 +131,20 @@ describe('Início do estúdio: configuração', () => {
     expect(items[0]).toHaveTextContent('Pronto')
     expect(items[1]).not.toHaveTextContent('Pronto')
     expect(items[2]).not.toHaveTextContent('Pronto')
+  })
+
+  it('negócio sem WhatsApp do estúdio ainda aparece como pendente (é por ele que o tutor fala depois do prazo)', async () => {
+    await home('PROVIDER', {
+      'GET /api/provider': () => json(200, { ...BUSINESS, phone: null }),
+      'GET /api/provider/services': () => json(200, [SERVICE]),
+      'GET /api/provider/availability': () => json(200, [WINDOW]),
+    })
+    expect(await screen.findByRole('heading', { name: 'Configure o seu negócio' })).toBeInTheDocument()
+    const items = screen.getAllByRole('listitem').filter((li) => li.closest('.setup'))
+    expect(items[0]).not.toHaveTextContent('Pronto')
+    expect(items[0]).toHaveTextContent('WhatsApp do estúdio')
+    expect(items[1]).toHaveTextContent('Pronto')
+    expect(items[2]).toHaveTextContent('Pronto')
   })
 
   it('negócio ainda não cadastrado: os três passos pendentes', async () => {

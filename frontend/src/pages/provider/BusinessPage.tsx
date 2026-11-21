@@ -2,6 +2,8 @@ import { useCallback, useMemo, useState, type FormEvent } from 'react'
 import { ApiError } from '../../api/client'
 import { isNotConfigured } from '../../api/errors'
 import { describeError } from '../../api/messages'
+import { formatPhone, validatePhone } from '../../api/phone'
+import { minutesText } from '../../api/policy'
 import { providerApi, type Business, type BusinessInput } from '../../api/provider'
 import { DEFAULT_TIME_ZONE, timeZones } from '../../api/timezones'
 import { useAuth } from '../../auth/session'
@@ -13,6 +15,8 @@ import { useSingleFlight } from '../useSingleFlight'
 import { Loading } from '../Loading'
 
 const MAX_MINUTES = 7 * 24 * 60
+/** Prazo sugerido para um negócio novo: 12 h. Zero deixaria o estúdio sem proteção nenhuma contra cancelamento em cima da hora (ADR 0021). */
+const DEFAULT_DEADLINE_MINUTES = 720
 
 export function BusinessPage() {
   const { request } = useAuth()
@@ -39,14 +43,15 @@ function BusinessForm({ business, saved, setSaved, onSaved }: { business?: Busin
   const [name, setName] = useState(business?.businessName ?? '')
   const [zone, setZone] = useState(business?.timeZone ?? DEFAULT_TIME_ZONE)
   const [notice, setNotice] = useState(String(business?.minimumNoticeMinutes ?? 0))
-  const [deadline, setDeadline] = useState(String(business?.cancellationDeadlineMinutes ?? 0))
-  const [errors, setErrors] = useState<Partial<Record<'name' | 'notice' | 'deadline' | 'form', string>>>({})
+  const [deadline, setDeadline] = useState(String(business?.cancellationDeadlineMinutes ?? DEFAULT_DEADLINE_MINUTES))
+  const [phone, setPhone] = useState(formatPhone(business?.phone))
+  const [errors, setErrors] = useState<Partial<Record<'name' | 'notice' | 'deadline' | 'phone' | 'form', string>>>({})
   const [busy, setBusy] = useState(false)
   const once = useSingleFlight()
   const focusFirstInvalid = useFocusFirstInvalid()
   const zones = useMemo(() => timeZones(business?.timeZone), [business?.timeZone])
 
-  const clear = (key: 'name' | 'notice' | 'deadline') => {
+  const clear = (key: 'name' | 'notice' | 'deadline' | 'phone') => {
     setSaved(false)
     setErrors((x) => ({ ...x, [key]: undefined }))
   }
@@ -61,7 +66,8 @@ function BusinessForm({ business, saved, setSaved, onSaved }: { business?: Busin
       const deadlineMinutes = Number(deadline)
       if (!Number.isInteger(noticeMinutes) || noticeMinutes < 0 || noticeMinutes > MAX_MINUTES) found.notice = `Informe um número de minutos entre 0 e ${MAX_MINUTES}.`
       if (!Number.isInteger(deadlineMinutes) || deadlineMinutes < 0 || deadlineMinutes > MAX_MINUTES) found.deadline = `Informe um número de minutos entre 0 e ${MAX_MINUTES}.`
-      if (found.name || found.notice || found.deadline) {
+      if (phone.trim()) found.phone = validatePhone(phone)
+      if (found.name || found.notice || found.deadline || found.phone) {
         setErrors(found)
         focusFirstInvalid()
         return
@@ -69,16 +75,16 @@ function BusinessForm({ business, saved, setSaved, onSaved }: { business?: Busin
       setErrors({})
       setSaved(false)
       setBusy(true)
-      const input: BusinessInput = { businessName: name.trim(), timeZone: zone, minimumNoticeMinutes: noticeMinutes, cancellationDeadlineMinutes: deadlineMinutes }
+      const input: BusinessInput = { businessName: name.trim(), timeZone: zone, minimumNoticeMinutes: noticeMinutes, cancellationDeadlineMinutes: deadlineMinutes, phone: phone.trim() }
       try {
         await (creating ? api.createBusiness(input) : api.updateBusiness(input))
         setSaved(true)
         await onSaved() // o formulário continua bloqueado até o GET posterior terminar e passa a mostrar o que o SERVIDOR devolveu
       } catch (e) {
         if (e instanceof ApiError && e.status === 400) {
-          const field = { name: e.fieldErrors.businessName, notice: e.fieldErrors.minimumNoticeMinutes, deadline: e.fieldErrors.cancellationDeadlineMinutes }
+          const field = { name: e.fieldErrors.businessName, notice: e.fieldErrors.minimumNoticeMinutes, deadline: e.fieldErrors.cancellationDeadlineMinutes, phone: e.fieldErrors.phone }
           // Erro de campo aparece no campo; o aviso geral só quando não há campo a apontar (por exemplo, o fuso).
-          setErrors({ ...field, form: field.name || field.notice || field.deadline ? undefined : (e.fieldErrors.timeZone ?? describeError(e)) })
+          setErrors({ ...field, form: field.name || field.notice || field.deadline || field.phone ? undefined : (e.fieldErrors.timeZone ?? describeError(e)) })
         } else setErrors({ form: describeError(e) })
         focusFirstInvalid()
       } finally {
@@ -124,12 +130,24 @@ function BusinessForm({ business, saved, setSaved, onSaved }: { business?: Busin
           type="number"
           inputMode="numeric"
           min={0}
-          hint="O cliente só cancela até este tempo antes do horário. A equipe cancela a qualquer momento."
+          hint={`O cliente cancela ou remarca de graça até este tempo antes do horário (${minutesText(Number(deadline))}); depois, fala com o estúdio. A equipe cancela a qualquer momento.`}
           value={deadline}
           error={errors.deadline}
           onChange={(e) => { setDeadline(e.target.value); clear('deadline') }}
         />
         </div>
+        <Field
+          label="WhatsApp do estúdio (opcional)"
+          name="studio-phone"
+          disabled={busy}
+          type="tel"
+          inputMode="tel"
+          autoComplete="off"
+          hint="O cliente usa este número para falar com você quando o prazo de cancelamento já passou. Exemplo: (11) 91234-5678."
+          value={phone}
+          error={errors.phone}
+          onChange={(e) => { setPhone(e.target.value); clear('phone') }}
+        />
         <p role="alert" className="error" hidden={!errors.form}>
           {errors.form}
         </p>

@@ -4,6 +4,9 @@ export interface CatalogProvider {
   id: string
   businessName: string
   timeZone: string
+  /** Prazo de cancelamento e WhatsApp do estúdio (ADR 0021): a regra aparece antes de reservar. */
+  cancellationDeadlineMinutes?: number
+  phone?: string | null
 }
 
 export interface CatalogService {
@@ -41,6 +44,9 @@ export interface BookedAppointment {
   priceCents?: number | null
   /** Cópia dos dados do pet no momento da reserva (só nome e espécie); nulo em agendamento sem pet. */
   pet?: { name: string; species: string } | null
+  /** Até quando cancelar ou remarcar de graça (só enquanto agendado) e o WhatsApp do estúdio (ADR 0021). */
+  freeChangeUntil?: string | null
+  studioPhone?: string | null
 }
 
 /** Uma linha do histórico. `by`: quem agiu, sem nomes de funcionários para o cliente. Horários só nas remarcações. */

@@ -34,6 +34,10 @@ public class Provider {
 	@Column(name = "slug")
 	private String slug;
 
+	/** Telefone do estúdio (ADR 0021): só dígitos com DDI, ou nulo. O banco repete o formato (providers_phone_check). */
+	@Column(name = "phone")
+	private String phone;
+
 	/** A página pública só aparece quando publicada (e com slug). */
 	@Column(name = "published", nullable = false)
 	private boolean published;
@@ -59,6 +63,15 @@ public class Provider {
 	public void setPublicPage(String slug, boolean published) {
 		this.slug = slug;
 		this.published = published;
+	}
+
+	public String getPhone() {
+		return phone;
+	}
+
+	/** Define o telefone já normalizado (PhoneNumber.normalize); nulo limpa. */
+	public void setPhone(String phone) {
+		this.phone = phone;
 	}
 
 	public String getSlug() {
