@@ -48,7 +48,7 @@ jobs:
         if: steps.segredos.outputs.ativo == 'sim'
       - name: Cliente PostgreSQL e GPG
         if: steps.segredos.outputs.ativo == 'sim'
-        run: sudo apt-get update -qq && sudo apt-get install -y -qq postgresql-client gnupg
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq postgresql-client-16 gnupg
       - name: Backup criptografado
         if: steps.segredos.outputs.ativo == 'sim'
         run: bash ops/backup/backup.sh "$RUNNER_TEMP/backups"

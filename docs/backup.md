@@ -54,6 +54,14 @@ A CI já prova que o par `backup.sh`/`restore.sh` funciona a cada mudança. O qu
 
 Uma vez por trimestre, faça o passo a passo acima de ponta a ponta num banco novo e anote quanto tempo levou (RTO real).
 
+## Versão do PostgreSQL (importante)
+
+Os workflows usam o **cliente 16** (`postgresql-client-16`) porque o banco é PostgreSQL 16 (Neon, ver `docs/publicacao.md`). Um `pg_dump` **mais novo** que o servidor gera comandos que ele não entende (o ensaio da CI pegou isso na primeira execução: o dump do cliente 17 traz `SET transaction_timeout`, que o 16 recusa). Regras:
+
+- o cliente do backup deve ter a **mesma versão principal do servidor de origem** (ou maior, nunca menor);
+- o banco de **destino** da restauração deve ser da **mesma versão ou mais novo** que a do cliente que fez o dump;
+- se o Neon for atualizado para o 17, troque `postgresql-client-16` por `-17` nos dois workflows e a imagem `postgres:16` por `postgres:17` (o ensaio da CI avisa se algo não casar).
+
 ## O que este backup não cobre
 
 - Alterações depois do último backup (RPO de 24 h).
