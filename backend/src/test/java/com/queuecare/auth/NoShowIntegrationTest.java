@@ -1,6 +1,8 @@
 package com.queuecare.auth;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -29,6 +31,9 @@ class NoShowIntegrationTest extends AuthIntegrationTestBase {
 	private static final ZoneId SP = ZoneId.of("America/Sao_Paulo");
 
 	private int seq;
+
+	@org.springframework.beans.factory.annotation.Autowired
+	com.queuecare.scheduling.persistence.AppointmentRepository appointmentRepository;
 	UUID ownerA, ownerB, attendantA, customer, otherCustomer;
 	UUID providerA, providerB, serviceA, serviceB;
 	String tokenA, tokenB, tokenAttendant, tokenCustomer;
@@ -133,6 +138,32 @@ class NoShowIntegrationTest extends AuthIntegrationTestBase {
 		noShow(tokenB, id).andExpect(status().isNotFound()); // outro estúdio: a mesma resposta de agendamento inexistente
 		noShow(tokenB, UUID.randomUUID().toString()).andExpect(status().isNotFound());
 		assertEquals("SCHEDULED", statusOf(id));
+	}
+
+	@Test
+	void faltouLiberaOHorarioNoBancoENasConsultasDeHorariosLivres() throws Exception {
+		// Um atendimento LONGO que começou há 30 min e vai até daqui a 2 h 30 (3 h no total).
+		OffsetDateTime start = OffsetDateTime.now().minusMinutes(30).withSecond(0).withNano(0);
+		String id = jdbc.queryForObject("INSERT INTO appointments (provider_id, service_id, customer_id, starts_at, ends_at, status, pet_id, pet_name, pet_species) "
+				+ "VALUES (?, ?, ?, ?, ?, 'SCHEDULED', ?, 'Pet de Teste', 'DOG') RETURNING id::text", String.class, providerA, serviceA, customer, start, start.plusHours(3), petOf(customer));
+		java.time.Instant from = start.plusHours(1).toInstant();
+		java.time.Instant to = start.plusHours(2).toInstant();
+		assertTrue(appointmentRepository.existsActiveOverlapping(providerA, from, to), "enquanto agendado, o horário está ocupado");
+		assertThrows(DataIntegrityViolationException.class, () -> insertOther(start.plusHours(1)), "e o banco recusa reserva dupla");
+
+		noShow(tokenA, id).andExpect(status().isOk());
+
+		assertFalse(appointmentRepository.existsActiveOverlapping(providerA, from, to), "quem faltou libera o resto do horário");
+		assertEquals(0, appointmentRepository.findActiveOverlapping(providerA, from, to).size());
+		insertOther(start.plusHours(1)); // agora cabe outra pessoa no resto do horário (antes era recusado)
+		// O faltoso continua registrado (estado e contagem) e não pode voltar a ocupar nada.
+		assertEquals("NO_SHOW", statusOf(id));
+		assertEquals(1, count("SELECT count(*) FROM appointments WHERE id = '" + id + "'::uuid AND status = 'NO_SHOW'"));
+	}
+
+	private void insertOther(OffsetDateTime at) {
+		jdbc.update("INSERT INTO appointments (provider_id, service_id, customer_id, starts_at, ends_at, status, pet_id, pet_name, pet_species) VALUES (?, ?, ?, ?, ?, 'SCHEDULED', ?, 'Mel', 'DOG')",
+				providerA, serviceA, otherCustomer, at, at.plusMinutes(30), petOf(otherCustomer));
 	}
 
 	@Test

@@ -69,14 +69,14 @@ public interface AppointmentRepository extends JpaRepository<Appointment, UUID> 
 			+ "and a.startsAt >= :start and a.startsAt < :end order by e.createdAt asc, a.id asc")
 	java.util.List<QueueRow> findQueue(@Param("providerId") UUID providerId, @Param("start") Instant start, @Param("end") Instant end);
 
-	/** Agendamentos ATIVOS (não cancelados) do prestador que se sobrepõem a [start, end): base da consulta de horários livres. */
-	@Query("select a from Appointment a where a.providerId = :providerId and a.status <> "
-			+ "com.queuecare.scheduling.persistence.AppointmentStatus.CANCELLED and a.startsAt < :end and a.endsAt > :start")
+	/** Agendamentos ATIVOS (nem cancelados nem faltosos: quem faltou libera o horário, ADR 0021) do prestador que se sobrepõem a [start, end): base da consulta de horários livres. */
+	@Query("select a from Appointment a where a.providerId = :providerId and a.status not in ("
+			+ "com.queuecare.scheduling.persistence.AppointmentStatus.CANCELLED, com.queuecare.scheduling.persistence.AppointmentStatus.NO_SHOW) and a.startsAt < :end and a.endsAt > :start")
 	java.util.List<Appointment> findActiveOverlapping(@Param("providerId") UUID providerId, @Param("start") Instant start, @Param("end") Instant end);
 
 	/** Como {@link #existsActiveOverlapping}, ignorando um agendamento (o próprio, ao remarcar: ele não conflita consigo mesmo). */
-	@Query("select count(a) > 0 from Appointment a where a.providerId = :providerId and a.id <> :ignoring and a.status <> "
-			+ "com.queuecare.scheduling.persistence.AppointmentStatus.CANCELLED and a.startsAt < :end and a.endsAt > :start")
+	@Query("select count(a) > 0 from Appointment a where a.providerId = :providerId and a.id <> :ignoring and a.status not in ("
+			+ "com.queuecare.scheduling.persistence.AppointmentStatus.CANCELLED, com.queuecare.scheduling.persistence.AppointmentStatus.NO_SHOW) and a.startsAt < :end and a.endsAt > :start")
 	boolean existsActiveOverlappingExcept(@Param("providerId") UUID providerId, @Param("start") Instant start, @Param("end") Instant end, @Param("ignoring") UUID ignoring);
 
 	/**
@@ -84,7 +84,7 @@ public interface AppointmentRepository extends JpaRepository<Appointment, UUID> 
 	 * Mesma condição de TimeRange.overlaps: {@code a < d} e {@code c < b}. Esta checagem só serve para dar uma
 	 * mensagem clara; quem GARANTE a exclusividade, mesmo sob concorrência, é o banco (ADR 0002).
 	 */
-	@Query("select count(a) > 0 from Appointment a where a.providerId = :providerId and a.status <> "
-			+ "com.queuecare.scheduling.persistence.AppointmentStatus.CANCELLED and a.startsAt < :end and a.endsAt > :start")
+	@Query("select count(a) > 0 from Appointment a where a.providerId = :providerId and a.status not in ("
+			+ "com.queuecare.scheduling.persistence.AppointmentStatus.CANCELLED, com.queuecare.scheduling.persistence.AppointmentStatus.NO_SHOW) and a.startsAt < :end and a.endsAt > :start")
 	boolean existsActiveOverlapping(@Param("providerId") UUID providerId, @Param("start") Instant start, @Param("end") Instant end);
 }
