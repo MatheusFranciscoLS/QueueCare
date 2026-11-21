@@ -17,9 +17,3 @@ description = "Senha fictícia usada nos testes de autenticação"
 condition = "AND"
 paths = ['''backend/src/test/.*''']
 regexes = ['''senha-forte-123''']
-
-[[allowlists]]
-description = "Senha temporária fictícia do teste de Clientes (ADR 0025); o commit original a tinha escrita por inteiro, hoje ela é montada por partes"
-condition = "AND"
-paths = ['''frontend/src/test/clientes\.test\.tsx''']
-regexes = ['''Abc234Def567''']
