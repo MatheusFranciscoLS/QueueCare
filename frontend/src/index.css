@@ -202,6 +202,12 @@ body {
   color: var(--st-cancelled);
 }
 
+/* o horário dentro do bloco "faltou" usa a cor do próprio estado: o cinza de apoio dava 4,44:1 sobre este fundo (o mínimo é 4,5:1; medido com axe) */
+.week-block[data-state='missed'] .week-block__time,
+.week-block[data-state='missed'] .week-block__end {
+  color: var(--st-cancelled);
+}
+
 .card {
   background: transparent;
   border: 0;
