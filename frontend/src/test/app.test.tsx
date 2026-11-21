@@ -61,10 +61,22 @@ describe('entrada', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent('10 minutos')
   })
 
-  it('o botão só habilita com e-mail e senha preenchidos', async () => {
-    mockApi({})
+  it('o botão Entrar nunca fica apagado: campo vazio é explicado ao enviar, o foco vai ao primeiro campo e nada é enviado', async () => {
+    mockApi({}) // qualquer chamada à API falharia o teste
+    const user = userEvent.setup()
     renderApp('/entrar')
-    expect(screen.getByRole('button', { name: 'Entrar' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Entrar' })).toBeEnabled()
+
+    await user.click(screen.getByRole('button', { name: 'Entrar' }))
+
+    expect(await screen.findByText('Informe o seu e-mail.')).toBeInTheDocument()
+    expect(screen.getByText('Informe a sua senha.')).toBeInTheDocument()
+    expect(screen.getByLabelText('E-mail')).toHaveFocus()
+    expect(screen.getByLabelText('E-mail')).toHaveAttribute('aria-invalid', 'true')
+
+    await user.type(screen.getByLabelText('E-mail'), 'a@exemplo.test') // digitar limpa o erro do campo
+    expect(screen.queryByText('Informe o seu e-mail.')).not.toBeInTheDocument()
+    expect(screen.getByText('Informe a sua senha.')).toBeInTheDocument()
   })
 
 })
@@ -251,11 +263,22 @@ describe('sessão', () => {
 })
 
 describe('início por perfil', () => {
+  it('CUSTOMER vê um único chamado forte para agendar, sem os cartões que repetiam o menu', async () => {
+    mockApi({ 'POST /api/auth/login': () => token(), 'GET /api/me': () => json(200, { ...USER, role: 'CUSTOMER' }) })
+    const user = userEvent.setup()
+    renderApp('/entrar')
+    await fillLogin(user)
+
+    const cta = await screen.findByRole('link', { name: 'Agendar um horário' })
+    expect(cta).toHaveAttribute('href', '/agendar')
+    expect(cta).toHaveClass('button')
+    expect(screen.queryByRole('heading', { name: 'No dia a dia' })).not.toBeInTheDocument()
+  })
+
   it.each([
     ['ADMIN', 'No dia a dia'],
     ['PROVIDER', 'No dia a dia'],
     ['ATTENDANT', 'No dia a dia'],
-    ['CUSTOMER', 'No dia a dia'],
   ])('%s vê o que vem a seguir para o seu perfil e nada dos outros', async (role, expected) => {
     mockApi({ 'POST /api/auth/login': () => token(), 'GET /api/me': () => json(200, { ...USER, role }) })
     const user = userEvent.setup()

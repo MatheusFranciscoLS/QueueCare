@@ -47,8 +47,11 @@ describe('página pública do estúdio (visitante)', () => {
     expect(rows[1]).toHaveTextContent('30 min')
     expect(rows[1]).not.toHaveTextContent('a partir de')
     expect(screen.getByText('Você pode cancelar ou remarcar de graça até 12 h antes do horário marcado. Depois disso, é só falar com o estúdio.')).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: 'Entrar para agendar' })).toHaveAttribute('href', '/entrar')
-    expect(screen.getByRole('link', { name: 'Criar conta de cliente' })).toHaveAttribute('href', '/cadastro')
+    // o chamado para agendar aparece no topo e de novo no fim da página
+    const enter = screen.getAllByRole('link', { name: 'Entrar para agendar' })
+    expect(enter).toHaveLength(2)
+    for (const l of enter) expect(l).toHaveAttribute('href', '/entrar')
+    for (const l of screen.getAllByRole('link', { name: 'Criar conta de cliente' })) expect(l).toHaveAttribute('href', '/cadastro')
   })
 
   it('estúdio sem serviços avisa, sem lista vazia', async () => {
@@ -79,8 +82,9 @@ describe('página pública para quem já tem conta', () => {
     const view = renderWithHarness('/p/estudio-bem-te-vi')
     await act(async () => view.api().login('x@exemplo.test', PASSWORD))
     expect(await screen.findByRole('heading', { level: 1, name: 'Estúdio Bem-te-vi' })).toBeInTheDocument()
-    const cta = screen.getAllByRole('link', { name: 'Agendar' }).find((l) => l.classList.contains('button'))
-    expect(cta).toHaveAttribute('href', '/agendar') // (o menu também tem um link "Agendar")
+    const ctas = screen.getAllByRole('link', { name: 'Agendar' }).filter((l) => l.classList.contains('button'))
+    expect(ctas).toHaveLength(2) // topo e fim da página (o menu também tem um link "Agendar")
+    for (const l of ctas) expect(l).toHaveAttribute('href', '/agendar')
     expect(screen.queryByRole('link', { name: 'Entrar para agendar' })).not.toBeInTheDocument()
   })
 })

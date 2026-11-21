@@ -63,21 +63,11 @@ export function HomePage() {
               Falta o seu WhatsApp: é por ele que o estúdio avisa quando o seu pet fica pronto. <Link to="/perfil">Adicionar WhatsApp</Link>
             </p>
           )}
-          <h2>No dia a dia</h2>
-          <ul className="shortcuts">
-            <li className="primary">
-              <Link to="/agendar">Agendar</Link>
-              <span>escolha o prestador, o serviço, o dia e um horário livre</span>
-            </li>
-            <li>
-              <Link to="/meus-agendamentos">Meus agendamentos</Link>
-              <span>veja e cancele os seus agendamentos</span>
-            </li>
-            <li>
-              <Link to="/pets">Meus pets</Link>
-              <span>cadastre, edite e arquive os animais que você leva ao estúdio</span>
-            </li>
-          </ul>
+          <p className="home-cta">
+            <Link to="/agendar" className="button">
+              Agendar um horário
+            </Link>
+          </p>
         </>
       )}
       {user.role === 'ATTENDANT' && (

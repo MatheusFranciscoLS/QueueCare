@@ -91,13 +91,12 @@ describe('Início do tutor', () => {
     expect(section).toHaveTextContent('MelGato')
   })
 
-  it('se as consultas falharem o painel some e os atalhos continuam', async () => {
+  it('se as consultas falharem o painel some e o chamado para agendar continua', async () => {
     await home('CUSTOMER', {
       'GET /api/appointments/mine?page=0&size=50': () => problem(500, 'x'),
       'GET /api/customer/pets': () => problem(500, 'x'),
     })
-    expect(await screen.findByRole('heading', { name: 'No dia a dia' })).toBeInTheDocument()
-    expect(within(screen.getByRole('main')).getByRole('link', { name: 'Agendar' })).toBeInTheDocument()
+    expect(await screen.findByRole('link', { name: 'Agendar um horário' })).toHaveAttribute('href', '/agendar') // o chamado para agendar não depende das consultas
     expect(screen.queryByRole('heading', { name: 'Próximo agendamento' })).not.toBeInTheDocument()
     expect(screen.queryByRole('heading', { name: 'Comece por aqui' })).not.toBeInTheDocument()
   })

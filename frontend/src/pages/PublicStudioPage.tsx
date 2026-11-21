@@ -66,6 +66,7 @@ function Studio({ studio, role }: { studio: PublicStudio; role: string | undefin
     <>
       <h1>{studio.businessName}</h1>
       <p className="lead">Banho e tosa com horário marcado. Escolha o serviço e agende pelo Pelo &amp; Ponto.</p>
+      <Cta role={role} />
 
       <h2>Serviços</h2>
       {studio.services.length === 0 ? (
@@ -86,22 +87,30 @@ function Studio({ studio, role }: { studio: PublicStudio; role: string | undefin
       <h2>Cancelamento e remarcação</h2>
       <p className="public-policy">{publicPolicyText(studio.cancellationDeadlineMinutes)}</p>
 
-      <p className="actions public-cta">
-        {role === 'CUSTOMER' ? (
-          <Link to="/agendar" className="button">
-            Agendar
-          </Link>
-        ) : role === undefined ? (
-          <>
-            <Link to="/entrar" className="button">
-              Entrar para agendar
-            </Link>
-            <Link to="/cadastro" className="button secondary">
-              Criar conta de cliente
-            </Link>
-          </>
-        ) : null}
-      </p>
+      <Cta role={role} />
     </>
+  )
+}
+
+/** O caminho para agendar: o visitante entra ou cria conta; o tutor já logado vai direto. Aparece no topo (quem já se decidiu) e no fim (quem leu tudo). Staff e admin não têm o que agendar. */
+function Cta({ role }: { role: string | undefined }) {
+  if (role !== undefined && role !== 'CUSTOMER') return null
+  return (
+    <p className="actions public-cta">
+      {role === 'CUSTOMER' ? (
+        <Link to="/agendar" className="button">
+          Agendar
+        </Link>
+      ) : (
+        <>
+          <Link to="/entrar" className="button">
+            Entrar para agendar
+          </Link>
+          <Link to="/cadastro" className="button secondary">
+            Criar conta de cliente
+          </Link>
+        </>
+      )}
+    </p>
   )
 }
