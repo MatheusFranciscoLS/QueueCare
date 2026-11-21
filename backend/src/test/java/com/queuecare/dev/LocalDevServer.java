@@ -166,6 +166,8 @@ public final class LocalDevServer {
 		UUID hygienic = service(c, provider, "Tosa higiênica", 45);
 		UUID full = service(c, provider, "Banho e tosa", 90);
 		service(c, provider, "Hidratação", 30);
+		// Folga de demonstração (ADR 0024): dois dias fechados, longe o bastante para não atrapalhar os fluxos que agendam nos próximos dias.
+		exec(c, "INSERT INTO time_off (provider_id, starts_on, ends_on, reason) VALUES (?, CURRENT_DATE + 20, CURRENT_DATE + 21, 'Folga da equipe')", provider);
 
 		UUID thor = pet(c, marina, "Thor", "DOG", "Golden Retriever", "LARGE", "Tem medo de secador. Não gosta de cheiro forte.");
 		UUID mel = pet(c, marina, "Mel", "CAT", "Siamês", "SMALL", null);

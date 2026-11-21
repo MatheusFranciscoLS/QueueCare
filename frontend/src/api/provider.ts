@@ -54,6 +54,17 @@ export interface AvailabilityWindow {
   end: string
 }
 
+/** Folga, feriado ou férias (ADR 0024): dias inteiros, de `startsOn` a `endsOn` (inclusive), na data do estúdio. */
+export interface TimeOff {
+  id: string
+  startsOn: string
+  endsOn: string
+  reason?: string | null
+}
+
+/** Ao fechar um período, quantos agendamentos ativos já existiam nele (nada é cancelado sozinho). */
+export type TimeOffCreated = TimeOff & { affectedAppointments: number }
+
 type Request = AuthApi['request']
 
 /** Chamadas do prestador (negócio, serviços e expediente). A API decide tudo: aqui só se monta a requisição. */
@@ -71,6 +82,10 @@ export function providerApi(request: Request) {
     createService: (input: { name: string; durationMinutes: number } & ServiceDurations & ServicePrices) => request<Service>('/api/provider/services', { method: 'POST', body: input }),
     updateService: (id: string, input: { name: string; durationMinutes: number; active: boolean } & ServiceDurations & ServicePrices) =>
       request<Service>(`/api/provider/services/${encodeURIComponent(id)}`, { method: 'PUT', body: input }),
+    /** Folgas, feriados e férias de hoje em diante (ADR 0024). */
+    listTimeOff: () => request<TimeOff[]>('/api/provider/time-off'),
+    createTimeOff: (input: { startsOn: string; endsOn: string; reason?: string }) => request<TimeOffCreated>('/api/provider/time-off', { method: 'POST', body: input }),
+    deleteTimeOff: (id: string) => request<void>(`/api/provider/time-off/${encodeURIComponent(id)}`, { method: 'DELETE' }),
     getAvailability: () => request<AvailabilityWindow[]>('/api/provider/availability'),
     replaceAvailability: (windows: AvailabilityWindow[]) => request<AvailabilityWindow[]>('/api/provider/availability', { method: 'PUT', body: windows }),
   }

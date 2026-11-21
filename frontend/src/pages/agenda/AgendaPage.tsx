@@ -67,6 +67,8 @@ function Day({ workplace }: { workplace: Workplace }) {
   const setView = (next: 'day' | 'week') => setParams(next === 'week' ? { visao: 'semana' } : {}, { replace: true })
   const week = view === 'week'
   const step = week ? 7 : 1
+  // Folga, feriado ou férias (ADR 0024): o dia escolhido cai num período em que o estúdio fecha.
+  const closure = workplace.closures?.find((c) => date >= c.startsOn && date <= c.endsOn)
   return (
     <section className="card">
       <h1>Agenda</h1>
@@ -113,6 +115,11 @@ function Day({ workplace }: { workplace: Workplace }) {
       ) : (
         <>
           <h2>{longDate(date)}</h2>
+          {closure && (
+            <p role="status" className="notice closed-day">
+              <strong>Estúdio fechado neste dia{closure.reason ? `: ${closure.reason}` : ''}.</strong> Ninguém consegue agendar nele; agendamentos que já existiam continuam aqui.
+            </p>
+          )}
           {/* A chave é a data: trocar de dia refaz a lista do zero (nunca aparece a lista de outro dia sob a data nova). */}
           <DayList key={date} date={date} timeZone={workplace.timeZone} workplace={workplace} />
           <WaitlistDay key={'wait-' + date} date={date} timeZone={workplace.timeZone} studioName={workplace.businessName} />

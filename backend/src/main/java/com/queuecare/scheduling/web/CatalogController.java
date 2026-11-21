@@ -23,8 +23,10 @@ class CatalogController {
 	static final int MAX_PAGE_SIZE = 50;
 
 	private final CatalogService catalog;
+	private final com.queuecare.scheduling.application.TimeOffService timeOff;
 
-	CatalogController(CatalogService catalog) {
+	CatalogController(CatalogService catalog, com.queuecare.scheduling.application.TimeOffService timeOff) {
+		this.timeOff = timeOff;
 		this.catalog = catalog;
 	}
 
@@ -52,6 +54,15 @@ class CatalogController {
 	DepositTermsResponse depositTerms(@org.springframework.security.core.annotation.AuthenticationPrincipal org.springframework.security.oauth2.jwt.Jwt jwt, @PathVariable UUID providerId) {
 		var t = catalog.depositTerms(providerId, UUID.fromString(jwt.getSubject()));
 		return new DepositTermsResponse(t.required(), t.depositCents(), t.pixKey());
+	}
+
+	/** Dias em que o estúdio fecha (ADR 0024), de hoje em diante: o Agendar pula esses dias e não oferece lista de espera neles. */
+	record ClosureResponse(java.time.LocalDate startsOn, java.time.LocalDate endsOn, String reason) {
+	}
+
+	@GetMapping("/providers/{providerId}/closures")
+	List<ClosureResponse> closures(@PathVariable UUID providerId) {
+		return timeOff.upcomingOfActive(providerId).stream().map(t -> new ClosureResponse(t.getStartsOn(), t.getEndsOn(), t.getReason())).toList();
 	}
 
 	@GetMapping("/providers")

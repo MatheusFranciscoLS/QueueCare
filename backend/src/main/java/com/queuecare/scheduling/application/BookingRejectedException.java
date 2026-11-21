@@ -24,7 +24,9 @@ public class BookingRejectedException extends RuntimeException {
 		IN_THE_PAST,
 		TOO_SOON,
 		/** R1: fora do expediente ou não cabe inteiro nele. */
-		OUTSIDE_AVAILABILITY
+		OUTSIDE_AVAILABILITY,
+		/** ADR 0024: o estúdio está fechado naquele dia (folga, feriado ou férias). */
+		CLOSED_DAY
 	}
 
 	private final Reason reason;

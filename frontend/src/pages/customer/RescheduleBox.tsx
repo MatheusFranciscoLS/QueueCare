@@ -7,7 +7,7 @@ import { useSingleFlight } from '../useSingleFlight'
 import { DayStep, SlotStep } from './BookingSteps'
 
 /** Recusas em que o problema é o HORÁRIO escolhido: a caixa continua aberta, mostra o motivo e refaz a lista de horários. */
-const SLOT_REASONS = new Set(['SLOT_TAKEN', 'IN_THE_PAST', 'TOO_SOON', 'OUTSIDE_AVAILABILITY', 'NO_CHANGE', 'NONEXISTENT_LOCAL_TIME', 'AMBIGUOUS_LOCAL_TIME'])
+const SLOT_REASONS = new Set(['SLOT_TAKEN', 'IN_THE_PAST', 'TOO_SOON', 'OUTSIDE_AVAILABILITY', 'CLOSED_DAY', 'NO_CHANGE', 'NONEXISTENT_LOCAL_TIME', 'AMBIGUOUS_LOCAL_TIME'])
 
 /**
  * Remarcar: o cliente escolhe outro dia e horário para o MESMO agendamento (mesmo serviço, mesma duração, mesmo pet). Os horários livres

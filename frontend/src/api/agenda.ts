@@ -8,6 +8,8 @@ export interface Workplace {
   timeZone: string
   /** Prazo de cancelamento do estúdio, em minutos (ADR 0021): a mensagem do lembrete diz até quando mudar de graça. */
   cancellationDeadlineMinutes?: number
+  /** Períodos em que o estúdio fecha (ADR 0024), de hoje em diante: a agenda avisa "fechado" nesses dias. */
+  closures?: { id: string; startsOn: string; endsOn: string; reason?: string | null }[]
 }
 
 export interface AgendaItem {
