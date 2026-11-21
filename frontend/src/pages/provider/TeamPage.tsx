@@ -156,9 +156,11 @@ function CreateAccount({ onCreated, setNotice }: { onCreated: () => Promise<void
         </p>
       </div>
     )}
-    <form onSubmit={submit} noValidate>
+    <form className="form-narrow" onSubmit={submit} noValidate>
+      <div className="field-row">
       <Field label="Nome" name="staff-name" disabled={busy} value={name} error={errors.name} onChange={edit('name', setName)} />
       <Field label="E-mail" name="staff-email" type="email" autoComplete="off" disabled={busy} value={email} error={errors.email} onChange={edit('email', setEmail)} />
+      </div>
       <Field
         label="Senha provisória"
         name="staff-password"
@@ -227,7 +229,7 @@ function LinkExisting({ onLinked, setNotice }: { onLinked: () => Promise<void>; 
   }
 
   return (
-    <form onSubmit={submit} noValidate>
+    <form className="form-narrow" onSubmit={submit} noValidate>
       <Field
         label="E-mail do atendente"
         name="link-email"
