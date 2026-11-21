@@ -74,7 +74,7 @@ public class AgendaService {
 
 	/** Um agendamento da agenda. */
 	public record AgendaItem(UUID id, Instant startsAt, Instant endsAt, AppointmentStatus status, UUID serviceId, String serviceName,
-			UUID customerId, String customerName, String customerPhone, Integer priceCents, PetInfo pet, int customerNoShows) {
+			UUID customerId, String customerName, String customerPhone, Integer priceCents, PetInfo pet, int customerNoShows, Instant remindedAt) {
 	}
 
 	/** Uma pessoa na fila: posição (1 = a primeira a chegar), quem é, o que vai fazer e quando chegou. */
@@ -83,13 +83,13 @@ public class AgendaService {
 	}
 
 	/** Onde a pessoa trabalha: o negócio e o fuso em que os horários da agenda valem (o atendente não tem acesso a /api/provider). */
-	public record Workplace(UUID providerId, String businessName, String timeZone) {
+	public record Workplace(UUID providerId, String businessName, String timeZone, int cancellationDeadlineMinutes) {
 	}
 
 	@Transactional(readOnly = true)
 	public Workplace workplace(UUID userId) {
 		Provider provider = resolveProvider(userId);
-		return new Workplace(provider.getId(), provider.getBusinessName(), provider.getTimeZone());
+		return new Workplace(provider.getId(), provider.getBusinessName(), provider.getTimeZone(), provider.getCancellationDeadlineMinutes());
 	}
 
 	/** O prestador em que o usuário opera, com as MESMAS regras da agenda (perfil, vínculo e dono ativo); nunca vem da requisição. */
@@ -150,7 +150,7 @@ public class AgendaService {
 		return found.stream().map(a -> new AgendaItem(a.getId(), a.getStartsAt(), a.getEndsAt(), a.getStatus(), a.getServiceId(),
 				serviceNames.get(a.getServiceId()), a.getCustomerId(), customers.get(a.getCustomerId()).getName(),
 				petDetails ? customers.get(a.getCustomerId()).getPhone() : null, petDetails ? a.getPriceCents() : null, PetInfo.of(a, petDetails),
-				noShows.getOrDefault(a.getCustomerId(), 0L).intValue())).toList();
+				noShows.getOrDefault(a.getCustomerId(), 0L).intValue(), petDetails ? a.getRemindedAt() : null)).toList();
 	}
 
 

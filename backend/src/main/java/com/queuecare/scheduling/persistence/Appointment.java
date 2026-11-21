@@ -96,6 +96,10 @@ public class Appointment {
 	@Column(name = "price_cents", updatable = false)
 	private Integer priceCents;
 
+	/** Quando a equipe lembrou o tutor pelo WhatsApp (ADR 0021); nulo = ainda não. */
+	@Column(name = "reminded_at")
+	private Instant remindedAt;
+
 	@Version
 	@Column(nullable = false)
 	private long version;
@@ -163,6 +167,15 @@ public class Appointment {
 	/** O pet está pronto para retirada (CHECKED_IN ou IN_PROGRESS para READY). */
 	public void markReady() {
 		this.status = AppointmentStatus.READY;
+	}
+
+	/** A equipe lembrou o tutor (ADR 0021). O serviço confere a situação antes; vale o último lembrete. */
+	public void markReminded(Instant at) {
+		this.remindedAt = Objects.requireNonNull(at);
+	}
+
+	public Instant getRemindedAt() {
+		return remindedAt;
 	}
 
 	/** A pessoa faltou (SCHEDULED para NO_SHOW). O serviço confere a situação e o horário antes; aqui só se muda. */

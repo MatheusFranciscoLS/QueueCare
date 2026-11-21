@@ -1,4 +1,6 @@
 import { formatMoney } from '../../api/money'
+import { reminderMessage } from '../../api/policy'
+import { whatsappLink } from '../../api/phone'
 import { ContactLink } from './ContactLink'
 import { PetFicha } from './PetFicha'
 import { PetVisitsList } from './PetVisitsList'
@@ -209,6 +211,12 @@ function DayList({ date, timeZone, workplace }: { date: string; timeZone: string
   )
 }
 
+/** "20/11, 17:02": quando o lembrete foi enviado, no fuso do negócio. */
+function reminderStamp(iso: string, timeZone: string): string {
+  const day = todayIn(timeZone, new Date(iso))
+  return `${day.slice(8, 10)}/${day.slice(5, 7)}, ${timeIn(iso, timeZone)}`
+}
+
 /** O resumo do dia em frase (ADR 0018 v2): concluídos, esperando (chegaram) e por vir. */
 function countByStatus(statuses: string[]) {
   return {
@@ -348,6 +356,16 @@ function AppointmentRow({
       onCancelled() // some da lista agora; o GET seguinte só confirma
       setNotice(`Agendamento de ${customer} cancelado.`)
     }, true)
+  /** O WhatsApp abre pelo próprio link; aqui só se guarda QUANDO a equipe lembrou, para ninguém lembrar duas vezes. */
+  async function markReminded() {
+    setProblem(null)
+    try {
+      await api.reminded(item.id)
+      await onChanged()
+    } catch (e) {
+      setProblem(describeError(e))
+    }
+  }
   const noShow = () =>
     act(async () => {
       await api.noShow(item.id)
@@ -418,6 +436,7 @@ function AppointmentRow({
           )}
           <span className="appt-service">{item.serviceName ?? 'Serviço'}</span>
           {item.priceCents != null && <span className="appt-price">{formatMoney(item.priceCents)}</span>}
+          {status === 'SCHEDULED' && item.remindedAt && <span className="appt-reminded">Lembrete enviado em {reminderStamp(item.remindedAt, timeZone)}</span>}
         </span>
         {item.pet && <PetFicha pet={item.pet} />}
         {item.pet?.notes && <span className="appt-notes">Observações do tutor: {item.pet.notes}</span>}
@@ -427,6 +446,29 @@ function AppointmentRow({
         <span className="actions">
           {!confirming ? (
             <>
+              {!started && item.customerPhone && (
+                <a
+                  className="button secondary"
+                  href={whatsappLink(
+                    item.customerPhone,
+                    reminderMessage({
+                      tutorName: item.customerName,
+                      studioName: workplace.businessName,
+                      serviceName: item.serviceName,
+                      petName: item.pet?.name,
+                      startsAt: item.startsAt,
+                      timeZone,
+                      deadlineMinutes: workplace.cancellationDeadlineMinutes,
+                    }),
+                  )}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={`Lembrar ${customer} pelo WhatsApp`}
+                  onClick={() => void markReminded()}
+                >
+                  Lembrar
+                </a>
+              )}
               {canCheckIn && (
                 <button type="button" className="button" disabled={busy} onClick={checkIn}>
                   {busy ? 'Enviando…' : 'Chegou'}

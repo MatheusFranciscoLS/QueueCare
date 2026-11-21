@@ -186,6 +186,13 @@ class AppointmentController {
 		return respond(List.of(attendanceService.noShow(id, userId(jwt)))).get(0);
 	}
 
+	/** A equipe lembrou o tutor pelo WhatsApp (ADR 0021): guarda quando. Só a equipe do prestador, só de quem está agendado e ainda não começou. */
+	@PostMapping("/{id}/reminded")
+	@PreAuthorize("hasAnyRole('PROVIDER','ATTENDANT')")
+	AppointmentResponse reminded(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID id) {
+		return respond(List.of(attendanceService.remind(id, userId(jwt)))).get(0);
+	}
+
 	/** O atendimento começou (de quem chegou). Só a equipe do prestador. */
 	@PostMapping("/{id}/start")
 	@PreAuthorize("hasAnyRole('PROVIDER','ATTENDANT')")
