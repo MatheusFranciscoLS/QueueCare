@@ -6,5 +6,7 @@ public enum AppointmentEventType {
 	/** O atendimento começou e o pet ficou pronto (ADR 0019); um de cada por agendamento. */
 	STARTED, READY,
 	/** Remarcação (ADR 0017): é o ÚNICO tipo que pode se repetir no mesmo agendamento. */
-	RESCHEDULED
+	RESCHEDULED,
+	/** A pessoa faltou (ADR 0021); um por agendamento, é o último evento. */
+	NO_SHOW
 }

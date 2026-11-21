@@ -21,6 +21,8 @@ export interface AgendaItem {
   customerName: string | null
   /** WhatsApp do tutor (só dígitos com DDI); vem na agenda do dia e na fila, nunca na semana; ausente se o tutor não informou. */
   customerPhone?: string | null
+  /** Quantas vezes o tutor faltou NESTE estúdio (ADR 0021); só na agenda do dia. */
+  customerNoShows?: number
   /** O pet (cópia gravada no agendamento); nulo em agendamento sem pet. Raça e observações vêm na agenda do dia e na fila. */
   pet?: PetOnAppointment | null
 }
@@ -67,6 +69,8 @@ export function agendaApi(request: Request) {
     start: (appointmentId: string) => request<unknown>(`/api/appointments/${encodeURIComponent(appointmentId)}/start`, { method: 'POST' }),
     /** O pet está pronto para retirada (de quem chegou ou está em atendimento). */
     ready: (appointmentId: string) => request<unknown>(`/api/appointments/${encodeURIComponent(appointmentId)}/ready`, { method: 'POST' }),
+    /** A pessoa faltou (ADR 0021): só a partir do horário marcado; estado final. */
+    noShow: (appointmentId: string) => request<unknown>(`/api/appointments/${encodeURIComponent(appointmentId)}/no-show`, { method: 'POST' }),
     complete: (appointmentId: string) => request<unknown>(`/api/appointments/${encodeURIComponent(appointmentId)}/complete`, { method: 'POST' }),
     /** Remarcar: move o MESMO agendamento para o novo horário LOCAL do negócio (equipe: sem prazo e sem limite). */
     reschedule: (appointmentId: string, localStart: string) =>

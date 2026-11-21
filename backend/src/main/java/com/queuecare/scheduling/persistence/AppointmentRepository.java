@@ -43,6 +43,14 @@ public interface AppointmentRepository extends JpaRepository<Appointment, UUID> 
 			+ "order by a.startsAt asc, a.id asc")
 	java.util.List<Appointment> findDayAgenda(@Param("providerId") UUID providerId, @Param("start") Instant start, @Param("end") Instant end);
 
+	/** Faltas de um tutor num prestador (ADR 0021): uma linha por tutor que TEM falta, dentre os pedidos. */
+	record NoShowCount(UUID customerId, long count) {
+	}
+
+	@Query("select new com.queuecare.scheduling.persistence.AppointmentRepository$NoShowCount(a.customerId, count(a)) from Appointment a where a.providerId = :providerId "
+			+ "and a.status = com.queuecare.scheduling.persistence.AppointmentStatus.NO_SHOW and a.customerId in :customerIds group by a.customerId")
+	java.util.List<NoShowCount> countNoShows(@Param("providerId") UUID providerId, @Param("customerIds") java.util.Collection<UUID> customerIds);
+
 	/** Linha da fila: o agendamento e o instante do check-in. */
 	record QueueRow(Appointment appointment, Instant checkedInAt) {
 	}

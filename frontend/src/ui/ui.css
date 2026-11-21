@@ -397,10 +397,12 @@
   border-width: 0 3px 3px 0;
   transform: rotate(40deg);
 }
+.pp .pp-dot[data-state='missed'],
 .pp .pp-dot[data-state='cancelled'] {
   border-color: var(--pp-field);
   background: var(--pp-bg);
 }
+.pp .pp-dot[data-state='missed']::after,
 .pp .pp-dot[data-state='cancelled']::after {
   content: '';
   position: absolute;
@@ -428,6 +430,7 @@
   background: var(--pp-st-done-bg);
   color: var(--pp-st-done-fg);
 }
+.pp .pp-badge[data-state='missed'],
 .pp .pp-badge[data-state='cancelled'] {
   background: var(--pp-st-cancelled-bg);
   color: var(--pp-st-cancelled-fg);
@@ -479,6 +482,7 @@
 .pp .pp-fio__item[data-state='done'] .pp-fio__node::after {
   border-left: 4px solid var(--pp-done);
 }
+.pp .pp-fio__item[data-state='missed'] .pp-fio__time,
 .pp .pp-fio__item[data-state='cancelled'] .pp-fio__time {
   color: var(--pp-muted);
   text-decoration: line-through;

@@ -74,7 +74,7 @@ public class AgendaService {
 
 	/** Um agendamento da agenda. */
 	public record AgendaItem(UUID id, Instant startsAt, Instant endsAt, AppointmentStatus status, UUID serviceId, String serviceName,
-			UUID customerId, String customerName, String customerPhone, Integer priceCents, PetInfo pet) {
+			UUID customerId, String customerName, String customerPhone, Integer priceCents, PetInfo pet, int customerNoShows) {
 	}
 
 	/** Uma pessoa na fila: posição (1 = a primeira a chegar), quem é, o que vai fazer e quando chegou. */
@@ -142,10 +142,15 @@ public class AgendaService {
 				.collect(Collectors.toMap(ServiceOffering::getId, ServiceOffering::getName));
 		Map<UUID, UserAccount> customers = users.findAllById(found.stream().map(Appointment::getCustomerId).distinct().toList()).stream()
 				.collect(Collectors.toMap(UserAccount::getId, u -> u, (a, b) -> a, java.util.HashMap::new));
+		// Faltas do tutor NESTE estúdio (ADR 0021), só na agenda do dia: é o que a equipe usa para decidir uma regra mais firme, e nunca atravessa estúdios.
+		Map<UUID, Long> noShows = !petDetails || found.isEmpty() ? Map.of()
+				: appointments.countNoShows(providerId, found.stream().map(Appointment::getCustomerId).distinct().toList()).stream()
+						.collect(Collectors.toMap(AppointmentRepository.NoShowCount::customerId, AppointmentRepository.NoShowCount::count));
 		// O telefone do tutor só vai na agenda do DIA (onde o atendimento acontece); a semana, de várias linhas, não o leva (ADR 0019).
 		return found.stream().map(a -> new AgendaItem(a.getId(), a.getStartsAt(), a.getEndsAt(), a.getStatus(), a.getServiceId(),
 				serviceNames.get(a.getServiceId()), a.getCustomerId(), customers.get(a.getCustomerId()).getName(),
-				petDetails ? customers.get(a.getCustomerId()).getPhone() : null, petDetails ? a.getPriceCents() : null, PetInfo.of(a, petDetails))).toList();
+				petDetails ? customers.get(a.getCustomerId()).getPhone() : null, petDetails ? a.getPriceCents() : null, PetInfo.of(a, petDetails),
+				noShows.getOrDefault(a.getCustomerId(), 0L).intValue())).toList();
 	}
 
 

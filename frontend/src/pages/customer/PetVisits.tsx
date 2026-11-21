@@ -16,6 +16,7 @@ const STATUS_TEXT: Record<string, string> = {
   READY: 'pronto para retirada',
   COMPLETED: 'concluído',
   CANCELLED: 'cancelado',
+  NO_SHOW: 'faltou',
 }
 
 /**

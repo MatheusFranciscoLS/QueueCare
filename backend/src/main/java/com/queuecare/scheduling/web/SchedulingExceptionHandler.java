@@ -67,7 +67,8 @@ class SchedulingExceptionHandler {
 
 	@ExceptionHandler(AttendanceRejectedException.class)
 	ProblemDetail attendanceRejected(AttendanceRejectedException e) {
-		HttpStatus status = e.reason() == AttendanceRejectedException.Reason.WRONG_DAY ? HttpStatus.UNPROCESSABLE_ENTITY : HttpStatus.CONFLICT;
+		HttpStatus status = e.reason() == AttendanceRejectedException.Reason.WRONG_DAY || e.reason() == AttendanceRejectedException.Reason.TOO_EARLY ? HttpStatus.UNPROCESSABLE_ENTITY
+				: HttpStatus.CONFLICT;
 		return problem(status, e.reason().name(), "operação recusada");
 	}
 

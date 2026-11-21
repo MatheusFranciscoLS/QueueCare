@@ -179,6 +179,13 @@ class AppointmentController {
 		return respond(List.of(attendanceService.checkIn(id, userId(jwt)))).get(0);
 	}
 
+	/** A pessoa faltou (ADR 0021): só a equipe do prestador, só de quem estava agendado e só a partir do horário marcado. */
+	@PostMapping("/{id}/no-show")
+	@PreAuthorize("hasAnyRole('PROVIDER','ATTENDANT')")
+	AppointmentResponse noShow(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID id) {
+		return respond(List.of(attendanceService.noShow(id, userId(jwt)))).get(0);
+	}
+
 	/** O atendimento começou (de quem chegou). Só a equipe do prestador. */
 	@PostMapping("/{id}/start")
 	@PreAuthorize("hasAnyRole('PROVIDER','ATTENDANT')")

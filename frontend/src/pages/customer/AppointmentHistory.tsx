@@ -34,6 +34,8 @@ function describeEntry(entry: HistoryEntry, zone: string, showNames: boolean): s
       return 'Atendimento concluído'
     case 'CANCELLED':
       return `Cancelado ${by}`
+    case 'NO_SHOW':
+      return 'Falta registrada'
   }
 }
 

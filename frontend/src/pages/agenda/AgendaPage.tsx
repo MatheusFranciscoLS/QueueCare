@@ -186,6 +186,7 @@ function DayList({ date, timeZone, workplace }: { date: string; timeZone: string
             status={laterOf(item.status, statuses.get(item.id))}
             timeZone={timeZone}
             canCheckIn={isToday}
+            started={Date.parse(item.startsAt) <= now.getTime()}
             nowLabel={index === nextIndex ? nowLabel : undefined}
             workplace={workplace}
             onChanged={reload}
@@ -212,13 +213,14 @@ function DayList({ date, timeZone, workplace }: { date: string; timeZone: string
 function countByStatus(statuses: string[]) {
   return {
     done: statuses.filter((s) => s === 'COMPLETED').length,
+    missed: statuses.filter((s) => s === 'NO_SHOW').length,
     waiting: statuses.filter((s) => s === 'CHECKED_IN').length,
     working: statuses.filter((s) => s === 'IN_PROGRESS' || s === 'READY').length,
     upcoming: statuses.filter((s) => s === 'SCHEDULED').length,
   }
 }
 
-function DaySummary({ counts }: { counts: { done: number; waiting: number; working: number; upcoming: number } }) {
+function DaySummary({ counts }: { counts: { done: number; missed: number; waiting: number; working: number; upcoming: number } }) {
   return (
     <Summary>
       <strong>
@@ -229,6 +231,11 @@ function DaySummary({ counts }: { counts: { done: number; waiting: number; worki
         <>
           , <strong>{counts.working} em atendimento</strong>
         </>
+      )}
+      {counts.missed > 0 && (
+        <>
+          , <strong>{counts.missed} {counts.missed === 1 ? 'faltou' : 'faltaram'}</strong>
+        </>
       )}{' '}
       e <strong>{counts.upcoming} por vir</strong>.
     </Summary>
@@ -236,7 +243,7 @@ function DaySummary({ counts }: { counts: { done: number; waiting: number; worki
 }
 
 /** As situações só andam para frente. */
-const RANK: Record<string, number> = { SCHEDULED: 0, CHECKED_IN: 1, IN_PROGRESS: 2, READY: 3, COMPLETED: 4 }
+const RANK: Record<string, number> = { SCHEDULED: 0, CHECKED_IN: 1, IN_PROGRESS: 2, READY: 3, COMPLETED: 4, NO_SHOW: 4 }
 
 /** A situação mais avançada entre a do servidor e a confirmada aqui: uma lista de antes da mudança não a desfaz, e uma leitura nova que a confirme ou ultrapasse (outra pessoa concluiu) prevalece. */
 function laterOf(server: string, local: string | undefined): string {
@@ -244,7 +251,7 @@ function laterOf(server: string, local: string | undefined): string {
   return RANK[local] > RANK[server] ? local : server
 }
 
-const STATUS_LABEL: Record<string, string> = { SCHEDULED: 'Agendado', CHECKED_IN: 'Chegou', IN_PROGRESS: 'Em atendimento', READY: 'Pronto para retirada', COMPLETED: 'Concluído' }
+const STATUS_LABEL: Record<string, string> = { SCHEDULED: 'Agendado', CHECKED_IN: 'Chegou', IN_PROGRESS: 'Em atendimento', READY: 'Pronto para retirada', COMPLETED: 'Concluído', NO_SHOW: 'Faltou' }
 
 /** Motivos em que o agendamento JÁ mudou no servidor: a linha volta a valer o que o servidor diz e a lista é refeita. */
 const STATE_CHANGED = new Set(['ALREADY_CANCELLED', 'NOT_CANCELLABLE', 'NOT_RESCHEDULABLE', 'INVALID_STATE', 'CONCURRENT_UPDATE'])
@@ -254,6 +261,7 @@ function AppointmentRow({
   status,
   timeZone,
   canCheckIn,
+  started,
   nowLabel,
   workplace,
   onChanged,
@@ -267,6 +275,8 @@ function AppointmentRow({
   status: string
   timeZone: string
   canCheckIn: boolean
+  /** O horário marcado já chegou (relógio da agenda): só então dá para registrar que a pessoa faltou. */
+  started: boolean
   /** Hora de agora no fuso do negócio, quando o marcador "agora" fica antes desta linha (entre o último atendimento passado e este). */
   nowLabel?: string
   workplace: Workplace
@@ -280,6 +290,8 @@ function AppointmentRow({
   const { request } = useAuth()
   const api = useMemo(() => agendaApi(request), [request])
   const [confirming, setConfirming] = useState(false)
+  // O que a confirmação pede: cancelar o agendamento ou registrar que a pessoa faltou (estado final, por isso também pede confirmação).
+  const [kind, setKind] = useState<'cancel' | 'noshow'>('cancel')
   const [busy, setBusy] = useState(false)
   const [rescheduling, setRescheduling] = useState(false)
   const [historyOpen, setHistoryOpen] = useState(false)
@@ -290,6 +302,7 @@ function AppointmentRow({
   // quando o botão pressionado some (a situação mudou), o foco vai para a própria linha.
   const rowRef = useRef<HTMLLIElement>(null)
   const openRef = useRef<HTMLButtonElement>(null)
+  const noShowRef = useRef<HTMLButtonElement>(null)
   const backRef = useRef<HTMLButtonElement>(null)
   const wasConfirming = useRef(false)
   const rescheduleRef = useRef<HTMLButtonElement>(null)
@@ -300,9 +313,9 @@ function AppointmentRow({
   }, [rescheduling])
   useEffect(() => {
     if (confirming) backRef.current?.focus()
-    else if (wasConfirming.current) openRef.current?.focus()
+    else if (wasConfirming.current) (kind === 'noshow' ? noShowRef : openRef).current?.focus()
     wasConfirming.current = confirming
-  }, [confirming])
+  }, [confirming, kind])
 
   /** Roda uma ação da equipe: bloqueia os botões durante o envio, avisa e, se o servidor já mudou, refaz a lista. */
   async function act(run: () => Promise<void>, removesRow = false) {
@@ -335,6 +348,12 @@ function AppointmentRow({
       onCancelled() // some da lista agora; o GET seguinte só confirma
       setNotice(`Agendamento de ${customer} cancelado.`)
     }, true)
+  const noShow = () =>
+    act(async () => {
+      await api.noShow(item.id)
+      onStatus('NO_SHOW')
+      setNotice(`Falta de ${customer} registrada.`)
+    })
   const checkIn = () =>
     act(async () => {
       await api.checkIn(item.id)
@@ -392,6 +411,11 @@ function AppointmentRow({
         <span className="appt-line">
           <span className="appt-who">{customer}</span>
           {item.customerPhone && <ContactLink phone={item.customerPhone} name={customer} />}
+          {item.customerNoShows != null && item.customerNoShows > 0 && (
+            <span className="appt-noshows">
+              {item.customerNoShows} {item.customerNoShows === 1 ? 'falta' : 'faltas'}
+            </span>
+          )}
           <span className="appt-service">{item.serviceName ?? 'Serviço'}</span>
           {item.priceCents != null && <span className="appt-price">{formatMoney(item.priceCents)}</span>}
         </span>
@@ -411,8 +435,41 @@ function AppointmentRow({
               <button type="button" className="button secondary" ref={rescheduleRef} disabled={busy} aria-expanded={rescheduling} onClick={() => setRescheduling((open) => !open)}>
                 Remarcar
               </button>
-              <button type="button" className="button secondary" ref={openRef} disabled={busy} onClick={() => setConfirming(true)}>
+              <button
+                type="button"
+                className="button secondary"
+                ref={openRef}
+                disabled={busy}
+                onClick={() => {
+                  setKind('cancel')
+                  setConfirming(true)
+                }}
+              >
                 Cancelar agendamento
+              </button>
+              {started && (
+                <button
+                  type="button"
+                  className="button secondary"
+                  ref={noShowRef}
+                  disabled={busy}
+                  onClick={() => {
+                    setKind('noshow')
+                    setConfirming(true)
+                  }}
+                >
+                  Faltou
+                </button>
+              )}
+            </>
+          ) : kind === 'noshow' ? (
+            <>
+              <span>Registrar que {customer} faltou? Não dá para desfazer.</span>
+              <button type="button" className="button" disabled={busy} onClick={noShow}>
+                {busy ? 'Registrando…' : 'Confirmar falta'}
+              </button>
+              <button type="button" className="button secondary" ref={backRef} disabled={busy} onClick={() => setConfirming(false)}>
+                Voltar
               </button>
             </>
           ) : (
