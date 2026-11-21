@@ -65,7 +65,7 @@ export function HomePage() {
           )}
           <h2>No dia a dia</h2>
           <ul className="shortcuts">
-            <li>
+            <li className="primary">
               <Link to="/agendar">Agendar</Link>
               <span>escolha o prestador, o serviço, o dia e um horário livre</span>
             </li>

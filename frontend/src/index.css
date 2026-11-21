@@ -2066,3 +2066,68 @@ a.button {
     flex: none;
   }
 }
+
+/* ===== Visual, rodada 2: Início e Agendar ===== */
+
+/* o primeiro atalho do tutor é a ação principal do app: Agendar */
+.shortcuts li.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.shortcuts li.primary a,
+.shortcuts li.primary span {
+  color: var(--accent-text);
+}
+
+.shortcuts li.primary:hover {
+  background: var(--accent-strong);
+  border-color: var(--accent-strong);
+}
+
+.shortcuts li.primary a:focus-visible,
+.shortcuts li.primary:has(a:focus-visible) {
+  outline-color: var(--text);
+}
+
+/* resumo do dia como painel: o "Próximo" fica em destaque */
+.today {
+  padding: var(--space-4) var(--space-5, 1.25rem);
+  background: var(--surface);
+  border: 2px solid var(--line);
+  border-radius: 16px;
+}
+
+.today .next {
+  margin-top: var(--space-2);
+  padding: 0.5rem 0.75rem;
+  background: var(--accent-soft);
+  border-radius: 10px;
+}
+
+/* Agendar: nome à esquerda, duração e valor à direita, em linha */
+.step .choice-text {
+  display: flex;
+  flex: 1;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0 var(--space-3);
+  padding: 0.35rem 0;
+}
+
+.step .choice-meta {
+  color: var(--muted);
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
+}
+
+/* o ponto separador continua no texto lido por leitores de tela, mas some do visual (o layout já separa nome e detalhes) */
+.step .choice-sep {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
