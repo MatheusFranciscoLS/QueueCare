@@ -202,10 +202,12 @@ body {
   color: var(--st-cancelled);
 }
 
-/* o horário dentro do bloco "faltou" usa a cor do próprio estado: o cinza de apoio dava 4,44:1 sobre este fundo (o mínimo é 4,5:1; medido com axe) */
+/* o horário dentro do bloco "faltou" usa a cor do próprio estado e SEM a transparência de 0,85 do horário comum: com ela o texto clareava e dava 4,44:1 sobre este fundo (o mínimo é 4,5:1; medido com axe) */
 .week-block[data-state='missed'] .week-block__time,
-.week-block[data-state='missed'] .week-block__end {
+.week-block[data-state='missed'] .week-block__end,
+.week-block[data-state='missed'] .week-block__service {
   color: var(--st-cancelled);
+  opacity: 1;
 }
 
 .card {
@@ -1972,7 +1974,8 @@ a.button {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 0 1.125rem;
+  /* 8 px entre linhas quando quebra (selo de faltas, lembrete): o anel de foco do link do WhatsApp precisa de folga e não pode encostar na linha de baixo */
+  gap: 0.5rem 1.125rem;
   color: var(--muted);
 }
 

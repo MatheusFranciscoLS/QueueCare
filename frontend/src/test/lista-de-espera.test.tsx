@@ -187,7 +187,7 @@ describe('agenda: lista de espera do dia (equipe)', () => {
     expect(await screen.findByText(/Chamado em 20\/11, 17:02/)).toBeInTheDocument()
     expect(calls).toEqual(['called'])
 
-    await user.click(screen.getByRole('button', { name: 'Tirar Joana Lima da lista' }))
+    await user.click(screen.getByRole('button', { name: 'Tirar da lista: Joana Lima' }))
     await waitFor(() => expect(screen.queryByRole('region', { name: 'Lista de espera' })).not.toBeInTheDocument())
     expect(calls).toEqual(['called', 'removed'])
   })

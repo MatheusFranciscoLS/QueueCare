@@ -211,9 +211,9 @@ describe('agenda: sinal para a equipe', () => {
     await open({ [AGENDA]: () => json(200, [item('a-1', { depositCents: 3000, depositStatus: 'REQUESTED' }), item('a-2', { customerName: 'Pedro Alves', depositCents: 3000, depositStatus: 'RECEIVED' }), item('a-3', { customerName: 'Ana Costa', depositStatus: 'NONE' })]) })
     const rows = await screen.findAllByRole('listitem')
     expect(within(rows[0]).getByText('Sinal pendente · R$ 30,00')).toBeInTheDocument()
-    expect(within(rows[0]).getByRole('button', { name: 'Marcar sinal de Joana Lima como recebido' })).toBeInTheDocument()
+    expect(within(rows[0]).getByRole('button', { name: 'Sinal recebido de Joana Lima' })).toBeInTheDocument()
     expect(within(rows[1]).getByText('Sinal recebido')).toBeInTheDocument()
-    expect(within(rows[1]).queryByRole('button', { name: /Marcar sinal/ })).not.toBeInTheDocument()
+    expect(within(rows[1]).queryByRole('button', { name: /Sinal recebido de/ })).not.toBeInTheDocument()
     expect(within(rows[2]).queryByText(/Sinal/)).not.toBeInTheDocument()
   })
 
@@ -226,9 +226,9 @@ describe('agenda: sinal para a equipe', () => {
         return json(200, { id: 'a-1', depositStatus: 'RECEIVED' })
       },
     })
-    await user.click(await screen.findByRole('button', { name: 'Marcar sinal de Joana Lima como recebido' }))
+    await user.click(await screen.findByRole('button', { name: 'Sinal recebido de Joana Lima' }))
     expect(await screen.findByText('Sinal de Joana Lima registrado como recebido.')).toBeInTheDocument()
     await waitFor(() => expect(screen.getByText('Sinal recebido')).toBeInTheDocument())
-    expect(screen.queryByRole('button', { name: /Marcar sinal/ })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /Sinal recebido de/ })).not.toBeInTheDocument()
   })
 })

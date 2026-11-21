@@ -479,7 +479,7 @@ function AppointmentRow({
                 </a>
               )}
               {item.depositStatus === 'REQUESTED' && (
-                <button type="button" className="button secondary" disabled={busy} aria-label={`Marcar sinal de ${customer} como recebido`} onClick={depositReceived}>
+                <button type="button" className="button secondary" disabled={busy} aria-label={`Sinal recebido de ${customer}`} onClick={depositReceived}>
                   Sinal recebido
                 </button>
               )}
