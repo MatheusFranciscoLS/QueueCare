@@ -16,6 +16,7 @@ import java.time.Clock;
 import java.time.Instant;
 import java.util.List;
 import java.util.Locale;
+import java.util.UUID;
 import java.util.Optional;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
@@ -73,6 +74,15 @@ public class AuthService {
 
 	public static String normalizeEmail(String email) {
 		return email.trim().toLowerCase(Locale.ROOT);
+	}
+
+	/** Registra que a pessoa leu esta versão da política de privacidade (ADR 0027). Versão nula não registra nada (cadastro por API sem o campo). */
+	@Transactional
+	public void recordPrivacyAcceptance(UUID userId, String version) {
+		if (version == null) {
+			return;
+		}
+		users.findById(userId).ifPresent(user -> user.recordPrivacyAcceptance(version, clock.instant()));
 	}
 
 	/** O cadastro público SEMPRE cria CUSTOMER, sem troca de senha obrigatória (a senha é da própria pessoa). */

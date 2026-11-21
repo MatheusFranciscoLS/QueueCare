@@ -1,6 +1,7 @@
 import { act, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { PRIVACY_POLICY_VERSION } from '../api/privacy'
 import { json, mockApi, NEW_PASSWORD, PASSWORD, problem, renderApp, token, USER, WRONG_PASSWORD } from './helpers'
 
 beforeEach(() => vi.useRealTimers())
@@ -200,7 +201,7 @@ describe('cadastro', () => {
     await user.click(screen.getByRole('button', { name: 'Criar conta' }))
 
     expect(await screen.findByRole('heading', { name: 'Olá, Maria Souza' })).toBeInTheDocument()
-    expect(calls[0].body).toEqual({ name: 'Maria Souza', email: 'maria@exemplo.test', password: PASSWORD, phone: '(11) 91234-5678' })
+    expect(calls[0].body).toEqual({ name: 'Maria Souza', email: 'maria@exemplo.test', password: PASSWORD, phone: '(11) 91234-5678', privacyPolicyVersion: PRIVACY_POLICY_VERSION })
   })
 
   it('e-mail já cadastrado aparece no campo de e-mail', async () => {

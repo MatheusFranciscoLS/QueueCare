@@ -21,7 +21,9 @@ final class AuthDtos {
 			@NotBlank @Size(max = 120) String name,
 			@NotBlank @Email @Size(max = 254) String email,
 			@NotBlank @Size(max = MAX_PASSWORD_CHARACTERS) String password,
-			@Size(max = PhoneNumber.MAX_INPUT) String phone) {
+			@Size(max = PhoneNumber.MAX_INPUT) String phone,
+			/** Versão da política de privacidade que a pessoa leu (AAAA-MM-DD); opcional (ADR 0027). */
+			@jakarta.validation.constraints.Pattern(regexp = "\\d{4}-\\d{2}-\\d{2}") String privacyPolicyVersion) {
 		/** Remove espaços externos ANTES da validação, para "  ana@exemplo.test " ser aceito e normalizado. */
 		RegisterRequest {
 			name = name == null ? null : name.trim();

@@ -68,6 +68,15 @@ public interface AppointmentRepository extends JpaRepository<Appointment, UUID> 
 	@Query("select distinct a.customerId, a.petName from Appointment a where a.providerId = :providerId and a.petName is not null")
 	java.util.List<Object[]> petNamesByCustomer(@Param("providerId") UUID providerId);
 
+	/** Anonimiza a cópia dos dados do pet gravada nos agendamentos do tutor (ADR 0027); o agendamento em si (horário, serviço, valor) continua. */
+	@org.springframework.data.jpa.repository.Modifying
+	@Query("update Appointment a set a.petName = 'Pet removido', a.petBreed = null, a.petNotes = null, a.petHealthNotes = null, a.petWeightKg = null where a.customerId = :customerId")
+	int anonymizePetCopies(@Param("customerId") UUID customerId);
+
+	/** Agendamentos ainda MARCADOS do tutor, de agora em diante (cancelados ao excluir a conta). */
+	@Query("select a from Appointment a where a.customerId = :customerId and a.status = com.queuecare.scheduling.persistence.AppointmentStatus.SCHEDULED and a.startsAt > :now")
+	java.util.List<Appointment> findFutureScheduledOf(@Param("customerId") UUID customerId, @Param("now") Instant now);
+
 	/** O estúdio já teve algum agendamento (de qualquer estado) com este tutor? */
 	boolean existsByProviderIdAndCustomerId(UUID providerId, UUID customerId);
 

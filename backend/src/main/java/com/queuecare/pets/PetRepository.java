@@ -18,6 +18,11 @@ public interface PetRepository extends JpaRepository<Pet, UUID> {
 	/** O dono é parte da consulta: pet de outro cliente é indistinguível de pet inexistente. */
 	Optional<Pet> findByIdAndCustomerId(UUID id, UUID customerId);
 
+	/** Anonimiza TODOS os pets do tutor (ADR 0027): o que identifica sai, o pet fica arquivado. */
+	@org.springframework.data.jpa.repository.Modifying
+	@Query("update Pet p set p.name = 'Pet removido', p.breed = null, p.notes = null, p.healthNotes = null, p.weightKg = null, p.active = false, p.updatedAt = :now where p.customerId = :customerId")
+	int anonymizeAllOf(@Param("customerId") UUID customerId, @Param("now") java.time.Instant now);
+
 	/** Carrega o pet BLOQUEANDO a linha (reservar e arquivar/editar serializam aqui, ADR 0016 item 5). O dono vem na consulta. */
 	@Lock(LockModeType.PESSIMISTIC_WRITE)
 	@Query("select p from Pet p where p.id = :id and p.customerId = :customerId")

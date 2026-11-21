@@ -9,6 +9,7 @@ import { HomePage } from './pages/HomePage'
 import { Layout } from './pages/Layout'
 import { Loading } from './pages/Loading'
 import { LoginPage } from './pages/LoginPage'
+import { PrivacyPage } from './pages/PrivacyPage'
 import { PublicStudioPage } from './pages/PublicStudioPage'
 import { RegisterPage } from './pages/RegisterPage'
 
@@ -53,6 +54,8 @@ export function App() {
       <Route element={<Layout />}>
         {/* Página pública do estúdio (ADR 0015): aberta a todos, com ou sem login. */}
         <Route path="/p/:slug" element={<PublicStudioPage />} />
+        {/* Política de Privacidade (ADR 0027): aberta a todos, com ou sem login. */}
+        <Route path="/privacidade" element={<PrivacyPage />} />
         <Route element={<PublicOnly />}>
           <Route path="/entrar" element={<LoginPage />} />
           <Route path="/cadastro" element={<RegisterPage />} />

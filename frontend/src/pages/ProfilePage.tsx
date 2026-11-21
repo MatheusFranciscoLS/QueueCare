@@ -8,6 +8,7 @@ import { useAuth } from '../auth/session'
 import { Field } from './Field'
 import { useFocusFirstInvalid } from './useFocusFirstInvalid'
 import { useSingleFlight } from './useSingleFlight'
+import { MyDataSection } from './customer/MyDataSection'
 
 /** Meu perfil: quem sou e o WhatsApp de contato. É por ele que o estúdio avisa quando o pet fica pronto (ADR 0019). */
 export function ProfilePage() {
@@ -90,6 +91,7 @@ export function ProfilePage() {
       <p className="aside">
         <Link to="/trocar-senha">Trocar senha</Link>
       </p>
+      {user.role === 'CUSTOMER' && <MyDataSection />}
     </section>
   )
 }

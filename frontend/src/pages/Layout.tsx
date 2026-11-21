@@ -48,6 +48,9 @@ function Account({ user, onNavigate }: { user: User; onNavigate?: () => void }) 
           <Link to="/trocar-senha" className="pp-who__link" onClick={onNavigate}>
             Trocar senha
           </Link>
+          <Link to="/privacidade" className="pp-who__link" onClick={onNavigate}>
+            Privacidade
+          </Link>
         </>
       )}
       <ThemeToggle />
