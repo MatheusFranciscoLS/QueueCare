@@ -110,9 +110,28 @@ class PublicStudioApiIntegrationTest extends AuthIntegrationTestBase {
 				.andReturn().getResponse().getContentAsString();
 		JsonNode json = new ObjectMapper().readTree(body);
 		// Só estes campos: nada de ids, e-mail, equipe nem configurações.
-		assertEquals(Set.of("slug", "businessName", "timeZone", "services"), fieldNames(json));
-		assertEquals(Set.of("name", "durationMinutes"), fieldNames(json.get("services").get(0)));
+		assertEquals(Set.of("slug", "businessName", "timeZone", "cancellationDeadlineMinutes", "services"), fieldNames(json)); // ADR 0021: o prazo de cancelamento é público
+		assertEquals(Set.of("name", "durationMinutes", "durationVaries"), fieldNames(json.get("services").get(0)));
 		assertTrue(!body.contains("pa@exemplo.test") && !body.contains(providerA.toString()) && !body.contains("Serviço desativado"));
+	}
+
+	@Test
+	void paginaPublicaTrazOPrazoDeCancelamentoEAMenorDuracaoComOAvisoDeQueVaria() throws Exception {
+		service(providerA, "Banho", 60, true);
+		jdbc.update("UPDATE services SET duration_medium_minutes = 45, duration_large_minutes = 90 WHERE name = 'Banho' AND provider_id = ?", providerA); // o médio é MAIS CURTO que a base
+		service(providerA, "Tosa", 45, true);
+		jdbc.update("UPDATE services SET coat_extra_minutes = 20 WHERE name = 'Tosa' AND provider_id = ?", providerA);
+		service(providerA, "Hidratação", 30, true); // sem variação nenhuma
+		setPage(tokenA, "estudio-alfa", true).andExpect(status().isOk());
+
+		String body = studio("estudio-alfa").andExpect(status().isOk()).andExpect(jsonPath("$.cancellationDeadlineMinutes").value(120)).andReturn().getResponse().getContentAsString();
+		assertEquals(45, JsonPath.<java.util.List<Integer>>read(body, "$.services[?(@.name=='Banho')].durationMinutes").get(0), "a menor possível: o 'a partir de'");
+		assertEquals(true, JsonPath.<java.util.List<Boolean>>read(body, "$.services[?(@.name=='Banho')].durationVaries").get(0));
+		assertEquals(45, JsonPath.<java.util.List<Integer>>read(body, "$.services[?(@.name=='Tosa')].durationMinutes").get(0));
+		assertEquals(true, JsonPath.<java.util.List<Boolean>>read(body, "$.services[?(@.name=='Tosa')].durationVaries").get(0), "só o extra de pelo já faz variar");
+		assertEquals(30, JsonPath.<java.util.List<Integer>>read(body, "$.services[?(@.name=='Hidratação')].durationMinutes").get(0));
+		assertEquals(false, JsonPath.<java.util.List<Boolean>>read(body, "$.services[?(@.name=='Hidratação')].durationVaries").get(0));
+		assertTrue(!body.contains("minimumNotice") && !body.contains("phone") && !body.contains("pixKey"), "o resto da configuração continua interno");
 	}
 
 	@Test

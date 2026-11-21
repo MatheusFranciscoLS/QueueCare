@@ -16,6 +16,8 @@ const BY_REASON: Record<string, string> = {
   INVALID_STATE: 'Esse agendamento já mudou de situação. Atualize a agenda.',
   WRONG_DAY: 'A chegada só pode ser registrada no dia do agendamento.',
   TOO_EARLY: 'Só dá para registrar a falta a partir do horário do agendamento.',
+  SLUG_TAKEN: 'Esse endereço já está em uso por outro estúdio. Escolha outro.',
+  STUDIO_NOT_FOUND: 'Não encontramos esse estúdio.',
   WAITLIST_LIMIT: 'Você já está em muitas listas de espera. Saia de uma para entrar em outra.',
   INVALID_DATE: 'Esse dia não está disponível para a lista de espera.',
   WAITLIST_ENTRY_NOT_FOUND: 'Essa entrada da lista de espera não existe mais.',

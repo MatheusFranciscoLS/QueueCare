@@ -55,9 +55,13 @@ export function AgendaPage() {
 }
 
 function Day({ workplace }: { workplace: Workplace }) {
-  const [date, setDate] = useState(() => todayIn(workplace.timeZone))
-  // A visão mora no endereço (?visao=semana): dá para voltar, recarregar e mandar o link da semana.
+  // A visão mora no endereço (?visao=semana): dá para voltar, recarregar e mandar o link da semana. O dia também pode vir no endereço (?data=AAAA-MM-DD),
+  // como no atalho "Lembrar pelo WhatsApp" do Início; um valor que não é data é ignorado.
   const [params, setParams] = useSearchParams()
+  const [date, setDate] = useState(() => {
+    const wanted = params.get('data')
+    return wanted && isDate(wanted) ? wanted : todayIn(workplace.timeZone)
+  })
   const view = params.get('visao') === 'semana' ? 'week' : 'day'
   const setView = (next: 'day' | 'week') => setParams(next === 'week' ? { visao: 'semana' } : {}, { replace: true })
   const week = view === 'week'

@@ -137,6 +137,66 @@ body {
   background: var(--st-waiting-bg);
 }
 
+/* página pública do estúdio (ADR 0015): a tela do visitante e o formulário do dono */
+.public-studio h2 {
+  margin-top: 1.75rem;
+}
+
+.public-studio .public-services .row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 1rem;
+}
+
+.public-cta {
+  margin-top: 1.5rem;
+}
+
+.public-cta .button {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  text-decoration: none;
+}
+
+/* "Meu negócio" tem seções em sequência (negócio, sinal, página pública): linha e respiro entre elas, e a explicação não cola no primeiro campo */
+section.card.public-page-form,
+section.card.deposit-form {
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--line);
+}
+
+.public-page-form .hint,
+.deposit-form .hint {
+  margin-bottom: 1rem;
+}
+
+.public-page-form label.check {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+/* a casca do visitante: só a marca e o conteúdo (sem o painel ilustrado do login) */
+.public-shell {
+  width: 100%;
+  max-width: 40rem;
+  margin: 0 auto;
+  padding: 1.25rem 1rem 3rem;
+}
+
+.public-shell header {
+  margin-bottom: 1.25rem;
+}
+
+.public-link {
+  margin-top: 1rem;
+  overflow-wrap: anywhere;
+}
+
 /* sinal por Pix (ADR 0023): texto + tom, nunca só cor */
 .appt-deposit {
   display: inline-flex;
@@ -158,9 +218,6 @@ body {
   margin: 0.5rem 0;
 }
 
-.deposit-form {
-  margin-top: 1.5rem;
-}
 
 /* lista de espera (ADR 0022) */
 .waitlist-offer {

@@ -60,6 +60,9 @@ type Request = AuthApi['request']
 export function providerApi(request: Request) {
   return {
     getBusiness: () => request<Business>('/api/provider'),
+    /** Endereço e publicação da página pública (ADR 0015); slug nulo = sem endereço. */
+    getPublicPage: () => request<{ slug: string | null; published: boolean }>('/api/provider/public-page'),
+    updatePublicPage: (input: { slug: string | null; published: boolean }) => request<{ slug: string | null; published: boolean }>('/api/provider/public-page', { method: 'PUT', body: input }),
     /** Sinal por Pix (ADR 0023). Chave vazia limpa; regra ligada exige chave e valor. */
     updateDeposit: (input: { pixKey: string; depositCents: number | null; depositRule: DepositRule }) => request<Business>('/api/provider/deposit', { method: 'PUT', body: input }),
     createBusiness: (input: BusinessInput) => request<Business>('/api/provider', { method: 'POST', body: input }),

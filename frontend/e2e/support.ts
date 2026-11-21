@@ -31,6 +31,7 @@ export interface Tela {
 export const TELAS: Tela[] = [
   { id: 'ui-demo', perfil: 'publica', path: '/__ui', pronto: 'Fundação visual' },
   { id: 'entrar', perfil: 'publica', path: '/entrar', pronto: 'Entrar' },
+  { id: 'publica-estudio', perfil: 'publica', path: '/p/estudio-bem-te-vi', pronto: 'Estúdio Bem-te-vi' },
   { id: 'nao-encontrada', perfil: 'publica', path: '/nao-existe', pronto: 'Página não encontrada' },
   { id: 'cadastro', perfil: 'publica', path: '/cadastro', pronto: 'Criar conta de cliente' },
   { id: 'cliente-inicio', perfil: 'cliente', path: '/', pronto: /Olá, Marina/ },
