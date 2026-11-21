@@ -2541,3 +2541,22 @@ label.check {
     width: 100%;
   }
 }
+
+/* App instalável (ADR 0030): aviso de falta de internet e botão "Instalar o app" */
+.offline-banner {
+  margin: 0 0 1rem;
+  padding: 0.625rem 0.875rem;
+  border: 2px solid var(--pp-gold-mark, #b97f00);
+  border-radius: 10px;
+  background: var(--pp-st-waiting-bg, #fce9be);
+  color: var(--pp-st-waiting-fg, #5e3f00);
+}
+
+.pp-install {
+  background: none;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
