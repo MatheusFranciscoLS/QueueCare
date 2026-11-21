@@ -33,8 +33,8 @@ async function loginAs(role: string, extra: Record<string, () => Response> = {},
 
 describe('navegação por perfil (ADR 0018, seção 4)', () => {
   it.each([
-    ['PROVIDER', ['Início', 'Agenda', 'Fila', 'Serviços', 'Expediente', 'Equipe', 'Meu negócio']],
-    ['ATTENDANT', ['Início', 'Agenda', 'Fila']],
+    ['PROVIDER', ['Início', 'Agenda', 'Fila', 'Clientes', 'Serviços', 'Expediente', 'Equipe', 'Meu negócio']],
+    ['ATTENDANT', ['Início', 'Agenda', 'Fila', 'Clientes']],
     ['CUSTOMER', ['Início', 'Agendar', 'Meus agendamentos', 'Meus pets']],
     ['ADMIN', ['Contas', 'Novo prestador']],
   ] as const)('%s tem exatamente estes itens, nesta ordem', (role, itens) => {

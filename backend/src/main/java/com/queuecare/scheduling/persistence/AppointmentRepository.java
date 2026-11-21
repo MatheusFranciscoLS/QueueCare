@@ -54,6 +54,23 @@ public interface AppointmentRepository extends JpaRepository<Appointment, UUID> 
 	/** Quantos agendamentos de um tutor neste prestador estão numa situação (ADR 0023: atendimentos concluídos e faltas). */
 	long countByProviderIdAndCustomerIdAndStatus(UUID providerId, UUID customerId, AppointmentStatus status);
 
+	/** Resumo de um tutor num estúdio (ADR 0025): atendimentos concluídos, faltas e o início do agendamento mais recente. */
+	record CustomerStat(UUID customerId, long visits, long noShows, Instant lastAt) {
+	}
+
+	@Query("select new com.queuecare.scheduling.persistence.AppointmentRepository$CustomerStat(a.customerId, "
+			+ "sum(case when a.status = com.queuecare.scheduling.persistence.AppointmentStatus.COMPLETED then 1L else 0L end), "
+			+ "sum(case when a.status = com.queuecare.scheduling.persistence.AppointmentStatus.NO_SHOW then 1L else 0L end), max(a.startsAt)) "
+			+ "from Appointment a where a.providerId = :providerId group by a.customerId")
+	java.util.List<CustomerStat> customerStats(@Param("providerId") UUID providerId);
+
+	/** Nomes de pet por tutor num estúdio (a cópia gravada em cada agendamento), sem repetir. */
+	@Query("select distinct a.customerId, a.petName from Appointment a where a.providerId = :providerId and a.petName is not null")
+	java.util.List<Object[]> petNamesByCustomer(@Param("providerId") UUID providerId);
+
+	/** O estúdio já teve algum agendamento (de qualquer estado) com este tutor? */
+	boolean existsByProviderIdAndCustomerId(UUID providerId, UUID customerId);
+
 	/** Linha da fila: o agendamento e o instante do check-in. */
 	record QueueRow(Appointment appointment, Instant checkedInAt) {
 	}

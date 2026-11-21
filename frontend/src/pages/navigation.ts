@@ -17,6 +17,7 @@ export function navigationFor(role: Role): { label: string; items: NavItem[] } {
           { to: '/', label: 'Início', end: true },
           { to: '/agenda', label: 'Agenda' },
           { to: '/fila', label: 'Fila' },
+          { to: '/clientes', label: 'Clientes' },
           { to: '/servicos', label: 'Serviços' },
           { to: '/expediente', label: 'Expediente' },
           { to: '/equipe', label: 'Equipe' },
@@ -30,6 +31,7 @@ export function navigationFor(role: Role): { label: string; items: NavItem[] } {
           { to: '/', label: 'Início', end: true },
           { to: '/agenda', label: 'Agenda' },
           { to: '/fila', label: 'Fila' },
+          { to: '/clientes', label: 'Clientes' },
         ],
       }
     case 'CUSTOMER':

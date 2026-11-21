@@ -1,0 +1,3 @@
+# Falso positivo conhecido e revisado (ADR 0025): senha temporária FICTÍCIA de um teste, no primeiro commit do PR 96.
+# O arquivo atual já a monta por partes; o varredor ainda a vê no histórico do PR. A impressão digital é exata (commit, arquivo, regra e linha).
+8fd629da8ad2a043bd55a6d24e771124b0ff9c9e:frontend/src/test/clientes.test.tsx:generic-api-key:107
