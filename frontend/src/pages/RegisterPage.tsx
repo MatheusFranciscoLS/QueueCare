@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { ApiError } from '../api/client'
 import { describeError } from '../api/messages'
 import { validatePhone } from '../api/phone'
+import { PRIVACY_POLICY_VERSION } from '../api/privacy'
 import { validateNewPassword } from '../auth/passwordPolicy'
 import { useAuth } from '../auth/session'
 import { AuthLayout } from './AuthLayout'
@@ -39,7 +40,7 @@ export function RegisterPage() {
     setErrors({})
     setBusy(true)
     try {
-      await register(name.trim(), email.trim(), password, phone.trim())
+      await register(name.trim(), email.trim(), password, phone.trim(), PRIVACY_POLICY_VERSION)
       navigate('/', { replace: true })
     } catch (e) {
       if (e instanceof ApiError && e.status === 409) setErrors({ email: 'Esse e-mail já está cadastrado.' })
@@ -91,6 +92,10 @@ export function RegisterPage() {
           {busy ? 'Criando…' : 'Criar conta'}
         </button>
       </form>
+      <p className="hint">Ao criar a conta, você confirma que leu a política de privacidade.</p>
+      <p className="aside">
+        <Link to="/privacidade">Política de Privacidade</Link>
+      </p>
       <p className="aside">
         Já tem conta? <Link to="/entrar">Entrar</Link>
       </p>

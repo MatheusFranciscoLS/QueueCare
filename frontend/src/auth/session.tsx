@@ -30,7 +30,8 @@ export interface AuthApi {
   /** A sessão acabou por expirar (e não porque a pessoa saiu); a tela de entrada avisa. */
   expired: boolean
   login(email: string, password: string): Promise<void>
-  register(name: string, email: string, password: string, phone?: string): Promise<void>
+  /** `privacyPolicyVersion`: a versão da política que a pessoa leu (ADR 0027), gravada no cadastro. */
+  register(name: string, email: string, password: string, phone?: string, privacyPolicyVersion?: string): Promise<void>
   /** Troca o próprio WhatsApp (vazio remove) e atualiza a sessão. */
   updatePhone(phone: string): Promise<void>
   logout(): void
@@ -111,9 +112,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const operation = ++generation.current
         await enter(await apiRequest<TokenResponse>('/api/auth/login', { method: 'POST', body: { email, password } }), operation)
       },
-      async register(name, email, password, phone) {
+      async register(name, email, password, phone, privacyPolicyVersion) {
         const operation = ++generation.current
-        await apiRequest('/api/auth/register', { method: 'POST', body: phone ? { name, email, password, phone } : { name, email, password } })
+        const body = { name, email, password, ...(phone ? { phone } : {}), ...(privacyPolicyVersion ? { privacyPolicyVersion } : {}) }
+        await apiRequest('/api/auth/register', { method: 'POST', body })
         await enter(await apiRequest<TokenResponse>('/api/auth/login', { method: 'POST', body: { email, password } }), operation)
       },
       async updatePhone(phone) {

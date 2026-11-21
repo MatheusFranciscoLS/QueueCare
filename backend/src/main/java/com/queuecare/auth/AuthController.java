@@ -33,6 +33,7 @@ class AuthController {
 	@ResponseStatus(HttpStatus.CREATED)
 	UserResponse register(@Valid @RequestBody RegisterRequest request) {
 		UserAccount user = authService.registerCustomer(request.name(), request.email(), request.password(), request.phone());
+		authService.recordPrivacyAcceptance(user.getId(), request.privacyPolicyVersion());
 		return toResponse(user);
 	}
 

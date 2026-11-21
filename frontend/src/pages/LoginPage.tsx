@@ -67,6 +67,9 @@ export function LoginPage() {
       <p className="aside">
         Ainda não tem conta? <Link to="/cadastro">Cadastre-se como cliente</Link>
       </p>
+      <p className="aside">
+        <Link to="/privacidade">Política de Privacidade</Link>
+      </p>
     </section>
     </AuthLayout>
   )

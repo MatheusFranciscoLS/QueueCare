@@ -83,6 +83,12 @@ public class PetService {
 		return saved;
 	}
 
+	/** Anonimiza todos os pets do tutor que está excluindo a conta (ADR 0027); o chamador já bloqueou a linha do cliente. */
+	@Transactional
+	public int anonymizeAll(UUID customerId) {
+		return pets.anonymizeAllOf(customerId, clock.instant());
+	}
+
 	/** Arquiva (não apaga). Repetir é inofensivo. Agendamento futuro continua válido; só novas reservas passam a ser recusadas. */
 	@Transactional
 	public Pet archive(UUID customerId, UUID petId) {
