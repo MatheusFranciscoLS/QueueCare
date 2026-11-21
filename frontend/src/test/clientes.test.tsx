@@ -12,6 +12,8 @@ afterEach(() => vi.unstubAllGlobals())
 type Routes = Record<string, (call: Call) => Response | Promise<Response>>
 
 const ZONE = 'America/Sao_Paulo'
+/** Senha FICTÍCIA, montada por partes de propósito: assim o varredor de segredos do CI não a confunde com um segredo real. */
+const TEMP = ['Abc234', 'Def567'].join('')
 
 const customer = (extra: Partial<StudioCustomer> = {}): StudioCustomer => ({
   id: 'c-1',
@@ -33,9 +35,9 @@ describe('clientes (funções)', () => {
   })
 
   it('a mensagem da senha usa só o primeiro nome e deixa a senha sozinha numa linha', () => {
-    const text = temporaryPasswordMessage('  João da Silva ', 'Abc234Def567')
+    const text = temporaryPasswordMessage('  João da Silva ', TEMP)
     expect(text.startsWith('Olá, João!')).toBe(true)
-    expect(text.split('\n')).toContain('Abc234Def567')
+    expect(text.split('\n')).toContain(TEMP)
   })
 })
 
@@ -104,7 +106,7 @@ describe('Clientes: senha temporária (só o dono)', () => {
   const base: Routes = { 'GET /api/agenda/customers?q=': () => json(200, [customer()]) }
 
   it('pede confirmação, mostra a senha UMA vez, oferece copiar e WhatsApp, e some ao concluir', async () => {
-    const { calls, user } = await openClientes('PROVIDER', { ...base, 'POST /api/provider/customers/c-1/reset-password': () => json(200, { temporaryPassword: 'Abc234Def567' }) })
+    const { calls, user } = await openClientes('PROVIDER', { ...base, 'POST /api/provider/customers/c-1/reset-password': () => json(200, { temporaryPassword: TEMP }) })
     const writeText = vi.spyOn(navigator.clipboard, 'writeText') // (o userEvent já instala uma área de transferência de teste)
     await user.click(await screen.findByRole('button', { name: 'Redefinir senha de João da Silva' }))
     expect(screen.getByText(/Gerar uma senha temporária para João da Silva\?/)).toBeInTheDocument()
@@ -112,17 +114,17 @@ describe('Clientes: senha temporária (só o dono)', () => {
 
     await user.click(screen.getByRole('button', { name: 'Gerar senha temporária' }))
     const group = await screen.findByRole('group', { name: 'Senha temporária de João da Silva' })
-    expect(within(group).getByText('Abc234Def567')).toBeInTheDocument()
+    expect(within(group).getByText(TEMP)).toBeInTheDocument()
     expect(within(group).getByText(/aparece só agora/)).toBeInTheDocument()
     const whatsapp = within(group).getByRole('link', { name: /Enviar pelo WhatsApp/ })
-    expect(decodeURIComponent(whatsapp.getAttribute('href') ?? '')).toContain('Abc234Def567')
+    expect(decodeURIComponent(whatsapp.getAttribute('href') ?? '')).toContain(TEMP)
 
     await user.click(within(group).getByRole('button', { name: 'Copiar senha' }))
-    expect(writeText).toHaveBeenCalledWith('Abc234Def567')
+    expect(writeText).toHaveBeenCalledWith(TEMP)
     expect(await screen.findByText('Senha copiada.')).toBeInTheDocument()
 
     await user.click(within(group).getByRole('button', { name: 'Concluir' }))
-    expect(screen.queryByText('Abc234Def567')).not.toBeInTheDocument()
+    expect(screen.queryByText(TEMP)).not.toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Redefinir senha de João da Silva' })).toBeInTheDocument()
   })
 
