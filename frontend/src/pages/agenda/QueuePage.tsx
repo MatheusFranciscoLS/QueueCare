@@ -154,7 +154,7 @@ function QueueRow({
 }) {
   const { request } = useAuth()
   const api = useMemo(() => agendaApi(request), [request])
-  const [busy, setBusy] = useState<'start' | 'ready' | 'complete' | null>(null)
+  const [busy, setBusy] = useState<'start' | 'ready' | 'complete' | 'undo' | null>(null)
   const [moreOpen, setMoreOpen] = useState(false) // pular etapas (ex.: concluir sem passar por "em atendimento") fica atrás de "Mais ações"
   const once = useSingleFlight()
   const customer = item.customerName ?? 'Cliente'
