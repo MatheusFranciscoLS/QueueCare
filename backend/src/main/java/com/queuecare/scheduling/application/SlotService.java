@@ -18,6 +18,7 @@ import com.queuecare.scheduling.persistence.Provider;
 import com.queuecare.scheduling.persistence.ProviderRepository;
 import com.queuecare.scheduling.persistence.ServiceOffering;
 import com.queuecare.scheduling.persistence.ServiceOfferingRepository;
+import com.queuecare.scheduling.persistence.TimeOffRepository;
 import com.queuecare.scheduling.persistence.UserAccount;
 import com.queuecare.scheduling.persistence.UserAccountRepository;
 import com.queuecare.scheduling.persistence.UserRole;
@@ -56,10 +57,12 @@ public class SlotService {
 	private final UserAccountRepository users;
 	private final PetService pets;
 	private final StaffAccess staffAccess;
+	private final TimeOffRepository timeOff;
 	private final Clock clock;
 
 	public SlotService(ProviderRepository providers, ServiceOfferingRepository services, AvailabilityWindowRepository windows,
-			AppointmentRepository appointments, UserAccountRepository users, PetService pets, StaffAccess staffAccess, Clock clock) {
+			AppointmentRepository appointments, UserAccountRepository users, PetService pets, StaffAccess staffAccess, TimeOffRepository timeOff, Clock clock) {
+		this.timeOff = timeOff;
 		this.users = users;
 		this.pets = pets;
 		this.staffAccess = staffAccess;
@@ -106,6 +109,11 @@ public class SlotService {
 		ZoneId zone = ZoneId.of(provider.getTimeZone());
 		LocalDate today = LocalDate.now(clock.withZone(zone));
 		if (date.isBefore(today) || date.isAfter(today.plusDays(MAX_DAYS_AHEAD))) {
+			return List.of();
+		}
+
+		// Folga, feriado ou férias (ADR 0024): dia fechado não oferece horário nenhum.
+		if (!timeOff.findCovering(providerId, date).isEmpty()) {
 			return List.of();
 		}
 

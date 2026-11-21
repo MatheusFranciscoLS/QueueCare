@@ -70,6 +70,13 @@ export interface HistoryEntry {
   newStartsAt?: string | null
 }
 
+/** Dias em que o estúdio fecha (ADR 0024): o Agendar explica o dia fechado e não oferece lista de espera nele. */
+export interface Closure {
+  startsOn: string
+  endsOn: string
+  reason?: string | null
+}
+
 type Request = AuthApi['request']
 
 /** Escolha e reserva pelo cliente. As regras (disponibilidade, antecedência, reserva dupla) são da API; aqui só se monta a requisição. */
@@ -77,6 +84,7 @@ export function bookingApi(request: Request) {
   return {
     providers: (page = 0, size = 50) => request<CatalogProvider[]>(`/api/catalog/providers?page=${page}&size=${size}`),
     depositTerms: (providerId: string) => request<DepositTerms>(`/api/catalog/providers/${encodeURIComponent(providerId)}/deposit-terms`),
+    closures: (providerId: string) => request<Closure[]>(`/api/catalog/providers/${encodeURIComponent(providerId)}/closures`),
     services: (providerId: string) => request<CatalogService[]>(`/api/catalog/providers/${encodeURIComponent(providerId)}/services`),
     slots: (providerId: string, serviceId: string, date: string, excludeAppointmentId?: string, petId?: string) =>
       request<FreeSlot[]>(

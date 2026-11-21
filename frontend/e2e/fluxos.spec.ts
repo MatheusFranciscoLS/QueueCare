@@ -156,7 +156,9 @@ test('lista de espera: o tutor entra, a equipe vê e chama pelo WhatsApp, e tira
 
   // Tutor: a entrada que a equipe tirou também some da tela dele (depois de recarregar a lista).
   await irPeloMenu(page, 'Meus pets', 1280)
+  await page.getByRole('heading', { level: 1, name: 'Meus pets' }).waitFor() // as telas carregam sob demanda: sem esperar, o 2º clique cancela a ida e a lista antiga nunca recarrega
   await irPeloMenu(page, 'Meus agendamentos', 1280)
+  await page.getByRole('heading', { level: 1, name: 'Meus agendamentos' }).waitFor()
   await expect(page.getByRole('region', { name: 'Lista de espera' })).toHaveCount(0)
   await estudio.close()
 })
@@ -195,7 +197,40 @@ test('tutor novo vê o sinal por Pix antes de confirmar, e a equipe marca o sina
 
   // Tutor: a tela dele mostra que o sinal foi recebido.
   await irPeloMenu(page, 'Agendar', 1280)
+  await page.getByRole('heading', { level: 1, name: 'Agendar' }).waitFor() // espera a tela chegar: a navegação é sob demanda
   await irPeloMenu(page, 'Meus agendamentos', 1280)
   await expect(page.getByText('Sinal recebido.')).toBeVisible()
+  await estudio.close()
+})
+
+test('estúdio fecha dois dias pelo Expediente e o tutor, em outro navegador, vê o dia fechado no Agendar e não consegue oferecer lista de espera (ADR 0024)', async ({ page }) => {
+  const fechado = dia(40)
+  const estudio = await page.context().newPage()
+  await entrar(estudio, 'prestador')
+  await irPeloMenu(estudio, 'Expediente', 1280)
+  await estudio.getByRole('heading', { name: 'Folgas e feriados' }).waitFor()
+  await expect(estudio.getByText('Folga da equipe')).toBeVisible() // a folga de demonstração já está na lista
+
+  await estudio.getByLabel('Primeiro dia').fill(fechado)
+  await estudio.getByLabel('Último dia').fill(dia(41))
+  await estudio.getByLabel('Motivo (opcional)').fill('Curso de tosa')
+  await estudio.getByRole('button', { name: 'Fechar esses dias' }).click()
+  await expect(estudio.getByRole('region', { name: 'Folgas e feriados' }).getByRole('status')).toContainText('fechado.')
+  await expect(estudio.getByText('Curso de tosa')).toBeVisible()
+
+  // A Agenda do estúdio avisa no dia fechado.
+  await irPeloMenu(estudio, 'Agenda', 1280)
+  await estudio.getByRole('heading', { level: 1, name: 'Agenda' }).waitFor()
+  await estudio.getByLabel('Data').fill(fechado) // (recarregar a página perderia a sessão, que fica só na memória)
+  await expect(estudio.getByText('Estúdio fechado neste dia: Curso de tosa.')).toBeVisible()
+
+  // O tutor escolhe o dia fechado e lê o motivo em vez de uma lista de espera.
+  await entrar(page, 'cliente')
+  await irPeloMenu(page, 'Agendar', 1280)
+  await page.getByRole('radio', { name: /^Banho(?! e tosa)/ }).check()
+  await page.getByRole('radio', { name: /Thor/ }).check()
+  await page.getByLabel('Data').fill(fechado)
+  await expect(page.getByText('O estúdio está fechado neste dia (Curso de tosa). Escolha outro dia.')).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Avise-me se vagar um horário neste dia' })).toHaveCount(0)
   await estudio.close()
 })

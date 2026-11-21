@@ -10,6 +10,7 @@ import { useFocusFirstInvalid } from '../useFocusFirstInvalid'
 import { useLoad } from '../useLoad'
 import { useSingleFlight } from '../useSingleFlight'
 import { Loading } from '../Loading'
+import { TimeOffSection } from './TimeOffSection'
 
 export function AvailabilityPage() {
   const { request } = useAuth()
@@ -37,6 +38,7 @@ export function AvailabilityPage() {
     <>
       {error !== undefined && data && <RefreshWarning onRetry={reload} />}
       <Editor key={version} windows={data ?? []} saved={saved} setSaved={setSaved} onSaved={reload} />
+      <TimeOffSection />
     </>
   )
 }

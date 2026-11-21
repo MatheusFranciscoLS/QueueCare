@@ -12,6 +12,7 @@ import com.queuecare.scheduling.persistence.Provider;
 import com.queuecare.scheduling.persistence.ProviderRepository;
 import com.queuecare.scheduling.persistence.ServiceOffering;
 import com.queuecare.scheduling.persistence.ServiceOfferingRepository;
+import com.queuecare.scheduling.persistence.TimeOffRepository;
 import com.queuecare.scheduling.persistence.UserAccount;
 import com.queuecare.scheduling.persistence.UserAccountRepository;
 import com.queuecare.scheduling.persistence.UserRole;
@@ -63,10 +64,12 @@ public class WaitlistService {
 	private final AppointmentRepository appointments;
 	private final PetService pets;
 	private final StaffAccess staffAccess;
+	private final TimeOffRepository timeOff;
 	private final Clock clock;
 
 	public WaitlistService(WaitlistEntryRepository entries, ProviderRepository providers, ServiceOfferingRepository services, UserAccountRepository users,
-			AppointmentRepository appointments, PetService pets, StaffAccess staffAccess, Clock clock) {
+			AppointmentRepository appointments, PetService pets, StaffAccess staffAccess, TimeOffRepository timeOff, Clock clock) {
+		this.timeOff = timeOff;
 		this.entries = entries;
 		this.providers = providers;
 		this.services = services;
@@ -89,6 +92,10 @@ public class WaitlistService {
 		LocalDate today = LocalDate.now(clock.withZone(ZoneId.of(provider.getTimeZone())));
 		if (date.isBefore(today) || date.isAfter(today.plusDays(MAX_DAYS_AHEAD))) {
 			throw new WaitlistRejectedException(WaitlistRejectedException.Reason.INVALID_DATE);
+		}
+		// Fila de espera num dia FECHADO (ADR 0024) nunca vagaria: recusa em vez de prometer o que não vai acontecer.
+		if (!timeOff.findCovering(provider.getId(), date).isEmpty()) {
+			throw new BookingRejectedException(Reason.CLOSED_DAY);
 		}
 		var existing = entries.findActiveSame(customer.getId(), provider.getId(), serviceId, pet.getId(), date);
 		if (existing.isPresent()) {

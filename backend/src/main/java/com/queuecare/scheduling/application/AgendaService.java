@@ -41,10 +41,12 @@ public class AgendaService {
 	private final ServiceOfferingRepository services;
 	private final AppointmentRepository appointments;
 	private final StaffAccess staffAccess;
+	private final TimeOffService timeOff;
 	private final Clock clock;
 
 	public AgendaService(UserAccountRepository users, ProviderRepository providers, ServiceOfferingRepository services,
-			AppointmentRepository appointments, StaffAccess staffAccess, Clock clock) {
+			AppointmentRepository appointments, StaffAccess staffAccess, TimeOffService timeOff, Clock clock) {
+		this.timeOff = timeOff;
 		this.clock = clock;
 		this.users = users;
 		this.providers = providers;
@@ -84,13 +86,18 @@ public class AgendaService {
 	}
 
 	/** Onde a pessoa trabalha: o negócio e o fuso em que os horários da agenda valem (o atendente não tem acesso a /api/provider). */
-	public record Workplace(UUID providerId, String businessName, String timeZone, int cancellationDeadlineMinutes) {
+	public record Workplace(UUID providerId, String businessName, String timeZone, int cancellationDeadlineMinutes, List<Closure> closures) {
+	}
+
+	/** Período em que o estúdio está fechado (ADR 0024), de hoje em diante: a agenda avisa "fechado" nesses dias. */
+	public record Closure(UUID id, LocalDate startsOn, LocalDate endsOn, String reason) {
 	}
 
 	@Transactional(readOnly = true)
 	public Workplace workplace(UUID userId) {
 		Provider provider = resolveProvider(userId);
-		return new Workplace(provider.getId(), provider.getBusinessName(), provider.getTimeZone(), provider.getCancellationDeadlineMinutes());
+		List<Closure> closures = timeOff.upcomingOf(provider).stream().map(t -> new Closure(t.getId(), t.getStartsOn(), t.getEndsOn(), t.getReason())).toList();
+		return new Workplace(provider.getId(), provider.getBusinessName(), provider.getTimeZone(), provider.getCancellationDeadlineMinutes(), closures);
 	}
 
 	/** O prestador em que o usuário opera, com as MESMAS regras da agenda (perfil, vínculo e dono ativo); nunca vem da requisição. */

@@ -11,6 +11,7 @@ import com.queuecare.scheduling.domain.TimeRange;
 import com.queuecare.scheduling.persistence.AppointmentRepository;
 import com.queuecare.scheduling.persistence.AvailabilityWindowRepository;
 import com.queuecare.scheduling.persistence.Provider;
+import com.queuecare.scheduling.persistence.TimeOffRepository;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -22,7 +23,7 @@ import org.springframework.stereotype.Component;
 /**
  * As regras do HORÁRIO de um agendamento, num lugar só (ADR 0017): usadas por quem reserva ({@link BookingService}) e por quem remarca
  * ({@link RescheduleService}), para que as duas operações nunca divirjam. Ordem: horário local sem ambiguidade (R5), passado e
- * antecedência mínima (R5), expediente (R1) e ausência de sobreposição com outro agendamento ativo (R2, só para dar mensagem clara).
+ * antecedência mínima (R5), dia fechado por folga/feriado/férias (ADR 0024), expediente (R1) e ausência de sobreposição com outro agendamento ativo (R2, só para dar mensagem clara).
  * A checagem de sobreposição NÃO impede reserva dupla sob concorrência: quem garante é a restrição de exclusão do banco (ADR 0002).
  * Chamar dentro de uma transação.
  */
@@ -31,10 +32,12 @@ public class SlotRules {
 
 	private final AvailabilityWindowRepository windows;
 	private final AppointmentRepository appointments;
+	private final TimeOffRepository timeOff;
 
-	public SlotRules(AvailabilityWindowRepository windows, AppointmentRepository appointments) {
+	public SlotRules(AvailabilityWindowRepository windows, AppointmentRepository appointments, TimeOffRepository timeOff) {
 		this.windows = windows;
 		this.appointments = appointments;
+		this.timeOff = timeOff;
 	}
 
 	/**
@@ -58,6 +61,10 @@ public class SlotRules {
 			throw new BookingRejectedException(Reason.TOO_SOON);
 		}
 
+		// Folga, feriado ou férias (ADR 0024): o dia local do início fecha o estúdio, mesmo que o expediente semanal tenha janela nele.
+		if (!timeOff.findCovering(provider.getId(), range.startsAt().atZone(zone).toLocalDate()).isEmpty()) {
+			throw new BookingRejectedException(Reason.CLOSED_DAY);
+		}
 		if (!availabilityOf(provider, zone).allows(range)) {
 			throw new BookingRejectedException(Reason.OUTSIDE_AVAILABILITY);
 		}

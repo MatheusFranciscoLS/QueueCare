@@ -1,7 +1,7 @@
 import { useCallback, useMemo, type ReactNode } from 'react'
 import { addDays, isDate, longDate, todayIn } from '../../api/dates'
 import { describeError } from '../../api/messages'
-import { bookingApi, type CatalogProvider, type CatalogService, type FreeSlot } from '../../api/booking'
+import { bookingApi, type CatalogProvider, type CatalogService, type Closure, type FreeSlot } from '../../api/booking'
 import { useAuth } from '../../auth/session'
 import { RefreshWarning } from '../RefreshWarning'
 import { useLoad } from '../useLoad'
@@ -93,8 +93,7 @@ export function SlotStep({
     <fieldset className="step">
       <legend>{number}. Escolha o horário</legend>
       {error !== undefined && data && <RefreshWarning onRetry={reload} />}
-      {data && data.length === 0 && <p className="notice">Nenhum horário livre neste dia. Tente outro dia.</p>}
-      {data && data.length === 0 && emptyExtra}
+      {data && data.length === 0 && <EmptyDay providerId={provider.id} date={date} emptyExtra={emptyExtra} />}
       <div className="slots" role="group" aria-label="Horários livres">
         {data?.map((s) => (
           <button
@@ -118,3 +117,30 @@ export function SlotStep({
   )
 }
 
+
+/**
+ * Dia sem horários livres. Se o estúdio FECHA nesse dia (folga, feriado ou férias, ADR 0024) diz isso, com o motivo, e não oferece a lista de espera
+ * (ninguém vai vagar num dia fechado). Enquanto não se sabe (ou se a consulta falhar), vale o aviso genérico e a oferta continua.
+ */
+function EmptyDay({ providerId, date, emptyExtra }: { providerId: string; date: string; emptyExtra?: ReactNode }) {
+  const { request, user } = useAuth()
+  const api = useMemo(() => bookingApi(request), [request])
+  // O catálogo é só do tutor: a equipe (que remarca por aqui) não consulta e vê o aviso genérico.
+  const isCustomer = user?.role === 'CUSTOMER'
+  const load = useCallback(() => (isCustomer ? api.closures(providerId) : Promise.resolve<Closure[]>([])), [api, providerId, isCustomer])
+  const { data } = useLoad<Closure[]>(load)
+  const closed = data?.find((c) => date >= c.startsOn && date <= c.endsOn)
+  if (closed) {
+    return (
+      <p className="notice">
+        O estúdio está fechado neste dia{closed.reason ? ` (${closed.reason})` : ''}. Escolha outro dia.
+      </p>
+    )
+  }
+  return (
+    <>
+      <p className="notice">Nenhum horário livre neste dia. Tente outro dia.</p>
+      {emptyExtra}
+    </>
+  )
+}

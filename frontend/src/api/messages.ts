@@ -29,6 +29,7 @@ const BY_REASON: Record<string, string> = {
   IN_THE_PAST: 'Esse horário já passou. Escolha outro.',
   TOO_SOON: 'Esse horário está muito próximo: o prestador exige mais antecedência.',
   OUTSIDE_AVAILABILITY: 'Esse horário está fora do expediente do prestador.',
+  CLOSED_DAY: 'O estúdio está fechado nesse dia. Escolha outro dia.',
   NONEXISTENT_LOCAL_TIME: 'Esse horário não existe nesse dia (mudança de horário de verão). Escolha outro.',
   AMBIGUOUS_LOCAL_TIME: 'Esse horário é ambíguo nesse dia (mudança de horário de verão). Escolha outro.',
   SERVICE_NOT_FOUND_OR_INACTIVE: 'Esse serviço não está mais disponível.',
