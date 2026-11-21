@@ -213,6 +213,11 @@ function ProviderStep({
     const wanted = data.find((p) => p.id === preselectId)
     if (wanted) onSelect(wanted)
   }, [preselectId, selected, data, onSelect])
+  // Só existe um estúdio: não há o que escolher, então ele já vem escolhido (quem quiser pode trocar quando houver mais de um).
+  useEffect(() => {
+    if (selected || preselectId || !data || data.length !== 1) return
+    onSelect(data[0])
+  }, [selected, preselectId, data, onSelect])
 
   if (loading && !data) return <Loading>Carregando prestadores…</Loading>
   if (error && !data) return <p role="alert" className="error">{describeError(error)}</p>
@@ -266,8 +271,9 @@ function ServiceStep({
       {data?.map((s) => (
         <label key={s.id} className="choice">
           <input type="radio" name="service" disabled={disabled} checked={selected?.id === s.id} onChange={() => onSelect(s)} />
-          <span>
-            {s.name} · {s.durationMinutes} min · {priceSummary(s)}
+          <span className="choice-text">
+            <span className="choice-name">{s.name}</span>
+            {' '}<span className="choice-sep">·</span>{' '}<span className="choice-meta">{s.durationMinutes} min · {priceSummary(s)}</span>
           </span>
         </label>
       ))}
@@ -359,8 +365,9 @@ function PetStep({
       {pets?.map((p) => (
         <label key={p.id} className="choice">
           <input type="radio" name="pet" disabled={disabled} checked={selected?.id === p.id} onChange={() => onSelect(p.id)} />
-          <span>
-            {p.name} · {petDescription(p)}
+          <span className="choice-text">
+            <span className="choice-name">{p.name}</span>
+            {' '}<span className="choice-sep">·</span>{' '}<span className="choice-meta">{petDescription(p)}</span>
           </span>
         </label>
       ))}
