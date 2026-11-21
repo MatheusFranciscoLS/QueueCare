@@ -97,7 +97,7 @@ public class BookingService {
 
 		Instant now = clock.instant();
 		// As regras do horário (R5, R1, R2) são as MESMAS da remarcação: ficam em SlotRules (ADR 0017).
-		TimeRange range = slotRules.validate(provider, request.localStart(), Duration.ofMinutes(service.getDurationMinutes()), now, null);
+		TimeRange range = slotRules.validate(provider, request.localStart(), Duration.ofMinutes(service.durationFor(pet.getSize(), pet.getCoat())), now, null);
 
 		Appointment draft = new Appointment(provider.getId(), service.getId(), customer.getId(), range.startsAt(), range.endsAt(), now);
 		draft.attachPet(pet); // cópia dos dados do pet no momento da reserva (ADR 0016)

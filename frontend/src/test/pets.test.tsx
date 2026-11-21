@@ -345,29 +345,32 @@ describe('meus pets: perfis', () => {
 })
 
 describe('agendar: escolha do pet', () => {
+  // O pet vem ANTES do dia e do horário (ADR 0020): a duração depende do porte e do pelo dele, e com ela os horários livres.
   const PROVIDERS = [{ id: 'p-1', businessName: 'Estúdio Pelo e Ponto', timeZone: ZONE }]
   const SERVICES = [{ id: 's-1', name: 'Banho e tosa', durationMinutes: 60 }]
-  const SLOTS = `GET /api/providers/p-1/slots?serviceId=s-1&date=${today}`
-  const slot = { localStart: `${today}T09:00:00`, startsAt: `${today}T12:00:00Z`, endsAt: `${today}T13:00:00Z` }
+  const slotsOf = (petId: string) => 'GET /api/providers/p-1/slots?serviceId=s-1&date=' + today + '&petId=' + petId
+  const slot = { localStart: today + 'T09:00:00', startsAt: today + 'T12:00:00Z', endsAt: today + 'T13:00:00Z' }
   const booked = { id: 'a-1', providerId: 'p-1', serviceId: 's-1', startsAt: slot.startsAt, endsAt: slot.endsAt, status: 'SCHEDULED', businessName: 'Estúdio Pelo e Ponto', timeZone: ZONE, serviceName: 'Banho e tosa', pet: { name: 'Rex', species: 'DOG' } }
 
+  /** Entra em Agendar e escolhe o estúdio e o serviço; o pet e o horário ficam por conta de cada teste. */
   async function openBook(routes: Routes) {
     const ctx = await loginAs('CUSTOMER', {
       'GET /api/catalog/providers?page=0&size=50': () => json(200, PROVIDERS),
       'GET /api/catalog/providers/p-1/services': () => json(200, SERVICES),
-      [SLOTS]: () => json(200, [slot]),
+      [slotsOf('pet-1')]: () => json(200, [slot]),
+      [slotsOf('pet-2')]: () => json(200, [slot]),
       ...routes,
     })
     await ctx.user.click(within(screen.getByRole('navigation', { name: 'Menu do cliente' })).getByRole('link', { name: 'Agendar' }))
     await ctx.user.click(await screen.findByRole('radio', { name: 'Estúdio Pelo e Ponto' }))
     await ctx.user.click(await screen.findByRole('radio', { name: /Banho e tosa/ }))
-    await ctx.user.click(await screen.findByRole('button', { name: '09:00' }))
     return ctx
   }
 
   it('com um só pet ativo ele já vem escolhido e vai na reserva', async () => {
     const { calls: all, user } = await openBook({ 'GET /api/customer/pets': () => json(200, [REX]), 'POST /api/appointments': () => json(201, booked) })
     expect(await screen.findByRole('radio', { name: /Rex · Cachorro · Poodle · Médio/ })).toBeChecked()
+    await user.click(await screen.findByRole('button', { name: '09:00' }))
     expect(screen.getByRole('region', { name: 'Confirmar agendamento' })).toHaveTextContent('para Rex')
 
     await user.click(screen.getByRole('button', { name: 'Confirmar agendamento' }))
@@ -377,19 +380,33 @@ describe('agendar: escolha do pet', () => {
     expect(calls(all, 'POST', '/api/appointments')[0].body).toEqual({ providerId: 'p-1', serviceId: 's-1', localStart: slot.localStart, petId: 'pet-1' })
   })
 
-  it('com vários pets nenhum vem escolhido: confirmar só habilita depois da escolha, e a reserva leva o escolhido', async () => {
+  it('com vários pets nenhum vem escolhido: sem pet não há dia nem horário, e a reserva leva o escolhido', async () => {
     const { calls: all, user } = await openBook({ 'GET /api/customer/pets': () => json(200, [REX, MEL]), 'POST /api/appointments': () => json(201, booked) })
-    const confirm = await screen.findByRole('button', { name: 'Confirmar agendamento' })
-    expect(screen.getByRole('radio', { name: /Rex/ })).not.toBeChecked()
+    expect(await screen.findByRole('radio', { name: /Rex/ })).not.toBeChecked()
     expect(screen.getByRole('radio', { name: /Mel/ })).not.toBeChecked()
-    expect(confirm).toBeDisabled()
+    expect(screen.queryByText('4. Escolha o dia')).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: '09:00' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Confirmar agendamento' })).not.toBeInTheDocument()
+
+    await user.click(screen.getByRole('radio', { name: /Mel/ }))
+    await user.click(await screen.findByRole('button', { name: '09:00' }))
+
+    await user.click(screen.getByRole('button', { name: 'Confirmar agendamento' }))
+    await screen.findByRole('heading', { name: 'Agendamento confirmado' })
+    expect((calls(all, 'POST', '/api/appointments')[0].body as { petId: string }).petId).toBe('pet-2')
+  })
+
+  it('trocar o pet descarta o horário escolhido e pede os horários do pet novo', async () => {
+    const { calls: all, user } = await openBook({ 'GET /api/customer/pets': () => json(200, [REX, MEL]) })
+    await user.click(await screen.findByRole('radio', { name: /Rex/ }))
+    await user.click(await screen.findByRole('button', { name: '09:00' }))
+    expect(screen.getByRole('button', { name: 'Confirmar agendamento' })).toBeInTheDocument()
 
     await user.click(screen.getByRole('radio', { name: /Mel/ }))
 
-    expect(confirm).toBeEnabled()
-    await user.click(confirm)
-    await screen.findByRole('heading', { name: 'Agendamento confirmado' })
-    expect((calls(all, 'POST', '/api/appointments')[0].body as { petId: string }).petId).toBe('pet-2')
+    expect(await screen.findByRole('button', { name: '09:00' })).toHaveAttribute('aria-pressed', 'false')
+    expect(screen.queryByRole('button', { name: 'Confirmar agendamento' })).not.toBeInTheDocument()
+    expect(all.some((c) => c.path === '/api/providers/p-1/slots?serviceId=s-1&date=' + today + '&petId=pet-2')).toBe(true)
   })
 
   it('sem nenhum pet: cadastra na hora, o pet novo já fica escolhido e a reserva o usa', async () => {
@@ -403,12 +420,12 @@ describe('agendar: escolha do pet', () => {
       'POST /api/appointments': () => json(201, booked),
     })
     expect(await screen.findByText('Cadastre o pet que será atendido.')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Confirmar agendamento' })).toBeDisabled()
+    expect(screen.queryByRole('button', { name: '09:00' })).not.toBeInTheDocument()
     await fillNewPet(user, { name: 'Rex', species: 'DOG' })
     await user.click(screen.getByRole('button', { name: 'Cadastrar e escolher' }))
 
     await waitFor(() => expect(screen.getByRole('radio', { name: /Rex/ })).toBeChecked())
-    expect(screen.getByRole('button', { name: 'Confirmar agendamento' })).toBeEnabled()
+    await user.click(await screen.findByRole('button', { name: '09:00' }))
     await user.click(screen.getByRole('button', { name: 'Confirmar agendamento' }))
     await screen.findByRole('heading', { name: 'Agendamento confirmado' })
     expect((calls(all, 'POST', '/api/appointments')[0].body as { petId: string }).petId).toBe('pet-1')
@@ -418,13 +435,14 @@ describe('agendar: escolha do pet', () => {
     let fail = true
     const { user } = await openBook({ 'GET /api/customer/pets': () => (fail ? problem(500, 'erro') : json(200, [REX])) })
     expect(await screen.findByRole('alert')).toHaveTextContent('Algo deu errado no servidor')
-    expect(screen.queryByRole('button', { name: 'Confirmar agendamento' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Confirmar agendamento' })).toBeDisabled()
+    expect(screen.queryByRole('button', { name: 'Confirmar agendamento' })).not.toBeInTheDocument()
+    expect(screen.queryByText('4. Escolha o dia')).not.toBeInTheDocument()
     fail = false
 
     await user.click(screen.getByRole('button', { name: 'Tentar de novo' }))
 
     expect(await screen.findByRole('radio', { name: /Rex/ })).toBeChecked()
+    expect(await screen.findByRole('button', { name: '09:00' })).toBeInTheDocument()
   })
 
   const KIKA = { id: 'pet-4', name: 'Kika', species: 'CAT', breed: null, size: null, notes: null, active: true }
@@ -432,7 +450,7 @@ describe('agendar: escolha do pet', () => {
   it.each([
     ['PET_INACTIVE', 422, 'Esse pet está arquivado. Reative-o em Meus pets ou escolha outro.'],
     ['PET_NOT_FOUND', 404, 'Não encontramos esse pet. Atualize a lista e escolha de novo.'],
-  ])('recusa %s: mostra o motivo, mantém o horário, limpa a escolha e refaz a lista de pets', async (reason, status, message) => {
+  ])('recusa %s: mostra o motivo, limpa a escolha e o horário (que era da duração dele) e refaz a lista de pets', async (reason, status, message) => {
     let listed = [REX, MEL, KIKA]
     const { user } = await openBook({
       'GET /api/customer/pets': () => json(200, listed),
@@ -442,16 +460,20 @@ describe('agendar: escolha do pet', () => {
       },
     })
     await user.click(await screen.findByRole('radio', { name: /Rex/ }))
+    await user.click(await screen.findByRole('button', { name: '09:00' }))
     await user.click(screen.getByRole('button', { name: 'Confirmar agendamento' }))
 
     expect(await screen.findByText(message)).toBeInTheDocument()
     await waitFor(() => expect(screen.queryByRole('radio', { name: /Rex/ })).not.toBeInTheDocument())
     expect(screen.getByRole('radio', { name: /Mel/ })).not.toBeChecked() // a escolha foi limpa
-    expect(screen.getByRole('button', { name: '09:00' })).toHaveAttribute('aria-pressed', 'true') // o horário continua escolhido
-    expect(screen.getByRole('button', { name: 'Confirmar agendamento' })).toBeDisabled()
+    expect(screen.queryByRole('button', { name: '09:00' })).not.toBeInTheDocument() // sem pet, sem horários
+    expect(screen.queryByRole('button', { name: 'Confirmar agendamento' })).not.toBeInTheDocument()
+
+    await user.click(screen.getByRole('radio', { name: /Mel/ })) // com o pet novo, os horários dele
+    expect(await screen.findByRole('button', { name: '09:00' })).toHaveAttribute('aria-pressed', 'false')
   })
 
-  it('se a lista de pets não conseguir ser atualizada depois da recusa, o único pet NÃO volta escolhido e a confirmação fica bloqueada até uma lista nova', async () => {
+  it('se a lista de pets não conseguir ser atualizada depois da recusa, o único pet NÃO volta escolhido e nada é oferecido até uma lista nova', async () => {
     let phase: 'before' | 'broken' | 'fixed' = 'before'
     const { user } = await openBook({
       'GET /api/customer/pets': () => (phase === 'before' ? json(200, [REX]) : phase === 'broken' ? problem(500, 'erro') : json(200, [MEL])),
@@ -461,6 +483,7 @@ describe('agendar: escolha do pet', () => {
       },
     })
     expect(await screen.findByRole('radio', { name: /Rex/ })).toBeChecked() // único pet: vinha escolhido
+    await user.click(await screen.findByRole('button', { name: '09:00' }))
     await user.click(screen.getByRole('button', { name: 'Confirmar agendamento' }))
 
     expect(await screen.findByText('Esse pet está arquivado. Reative-o em Meus pets ou escolha outro.')).toBeInTheDocument()
@@ -468,14 +491,16 @@ describe('agendar: escolha do pet', () => {
     expect(await screen.findByText(/Não foi possível atualizar os dados/)).toBeInTheDocument()
     expect(screen.getByRole('radio', { name: /Rex/ })).not.toBeChecked()
     expect(screen.getByRole('radio', { name: /Rex/ })).toBeDisabled()
-    expect(screen.getByRole('button', { name: 'Confirmar agendamento' })).toBeDisabled()
+    expect(screen.queryByRole('button', { name: '09:00' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Confirmar agendamento' })).not.toBeInTheDocument()
 
     phase = 'fixed'
     await user.click(screen.getAllByRole('button', { name: 'Tentar de novo' })[0])
 
-    // lista nova: o único pet agora é a Mel, que vem escolhida, e a confirmação libera
+    // lista nova: o único pet agora é a Mel, que vem escolhida, com os horários dela; a confirmação libera depois de escolher o horário
     expect(await screen.findByRole('radio', { name: /Mel/ })).toBeChecked()
     expect(screen.queryByRole('radio', { name: /Rex/ })).not.toBeInTheDocument()
+    await user.click(await screen.findByRole('button', { name: '09:00' }))
     expect(screen.getByRole('button', { name: 'Confirmar agendamento' })).toBeEnabled()
   })
 
@@ -483,6 +508,7 @@ describe('agendar: escolha do pet', () => {
     const pending = deferred<Response>()
     const { user } = await openBook({ 'GET /api/customer/pets': () => json(200, [REX, MEL]), 'POST /api/appointments': () => pending.promise })
     await user.click(await screen.findByRole('radio', { name: /Rex/ }))
+    await user.click(await screen.findByRole('button', { name: '09:00' }))
     await user.click(screen.getByRole('button', { name: 'Confirmar agendamento' }))
 
     expect(screen.getByRole('radio', { name: /Rex/ })).toBeDisabled()

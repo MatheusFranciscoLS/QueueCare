@@ -100,7 +100,7 @@ describe('agendar de novo: escolhas já feitas', () => {
       'GET /api/catalog/providers?page=0&size=50': () => json(200, [{ id: 'p-1', businessName: 'Estúdio Bem-te-vi', timeZone: ZONE }, { id: 'p-2', businessName: 'Outro', timeZone: ZONE }]),
       'GET /api/catalog/providers/p-1/services': () => json(200, [{ id: 's-1', name: 'Banho', durationMinutes: 60, priceCents: 5000, priceLargeCents: 9000 }, { id: 's-2', name: 'Tosa', durationMinutes: 45 }]),
       'GET /api/customer/pets': () => json(200, [THOR, { ...THOR, id: 'pet-2', name: 'Mel', species: 'CAT', size: 'SMALL' }]),
-      [`GET /api/providers/p-1/slots?serviceId=s-1&date=${today}`]: () => json(200, [slot]),
+      [`GET /api/providers/p-1/slots?serviceId=s-1&date=${today}&petId=pet-1`]: () => json(200, [slot]),
     })
     const view = renderWithHarness()
     await act(async () => view.api().login('x@exemplo.test', PASSWORD))

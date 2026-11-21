@@ -4,6 +4,7 @@ import { longDate, todayIn } from '../../api/dates'
 import { describeError } from '../../api/messages'
 import { ApiError } from '../../api/client'
 import { bookingApi, type BookedAppointment, type CatalogProvider, type CatalogService, type FreeSlot } from '../../api/booking'
+import { durationForPet, durationSummary } from '../../api/duration'
 import { formatMoney, priceForSize, priceSummary } from '../../api/money'
 import { petDescription, petsApi, type Pet, type PetInput } from '../../api/pets'
 import { useAuth } from '../../auth/session'
@@ -19,7 +20,8 @@ const PAGE_SIZE = 50
 const PET_REASONS = new Set(['PET_NOT_FOUND', 'PET_INACTIVE'])
 
 /**
- * Agendar: prestador, serviço, dia, horário livre e confirmação. Cada passo só aparece depois do anterior; trocar uma escolha
+ * Agendar: prestador, serviço, pet, dia, horário livre e confirmação. O pet vem ANTES do dia porque a duração do atendimento depende do porte e do pelo dele
+ * (ADR 0020), e com ela os horários livres. Cada passo só aparece depois do anterior; trocar uma escolha
  * descarta as seguintes. As regras (disponibilidade, antecedência, reserva dupla) são da API; um 409 ou 422 ao reservar mostra o
  * motivo e atualiza os horários. O pet é obrigatório: escolhe-se um dos ativos (ou cadastra-se um na hora); com um só pet ativo ele já vem
  * escolhido. Recusa por causa do PET (arquivado em outra tela, por exemplo) mantém o horário e refaz a lista de pets.
@@ -67,8 +69,10 @@ export function BookPage() {
         // A API recusou este horário: mostra o motivo e refaz a lista de horários (o escolhido pode não existir mais).
         setBookingError(describeError(e))
         if (e instanceof ApiError && e.reason && PET_REASONS.has(e.reason)) {
-          // O problema é o pet: o horário continua valendo. Refaz a lista de pets (o pet pode ter sido arquivado) e pede nova escolha.
+          // O problema é o pet: refaz a lista de pets (o pet pode ter sido arquivado) e pede nova escolha. Os horários eram os da duração DELE,
+          // então o horário escolhido sai junto (a lista é refeita para o pet novo).
           setPetChoice(null)
+          setSlot(null)
           setRefusedAtVersion(petList.version)
           await petList.reload()
         } else {
@@ -139,9 +143,32 @@ export function BookPage() {
           }}
         />
       )}
-      {provider && service && date && (
+      {provider && service && (
+        <PetStep
+          pets={petList.data}
+          loading={petList.loading}
+          error={petList.error}
+          reload={petList.reload}
+          selected={pet}
+          disabled={submitting || !petsFresh}
+          onSelect={(id) => {
+            setPetChoice(id)
+            setSlot(null)
+            setBookingError(null)
+          }}
+          onCreate={async (input) => {
+            const created = await pets.create(input)
+            await petList.reload()
+            setPetChoice(created.id)
+            setSlot(null)
+            setBookingError(null)
+          }}
+        />
+      )}
+      {provider && service && pet && date && (
         <>
           <DayStep
+            number={4}
             disabled={submitting}
             provider={provider}
             date={date}
@@ -152,7 +179,9 @@ export function BookPage() {
             }}
           />
           <SlotStep
-            key={`${provider.id}|${service.id}|${date}|${slotsVersion}`}
+            key={`${provider.id}|${service.id}|${pet.id}|${date}|${slotsVersion}`}
+            number={5}
+            petId={pet.id}
             provider={provider}
             service={service}
             date={date}
@@ -165,28 +194,8 @@ export function BookPage() {
           />
         </>
       )}
-      {provider && service && slot && (
-        <>
-          <PetStep
-            pets={petList.data}
-            loading={petList.loading}
-            error={petList.error}
-            reload={petList.reload}
-            selected={pet}
-            disabled={submitting || !petsFresh}
-            onSelect={(id) => {
-              setPetChoice(id)
-              setBookingError(null)
-            }}
-            onCreate={async (input) => {
-              const created = await pets.create(input)
-              await petList.reload()
-              setPetChoice(created.id)
-              setBookingError(null)
-            }}
-          />
-          <ConfirmStep provider={provider} service={service} slot={slot} pet={pet} busy={submitting} onConfirm={confirm} onCancel={() => setSlot(null)} />
-        </>
+      {provider && service && pet && slot && (
+        <ConfirmStep provider={provider} service={service} slot={slot} pet={pet} busy={submitting} onConfirm={confirm} onCancel={() => setSlot(null)} />
       )}
     </section>
   )
@@ -273,7 +282,7 @@ function ServiceStep({
           <input type="radio" name="service" disabled={disabled} checked={selected?.id === s.id} onChange={() => onSelect(s)} />
           <span className="choice-text">
             <span className="choice-name">{s.name}</span>
-            {' '}<span className="choice-sep">·</span>{' '}<span className="choice-meta">{s.durationMinutes} min · {priceSummary(s)}</span>
+            {' '}<span className="choice-sep">·</span>{' '}<span className="choice-meta">{durationSummary(s)} · {priceSummary(s)}</span>
           </span>
         </label>
       ))}
@@ -302,7 +311,7 @@ function ConfirmStep({
     <section className="step confirm" aria-label="Confirmar agendamento">
       <h2>6. Confirme</h2>
       <p>
-        <strong>{service.name}</strong> ({service.durationMinutes} min){pet && <> para <strong>{pet.name}</strong></>} em <strong>{provider.businessName}</strong>, {longDate(slot.localStart.slice(0, 10))}, às{' '}
+        <strong>{service.name}</strong> ({durationForPet(service, pet?.size, pet?.coat)} min){pet && <> para <strong>{pet.name}</strong></>} em <strong>{provider.businessName}</strong>, {longDate(slot.localStart.slice(0, 10))}, às{' '}
         <strong>{slot.localStart.slice(11, 16)}</strong> (horário do negócio).
       </p>
       <p className="confirm-price">
@@ -359,7 +368,7 @@ function PetStep({
   const none = !pets || pets.length === 0
   return (
     <fieldset className="step">
-      <legend>5. Escolha o pet</legend>
+      <legend>3. Escolha o pet</legend>
       {error !== undefined && pets && <RefreshWarning onRetry={reload} />}
       {none && <p className="notice">Cadastre o pet que será atendido.</p>}
       {pets?.map((p) => (

@@ -54,7 +54,7 @@ async function reachSlots(user: ReturnType<typeof userEvent.setup>) {
 
 describe('agendar: escolha passo a passo', () => {
   it('mostra os prestadores e, só depois de escolher, os serviços; depois o dia e os horários', async () => {
-    const { calls, user } = await loginAsCustomer({ [`GET /api/providers/p-1/slots?serviceId=s-1&date=${today}`]: () => json(200, [slot(today, '09:00'), slot(today, '09:30')]) })
+    const { calls, user } = await loginAsCustomer({ [`GET /api/providers/p-1/slots?serviceId=s-1&date=${today}&petId=pet-1`]: () => json(200, [slot(today, '09:00'), slot(today, '09:30')]) })
     expect(await screen.findByRole('radio', { name: 'Barbearia do Zé' })).toBeInTheDocument()
     expect(screen.queryByText('2. Escolha o serviço')).not.toBeInTheDocument()
 
@@ -66,12 +66,12 @@ describe('agendar: escolha passo a passo', () => {
     expect(await screen.findByRole('button', { name: '09:00' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: '09:30' })).toBeInTheDocument()
     expect(screen.getByText(/horários no fuso do negócio \(America\/Sao_Paulo\)/)).toBeInTheDocument()
-    expect(calls.some((c) => c.path === `/api/providers/p-1/slots?serviceId=s-1&date=${today}`)).toBe(true)
+    expect(calls.some((c) => c.path === `/api/providers/p-1/slots?serviceId=s-1&date=${today}&petId=pet-1`)).toBe(true)
   })
 
   it('trocar o prestador descarta serviço, dia, horário e confirmação', async () => {
     const { user } = await loginAsCustomer({
-      [`GET /api/providers/p-1/slots?serviceId=s-1&date=${today}`]: () => json(200, [slot(today, '09:00')]),
+      [`GET /api/providers/p-1/slots?serviceId=s-1&date=${today}&petId=pet-1`]: () => json(200, [slot(today, '09:00')]),
       'GET /api/catalog/providers/p-2/services': () => json(200, []),
     })
     await reachSlots(user)
@@ -87,8 +87,8 @@ describe('agendar: escolha passo a passo', () => {
 
   it('dia sem horários avisa; navegar pelos dias pede a data certa e respeita o limite de hoje', async () => {
     const { calls, user } = await loginAsCustomer({
-      [`GET /api/providers/p-1/slots?serviceId=s-1&date=${today}`]: () => json(200, []),
-      [`GET /api/providers/p-1/slots?serviceId=s-1&date=${tomorrow}`]: () => json(200, [slot(tomorrow, '14:00')]),
+      [`GET /api/providers/p-1/slots?serviceId=s-1&date=${today}&petId=pet-1`]: () => json(200, []),
+      [`GET /api/providers/p-1/slots?serviceId=s-1&date=${tomorrow}&petId=pet-1`]: () => json(200, [slot(tomorrow, '14:00')]),
     })
     await reachSlots(user)
     expect(await screen.findByText('Nenhum horário livre neste dia. Tente outro dia.')).toBeInTheDocument()
@@ -97,12 +97,12 @@ describe('agendar: escolha passo a passo', () => {
     await user.click(screen.getByRole('button', { name: 'Próximo dia' }))
 
     expect(await screen.findByRole('button', { name: '14:00' })).toBeInTheDocument()
-    expect(calls.at(-1)?.path).toBe(`/api/providers/p-1/slots?serviceId=s-1&date=${tomorrow}`)
+    expect(calls.at(-1)?.path).toBe(`/api/providers/p-1/slots?serviceId=s-1&date=${tomorrow}&petId=pet-1`)
     expect(screen.queryByText('Nenhum horário livre neste dia. Tente outro dia.')).not.toBeInTheDocument()
   })
 
   it('a data do negócio tem limite de 90 dias à frente', async () => {
-    const { user } = await loginAsCustomer({ [`GET /api/providers/p-1/slots?serviceId=s-1&date=${today}`]: () => json(200, []) })
+    const { user } = await loginAsCustomer({ [`GET /api/providers/p-1/slots?serviceId=s-1&date=${today}&petId=pet-1`]: () => json(200, []) })
     await reachSlots(user)
     await screen.findByText('Nenhum horário livre neste dia. Tente outro dia.')
 
@@ -114,8 +114,8 @@ describe('agendar: escolha passo a passo', () => {
   it('a lista de horários de um dia anterior nunca aparece sob o dia novo', async () => {
     const slowNext = deferred<Response>()
     const { user } = await loginAsCustomer({
-      [`GET /api/providers/p-1/slots?serviceId=s-1&date=${today}`]: () => json(200, [slot(today, '09:00')]),
-      [`GET /api/providers/p-1/slots?serviceId=s-1&date=${tomorrow}`]: () => slowNext.promise,
+      [`GET /api/providers/p-1/slots?serviceId=s-1&date=${today}&petId=pet-1`]: () => json(200, [slot(today, '09:00')]),
+      [`GET /api/providers/p-1/slots?serviceId=s-1&date=${tomorrow}&petId=pet-1`]: () => slowNext.promise,
     })
     await reachSlots(user)
     await screen.findByRole('button', { name: '09:00' })
@@ -132,7 +132,7 @@ describe('agendar: escolha passo a passo', () => {
     let gets = 0
     const { user } = await loginAsCustomer({
       'GET /api/catalog/providers?page=0&size=50': () => json(200, PROVIDERS),
-      [`GET /api/providers/p-1/slots?serviceId=s-1&date=${today}`]: () => (++gets === 1 ? json(200, [slot(today, '09:00')]) : problem(500, 'x')),
+      [`GET /api/providers/p-1/slots?serviceId=s-1&date=${today}&petId=pet-1`]: () => (++gets === 1 ? json(200, [slot(today, '09:00')]) : problem(500, 'x')),
     })
     await reachSlots(user)
     await screen.findByRole('button', { name: '09:00' })
@@ -149,7 +149,7 @@ describe('agendar: reservar', () => {
 
   it('confirma com o horário LOCAL do negócio e mostra o agendamento', async () => {
     const { calls, user } = await loginAsCustomer({
-      [`GET /api/providers/p-1/slots?serviceId=s-1&date=${today}`]: () => json(200, [slot(today, '09:00')]),
+      [`GET /api/providers/p-1/slots?serviceId=s-1&date=${today}&petId=pet-1`]: () => json(200, [slot(today, '09:00')]),
       'POST /api/appointments': () => json(201, { id: 'a-1', providerId: 'p-1', serviceId: 's-1', startsAt: '', endsAt: '', status: 'SCHEDULED', businessName: 'Oficina Central', timeZone: ZONE, serviceName: 'Troca de óleo' }),
     })
     await reachSlots(user)
@@ -165,7 +165,7 @@ describe('agendar: reservar', () => {
 
   it('"Agendar outro horário" volta ao começo', async () => {
     const { user } = await loginAsCustomer({
-      [`GET /api/providers/p-1/slots?serviceId=s-1&date=${today}`]: () => json(200, [slot(today, '09:00')]),
+      [`GET /api/providers/p-1/slots?serviceId=s-1&date=${today}&petId=pet-1`]: () => json(200, [slot(today, '09:00')]),
       'POST /api/appointments': () => json(201, { id: 'a-1', providerId: 'p-1', serviceId: 's-1', startsAt: '', endsAt: '', status: 'SCHEDULED', businessName: 'Oficina Central', timeZone: ZONE, serviceName: 'Troca de óleo' }),
     })
     await reachSlots(user)
@@ -182,7 +182,7 @@ describe('agendar: reservar', () => {
   it('horário tomado por outra pessoa (409): mostra o motivo, descarta a escolha e refaz a lista', async () => {
     let slotCalls = 0
     const { calls, user } = await loginAsCustomer({
-      [`GET /api/providers/p-1/slots?serviceId=s-1&date=${today}`]: () => json(200, ++slotCalls === 1 ? [slot(today, '09:00'), slot(today, '09:30')] : [slot(today, '09:30')]),
+      [`GET /api/providers/p-1/slots?serviceId=s-1&date=${today}&petId=pet-1`]: () => json(200, ++slotCalls === 1 ? [slot(today, '09:00'), slot(today, '09:30')] : [slot(today, '09:30')]),
       'POST /api/appointments': () => problem(409, 'o horário já está ocupado', { reason: 'SLOT_TAKEN' }),
     })
     await reachSlots(user)
@@ -205,7 +205,7 @@ describe('agendar: reservar', () => {
     ['AMBIGUOUS_LOCAL_TIME', 'Esse horário é ambíguo nesse dia (mudança de horário de verão). Escolha outro.'],
   ])('recusa 422 %s mostra o motivo e atualiza os horários', async (reason, message) => {
     const { user } = await loginAsCustomer({
-      [`GET /api/providers/p-1/slots?serviceId=s-1&date=${today}`]: () => json(200, [slot(today, '09:00')]),
+      [`GET /api/providers/p-1/slots?serviceId=s-1&date=${today}&petId=pet-1`]: () => json(200, [slot(today, '09:00')]),
       'POST /api/appointments': () => problem(422, 'agendamento recusado', { reason }),
     })
     await reachSlots(user)
@@ -219,7 +219,7 @@ describe('agendar: reservar', () => {
 
   it('serviço ou prestador que deixaram de estar disponíveis (404) mostram a mensagem certa', async () => {
     const { user } = await loginAsCustomer({
-      [`GET /api/providers/p-1/slots?serviceId=s-1&date=${today}`]: () => json(200, [slot(today, '09:00')]),
+      [`GET /api/providers/p-1/slots?serviceId=s-1&date=${today}&petId=pet-1`]: () => json(200, [slot(today, '09:00')]),
       'POST /api/appointments': () => problem(404, 'agendamento recusado', { reason: 'SERVICE_NOT_FOUND_OR_INACTIVE' }),
     })
     await reachSlots(user)
@@ -233,7 +233,7 @@ describe('agendar: reservar', () => {
   it('durante o envio o botão fica bloqueado e um segundo clique não duplica a reserva', async () => {
     const slow = deferred<Response>()
     const { calls, user } = await loginAsCustomer({
-      [`GET /api/providers/p-1/slots?serviceId=s-1&date=${today}`]: () => json(200, [slot(today, '09:00')]),
+      [`GET /api/providers/p-1/slots?serviceId=s-1&date=${today}&petId=pet-1`]: () => json(200, [slot(today, '09:00')]),
       'POST /api/appointments': () => slow.promise,
     })
     await reachSlots(user)
@@ -250,7 +250,7 @@ describe('agendar: reservar', () => {
   })
 
   it('"Escolher outro horário" volta sem enviar nada', async () => {
-    const { calls, user } = await loginAsCustomer({ [`GET /api/providers/p-1/slots?serviceId=s-1&date=${today}`]: () => json(200, [slot(today, '09:00')]) })
+    const { calls, user } = await loginAsCustomer({ [`GET /api/providers/p-1/slots?serviceId=s-1&date=${today}&petId=pet-1`]: () => json(200, [slot(today, '09:00')]) })
     await reachSlots(user)
     await user.click(await screen.findByRole('button', { name: '09:00' }))
 
@@ -265,7 +265,7 @@ describe('agendar: nada muda durante o envio da reserva', () => {
   it('prestador, serviço, dia e horário ficam bloqueados enquanto a reserva está pendente, e o resumo é o do que foi ENVIADO', async () => {
     const slow = deferred<Response>()
     const { calls, user } = await loginAsCustomer({
-      [`GET /api/providers/p-1/slots?serviceId=s-1&date=${today}`]: () => json(200, [slot(today, '09:00'), slot(today, '10:00')]),
+      [`GET /api/providers/p-1/slots?serviceId=s-1&date=${today}&petId=pet-1`]: () => json(200, [slot(today, '09:00'), slot(today, '10:00')]),
       'POST /api/appointments': () => slow.promise,
     })
     await reachSlots(user)
@@ -301,7 +301,7 @@ describe('agendar: nada muda durante o envio da reserva', () => {
 
   it('depois de uma recusa as escolhas voltam a poder ser trocadas', async () => {
     const { user } = await loginAsCustomer({
-      [`GET /api/providers/p-1/slots?serviceId=s-1&date=${today}`]: () => json(200, [slot(today, '09:00')]),
+      [`GET /api/providers/p-1/slots?serviceId=s-1&date=${today}&petId=pet-1`]: () => json(200, [slot(today, '09:00')]),
       'POST /api/appointments': () => problem(409, 'x', { reason: 'SLOT_TAKEN' }),
     })
     await reachSlots(user)

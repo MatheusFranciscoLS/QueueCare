@@ -60,6 +60,15 @@ public class PetService {
 		return pets.findByIdAndCustomerId(petId, customerId).orElseThrow(PetNotFoundException::new);
 	}
 
+	/**
+	 * O pet ATIVO do cliente, ou vazio (inexistente, de outro cliente ou arquivado: sem distinção, para não dar pista). Só leitura, para quem precisa
+	 * do porte e do pelo (a duração do atendimento, ADR 0020).
+	 */
+	@Transactional(readOnly = true)
+	public java.util.Optional<Pet> findActive(UUID customerId, UUID petId) {
+		return pets.findByIdAndCustomerId(petId, customerId).filter(Pet::isActive);
+	}
+
 	/** Edita os dados do pet (substituição completa). Pet arquivado também pode ser corrigido. */
 	@Transactional
 	public Pet update(UUID customerId, UUID petId, PetText.Input input) {

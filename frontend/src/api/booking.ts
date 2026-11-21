@@ -10,6 +10,10 @@ export interface CatalogService {
   id: string
   name: string
   durationMinutes: number
+  /** Duração por porte e extra de pelo (ADR 0020); nulos = usam a base. */
+  durationMediumMinutes?: number | null
+  durationLargeMinutes?: number | null
+  coatExtraMinutes?: number | null
   /** Preços em centavos (ADR 0019); todos nulos = a combinar. Médio e grande nulos valem o base. */
   priceCents?: number | null
   priceMediumCents?: number | null
@@ -56,10 +60,12 @@ export function bookingApi(request: Request) {
   return {
     providers: (page = 0, size = 50) => request<CatalogProvider[]>(`/api/catalog/providers?page=${page}&size=${size}`),
     services: (providerId: string) => request<CatalogService[]>(`/api/catalog/providers/${encodeURIComponent(providerId)}/services`),
-    slots: (providerId: string, serviceId: string, date: string, excludeAppointmentId?: string) =>
+    slots: (providerId: string, serviceId: string, date: string, excludeAppointmentId?: string, petId?: string) =>
       request<FreeSlot[]>(
         `/api/providers/${encodeURIComponent(providerId)}/slots?serviceId=${encodeURIComponent(serviceId)}&date=${encodeURIComponent(date)}` +
-          (excludeAppointmentId ? `&excludeAppointmentId=${encodeURIComponent(excludeAppointmentId)}` : ''),
+          (excludeAppointmentId ? `&excludeAppointmentId=${encodeURIComponent(excludeAppointmentId)}` : '') +
+          // A duração depende do pet (ADR 0020): a API só considera um pet ativo do próprio cliente.
+          (petId ? `&petId=${encodeURIComponent(petId)}` : ''),
       ),
     /** Remarcar: move o MESMO agendamento para o novo horário LOCAL do negócio. */
     reschedule: (appointmentId: string, localStart: string) =>
