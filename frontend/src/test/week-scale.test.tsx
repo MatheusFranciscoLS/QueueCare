@@ -19,7 +19,8 @@ describe('escala da grade da semana', () => {
     expect(blockBox(0, 30, h30).height).toBeGreaterThanOrEqual(MIN_BLOCK_PX)
     const h15 = hourHeight([15, 60])
     expect(h15).toBeGreaterThan(h30)
-    expect(blockBox(0, 15, h15).height).toBeGreaterThanOrEqual(MIN_BLOCK_PX - 4) // o limite da hora pode deixar o de 15 minutos um pouco abaixo do ideal
+    expect(blockBox(0, 15, h15).height).toBeGreaterThanOrEqual(MIN_BLOCK_PX) // até o de 15 minutos é um alvo de toque de 44 px
+    expect(MIN_BLOCK_PX).toBeGreaterThanOrEqual(44)
     expect(hourHeight([1])).toBe(MAX_HOUR_PX)
   })
 
