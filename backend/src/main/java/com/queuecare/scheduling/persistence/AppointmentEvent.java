@@ -81,6 +81,11 @@ public class AppointmentEvent {
 		return createdAt;
 	}
 
+	/** Texto livre do evento; em UNDONE (ADR 0026) é o nome da etapa desfeita. */
+	public String getNotes() {
+		return notes;
+	}
+
 	public Instant getPreviousStartsAt() {
 		return previousStartsAt;
 	}

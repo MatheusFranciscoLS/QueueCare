@@ -273,6 +273,10 @@ function laterOf(server: string, local: string | undefined): string {
   return RANK[local] > RANK[server] ? local : server
 }
 
+/** Desfazer etapa (ADR 0026): o que foi desfeito no aviso e o texto do botão, por situação. */
+const UNDO_LABEL: Record<string, string> = { CHECKED_IN: 'chegada', IN_PROGRESS: 'início do atendimento', READY: 'pronto para retirada' }
+const UNDO_BUTTON: Record<string, string> = { CHECKED_IN: 'Desfazer chegada', IN_PROGRESS: 'Desfazer início', READY: 'Desfazer pronto' }
+
 const STATUS_LABEL: Record<string, string> = { SCHEDULED: 'Agendado', CHECKED_IN: 'Chegou', IN_PROGRESS: 'Em atendimento', READY: 'Pronto para retirada', COMPLETED: 'Concluído', NO_SHOW: 'Faltou' }
 
 /** Motivos em que o agendamento JÁ mudou no servidor: a linha volta a valer o que o servidor diz e a lista é refeita. */
@@ -402,6 +406,12 @@ function AppointmentRow({
       await api.checkIn(item.id)
       onStatus('CHECKED_IN')
       setNotice(`Chegada de ${customer} registrada.`)
+    })
+  const undo = () =>
+    act(async () => {
+      await api.undo(item.id)
+      onStatus(null) // o estado volta uma etapa: a tela larga o que lembrava (ela só guardava o mais avançado) e relê do servidor
+      setNotice(`Desfeito: ${UNDO_LABEL[status] ?? 'etapa'} de ${customer}.`)
     })
   const complete = () =>
     act(async () => {
@@ -571,6 +581,11 @@ function AppointmentRow({
           <button type="button" className="button" disabled={busy} onClick={complete}>
             {busy ? 'Enviando…' : 'Concluir atendimento'}
           </button>
+          <MoreActions who={customer} open={moreOpen} onOpenChange={setMoreOpen} disabled={busy}>
+            <button type="button" className="button secondary" disabled={busy} onClick={undo}>
+              {UNDO_BUTTON[status]}
+            </button>
+          </MoreActions>
         </span>
       )}
       <span className="row-extra">

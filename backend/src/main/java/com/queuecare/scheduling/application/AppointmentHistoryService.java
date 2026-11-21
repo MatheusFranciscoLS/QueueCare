@@ -35,7 +35,7 @@ public class AppointmentHistoryService {
 	}
 
 	/** Uma linha do histórico. {@code actorName} só vem para a equipe (nulo para o cliente e nos eventos do sistema). */
-	public record Entry(AppointmentEventType type, Instant at, Actor by, String actorName, Instant previousStartsAt, Instant newStartsAt) {
+	public record Entry(AppointmentEventType type, Instant at, Actor by, String actorName, Instant previousStartsAt, Instant newStartsAt, String undone) {
 	}
 
 	private final UserAccountRepository users;
@@ -72,7 +72,9 @@ public class AppointmentHistoryService {
 			UserAccount actor = e.getActorId() == null ? null : actors.get(e.getActorId());
 			Actor by = actor == null ? Actor.SYSTEM : (actor.getRole() == UserRole.CUSTOMER ? Actor.CUSTOMER : Actor.STAFF);
 			String name = staffOfProvider && actor != null ? actor.getName() : null;
-			return new Entry(e.getEventType(), e.getCreatedAt(), by, name, e.getPreviousStartsAt(), e.getNewStartsAt());
+			// Em UNDONE o campo notes diz qual etapa foi desfeita (CHECKED_IN, STARTED ou READY); nos outros tipos fica nulo.
+			String undone = e.getEventType() == AppointmentEventType.UNDONE ? e.getNotes() : null;
+			return new Entry(e.getEventType(), e.getCreatedAt(), by, name, e.getPreviousStartsAt(), e.getNewStartsAt(), undone);
 		}).toList();
 	}
 }

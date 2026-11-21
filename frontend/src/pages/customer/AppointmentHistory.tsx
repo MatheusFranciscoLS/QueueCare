@@ -13,6 +13,9 @@ function when(iso: string, zone: string): string {
   return `${longDate(todayIn(zone, new Date(iso)))}, ${timeIn(iso, zone)}`
 }
 
+/** A etapa que foi desfeita (ADR 0026), em minúsculas para entrar na frase. */
+const UNDONE_LABEL: Record<string, string> = { CHECKED_IN: 'chegada', STARTED: 'início do atendimento', READY: 'pronto para retirada' }
+
 /** Uma linha do histórico em português. O cliente nunca vê o nome de um funcionário: só "por você" ou "pelo estúdio". */
 function describeEntry(entry: HistoryEntry, zone: string, showNames: boolean): string {
   // A equipe vê o nome de quem agiu (a API só o envia a ela); o cliente nunca: mesmo que viesse, a tela não o mostraria.
@@ -36,6 +39,8 @@ function describeEntry(entry: HistoryEntry, zone: string, showNames: boolean): s
       return `Cancelado ${by}`
     case 'NO_SHOW':
       return 'Falta registrada'
+    case 'UNDONE':
+      return `Etapa desfeita (${UNDONE_LABEL[entry.undone ?? ''] ?? 'etapa'}) ${showNames && entry.actorName ? `por ${entry.actorName}` : 'pelo estúdio'}`
   }
 }
 

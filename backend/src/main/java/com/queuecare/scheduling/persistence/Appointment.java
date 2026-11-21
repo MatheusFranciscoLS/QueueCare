@@ -214,6 +214,11 @@ public class Appointment {
 		this.status = AppointmentStatus.NO_SHOW;
 	}
 
+	/** Volta UMA etapa do atendimento (ADR 0026): quem valida o caminho é o serviço. */
+	public void stepBackTo(AppointmentStatus previous) {
+		this.status = previous;
+	}
+
 	/** Atendimento concluído, ou seja, o pet foi retirado (CHECKED_IN, IN_PROGRESS ou READY para COMPLETED). */
 	public void complete() {
 		this.status = AppointmentStatus.COMPLETED;

@@ -62,7 +62,9 @@ export interface DepositTerms {
 
 /** Uma linha do histórico. `by`: quem agiu, sem nomes de funcionários para o cliente. Horários só nas remarcações. */
 export interface HistoryEntry {
-  type: 'SCHEDULED' | 'RESCHEDULED' | 'CHECKED_IN' | 'STARTED' | 'READY' | 'COMPLETED' | 'CANCELLED' | 'NO_SHOW'
+  type: 'SCHEDULED' | 'RESCHEDULED' | 'CHECKED_IN' | 'STARTED' | 'READY' | 'COMPLETED' | 'CANCELLED' | 'NO_SHOW' | 'UNDONE'
+  /** Em UNDONE (ADR 0026): qual etapa foi desfeita. */
+  undone?: 'CHECKED_IN' | 'STARTED' | 'READY' | null
   at: string
   by: 'CUSTOMER' | 'STAFF' | 'SYSTEM'
   actorName?: string | null
