@@ -18,6 +18,7 @@ export function navigationFor(role: Role): { label: string; items: NavItem[] } {
           { to: '/agenda', label: 'Agenda' },
           { to: '/fila', label: 'Fila' },
           { to: '/clientes', label: 'Clientes' },
+          { to: '/resumo', label: 'Resumo' },
           { to: '/servicos', label: 'Serviços' },
           { to: '/expediente', label: 'Expediente' },
           { to: '/equipe', label: 'Equipe' },

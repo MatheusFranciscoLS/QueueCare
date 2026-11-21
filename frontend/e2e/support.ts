@@ -47,6 +47,7 @@ export const TELAS: Tela[] = [
   { id: 'prestador-semana', perfil: 'prestador', path: '/agenda', menu: 'Agenda', depois: ['Semana'], pronto: 'Agenda' },
   { id: 'prestador-fila', perfil: 'prestador', path: '/fila', menu: 'Fila', pronto: 'Fila' },
   { id: 'prestador-clientes', perfil: 'prestador', path: '/clientes', menu: 'Clientes', pronto: 'Clientes' },
+  { id: 'prestador-resumo', perfil: 'prestador', path: '/resumo', menu: 'Resumo', pronto: 'Resumo' },
   { id: 'prestador-servicos', perfil: 'prestador', path: '/servicos', menu: 'Serviços', pronto: 'Serviços' },
   { id: 'prestador-expediente', perfil: 'prestador', path: '/expediente', menu: 'Expediente', pronto: 'Expediente' },
   { id: 'prestador-equipe', perfil: 'prestador', path: '/equipe', menu: 'Equipe', pronto: 'Equipe' },

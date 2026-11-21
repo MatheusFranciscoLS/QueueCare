@@ -24,6 +24,7 @@ const CreateProviderPage = lazyPage(() => import('./pages/admin/CreateProviderPa
 const UsersPage = lazyPage(() => import('./pages/admin/UsersPage'), 'UsersPage')
 const AgendaPage = lazyPage(() => import('./pages/agenda/AgendaPage'), 'AgendaPage')
 const QueuePage = lazyPage(() => import('./pages/agenda/QueuePage'), 'QueuePage')
+const ReportsPage = lazyPage(() => import('./pages/provider/ReportsPage'), 'ReportsPage')
 const CustomersPage = lazyPage(() => import('./pages/agenda/CustomersPage'), 'CustomersPage')
 const BookPage = lazyPage(() => import('./pages/customer/BookPage'), 'BookPage')
 const MyAppointmentsPage = lazyPage(() => import('./pages/customer/MyAppointmentsPage'), 'MyAppointmentsPage')
@@ -66,6 +67,7 @@ export function App() {
           <Route path="/perfil" element={<Lazy><ProfilePage /></Lazy>} />
           <Route element={<RequireRole roles={['PROVIDER']} />}>
             <Route path="/meu-negocio" element={<Lazy><BusinessPage /></Lazy>} />
+            <Route path="/resumo" element={<Lazy><ReportsPage /></Lazy>} />
             <Route path="/servicos" element={<Lazy><ServicesPage /></Lazy>} />
             <Route path="/expediente" element={<Lazy><AvailabilityPage /></Lazy>} />
             <Route path="/equipe" element={<Lazy><TeamPage /></Lazy>} />
