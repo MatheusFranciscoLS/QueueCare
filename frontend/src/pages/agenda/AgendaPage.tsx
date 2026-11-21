@@ -311,8 +311,10 @@ function AppointmentRow({
   const [moreOpen, setMoreOpen] = useState(false)
   const [busy, setBusy] = useState(false)
   const [rescheduling, setRescheduling] = useState(false)
+  // Um só "Histórico" abre o registro deste agendamento e as visitas anteriores do pet (revisão do ChatGPT, 21/11/2026: dois links iguais poluíam o cartão).
   const [historyOpen, setHistoryOpen] = useState(false)
-  const [visitsOpen, setVisitsOpen] = useState(false)
+  // Atendimento encerrado não precisa da ficha do pet na linha: ela só serve a quem vai atender.
+  const finished = status === 'COMPLETED' || status === 'NO_SHOW'
   const once = useSingleFlight()
   const customer = item.customerName ?? 'Cliente'
   const hasFlags =
@@ -460,14 +462,20 @@ function AppointmentRow({
             {status === 'SCHEDULED' && item.remindedAt && <span className="appt-reminded">Lembrete enviado em {reminderStamp(item.remindedAt, timeZone)}</span>}
           </span>
         )}
-        {item.pet && <PetFicha pet={item.pet} />}
-        {item.pet?.notes && <span className="appt-notes">Observações do tutor: {item.pet.notes}</span>}
+        {item.pet && !finished && <PetFicha pet={item.pet} />}
+        {item.pet?.notes && !finished && <span className="appt-notes">Observações do tutor: {item.pet.notes}</span>}
         <span className="badge" data-status={status}>{STATUS_LABEL[status] ?? status}</span>
       </span>
       {status === 'SCHEDULED' && (
         <span className="actions">
           {!confirming ? (
             <>
+              {/* a principal vem primeiro (também na ordem do teclado); "Lembrar" e "Mais ações" dividem a linha de baixo no celular */}
+              {canCheckIn && (
+                <button type="button" className="button" disabled={busy} onClick={checkIn}>
+                  {busy ? 'Enviando…' : 'Chegou'}
+                </button>
+              )}
               {!started && item.customerPhone && (
                 <a
                   className="button secondary"
@@ -490,11 +498,6 @@ function AppointmentRow({
                 >
                   Lembrar
                 </a>
-              )}
-              {canCheckIn && (
-                <button type="button" className="button" disabled={busy} onClick={checkIn}>
-                  {busy ? 'Enviando…' : 'Chegou'}
-                </button>
               )}
               <MoreActions who={customer} open={moreOpen} onOpenChange={setMoreOpen} disabled={busy}>
                 {item.depositStatus === 'REQUESTED' && (
@@ -567,17 +570,7 @@ function AppointmentRow({
         <button type="button" className="button secondary" aria-expanded={historyOpen} onClick={() => setHistoryOpen((open) => !open)}>
           {historyOpen ? 'Ocultar histórico' : 'Histórico'}
         </button>
-        {item.pet && (
-          <button type="button" className="button secondary" aria-expanded={visitsOpen} onClick={() => setVisitsOpen((open) => !open)}>
-            {visitsOpen ? 'Ocultar visitas anteriores' : 'Visitas anteriores'}
-          </button>
-        )}
       </span>
-      {visitsOpen && item.pet && (
-        <div className="row-extra">
-          <PetVisitsList appointmentId={item.id} petName={item.pet.name} timeZone={timeZone} />
-        </div>
-      )}
       {rescheduling && status === 'SCHEDULED' && (
         <div className="row-extra">
           <RescheduleBox
@@ -593,6 +586,7 @@ function AppointmentRow({
       {historyOpen && (
         <div className="row-extra">
           <AppointmentHistory key={item.startsAt + status} appointmentId={item.id} timeZone={timeZone} showNames />
+          {item.pet && <PetVisitsList appointmentId={item.id} petName={item.pet.name} timeZone={timeZone} />}
         </div>
       )}
     </li>

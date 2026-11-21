@@ -130,9 +130,10 @@ describe('visitas anteriores na agenda (equipe)', () => {
     pet,
   })
 
-  it('mostra as visitas anteriores do pet sob demanda', async () => {
+  it('o botão "Histórico" abre o registro do agendamento e as visitas anteriores do pet, sob demanda', async () => {
     const { calls, user } = await login('PROVIDER', {
       [`GET /api/agenda?date=${today}`]: () => json(200, [item({ name: 'Thor', species: 'DOG' })]),
+      'GET /api/appointments/a-1/events': () => json(200, []),
       'GET /api/appointments/a-1/pet-visits': () =>
         json(200, [
           { startsAt: `${addDays(today, -15)}T13:00:00Z`, serviceName: 'Banho', priceCents: 7000 },
@@ -142,7 +143,7 @@ describe('visitas anteriores na agenda (equipe)', () => {
     await user.click(within(screen.getByRole('navigation', { name: 'Menu do prestador' })).getByRole('link', { name: 'Agenda' }))
     await screen.findByText('Marina Souza')
     expect(calls.some((c) => c.path.endsWith('/pet-visits'))).toBe(false)
-    await user.click(screen.getByRole('button', { name: 'Visitas anteriores' }))
+    await user.click(screen.getByRole('button', { name: 'Histórico' }))
     const group = await screen.findByRole('group', { name: 'Visitas anteriores de Thor' })
     const lines = within(group).getAllByRole('listitem')
     expect(lines[0]).toHaveTextContent('Banho · R$ 70,00')
@@ -150,15 +151,16 @@ describe('visitas anteriores na agenda (equipe)', () => {
     expect(lines[1]).not.toHaveTextContent('R$')
   })
 
-  it('sem visitas diz isso; agendamento sem pet não tem o botão', async () => {
+  it('sem visitas diz isso; agendamento sem pet não mostra visitas anteriores', async () => {
     const { user } = await login('PROVIDER', {
       [`GET /api/agenda?date=${today}`]: () => json(200, [item({ name: 'Thor', species: 'DOG' }), { ...item(null), id: 'a-2', customerName: 'Carla Mendes' }]),
+      'GET /api/appointments/a-1/events': () => json(200, []),
       'GET /api/appointments/a-1/pet-visits': () => json(200, []),
     })
     await user.click(within(screen.getByRole('navigation', { name: 'Menu do prestador' })).getByRole('link', { name: 'Agenda' }))
     await screen.findByText('Carla Mendes')
-    expect(screen.getAllByRole('button', { name: 'Visitas anteriores' })).toHaveLength(1)
-    await user.click(screen.getByRole('button', { name: 'Visitas anteriores' }))
+    expect(screen.queryByRole('button', { name: 'Visitas anteriores' })).not.toBeInTheDocument() // virou parte do "Histórico"
+    await user.click(within(screen.getByText('Marina Souza').closest('li') as HTMLElement).getByRole('button', { name: 'Histórico' }))
     expect(await screen.findByText('Thor não tem visitas anteriores aqui.')).toBeInTheDocument()
   })
 })
