@@ -14,6 +14,14 @@ class ProbeController {
 		return "ok";
 	}
 
+	/** Devolve o código de requisição que está no MDC DENTRO do tratamento da chamada (prova que o log da aplicação o enxerga). */
+	@GetMapping("/api/test/mdc")
+	@PreAuthorize("hasAnyRole('PROVIDER','ATTENDANT')")
+	String mdc() {
+		org.slf4j.LoggerFactory.getLogger("probe-mdc").info("linha de log DENTRO da chamada");
+		return String.valueOf(org.slf4j.MDC.get("requestId"));
+	}
+
 	@GetMapping("/api/test/staff")
 	@PreAuthorize("hasAnyRole('PROVIDER','ATTENDANT')")
 	String staff() {

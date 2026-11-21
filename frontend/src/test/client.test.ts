@@ -74,6 +74,22 @@ describe('describeError', () => {
   })
 })
 
+describe('código da requisição (ADR 0029)', () => {
+  it('o erro guarda o X-Request-Id e a mensagem do erro do servidor o mostra para a pessoa informar', async () => {
+    mockApi({ 'GET /boom': () => problem(500, 'falha interna', {}, { 'X-Request-Id': 'a1b2c3d4e5f60718' }) })
+    const error = (await apiRequest('/boom').catch((e) => e)) as ApiError
+    expect(error).toBeInstanceOf(ApiError)
+    expect(error.requestId).toBe('a1b2c3d4e5f60718')
+    expect(describeError(error)).toBe('Algo deu errado no servidor. Tente novamente em instantes. Se continuar, informe o código a1b2c3d4e5f60718.')
+  })
+
+  it('sem o cabeçalho a mensagem continua a de sempre, e erros que a pessoa resolve não ganham código', async () => {
+    mockApi({ 'GET /sem': () => problem(500, 'x'), 'GET /nao': () => problem(404, 'x', {}, { 'X-Request-Id': 'a1b2c3d4e5f60718' }) })
+    expect(describeError(await apiRequest('/sem').catch((e) => e))).toBe('Algo deu errado no servidor. Tente novamente em instantes.')
+    expect(describeError(await apiRequest('/nao').catch((e) => e))).toBe('Não encontramos o que você procura.')
+  })
+})
+
 describe('validateNewPassword', () => {
   it('segue a política da API: 10 caracteres, 72 bytes, diferente da atual', () => {
     expect(validateNewPassword('curta')).toMatch(/pelo menos 10/)

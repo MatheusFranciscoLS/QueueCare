@@ -25,6 +25,11 @@ springdoc:
   swagger-ui:
     enabled: false
 
+# Todo log leva o código da requisição (rid=...): o mesmo que volta no cabeçalho X-Request-Id e que a tela mostra num erro do servidor (ADR 0029).
+logging:
+  pattern:
+    level: "%5p [rid=%X{requestId:-}]"
+
 management:
   endpoints:
     web:

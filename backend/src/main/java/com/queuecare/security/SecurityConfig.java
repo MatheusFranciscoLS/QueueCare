@@ -87,6 +87,8 @@ class SecurityConfig {
 		configuration.setAllowedOrigins(origins);
 		configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
 		configuration.setAllowedHeaders(List.of("Authorization", "Content-Type"));
+		// Sem expor, o navegador de OUTRA origem (o site na Vercel falando com a API no Render) não consegue ler estes cabeçalhos: o código do erro e o tempo de espera do 429.
+		configuration.setExposedHeaders(List.of("X-Request-Id", "Retry-After"));
 		configuration.setAllowCredentials(false);
 		configuration.setMaxAge(Duration.ofHours(1));
 		UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
