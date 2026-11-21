@@ -21,7 +21,7 @@ export function DurationFields({
     <div className="field-row field-row--three">
       <Field
         {...props}
-        label="Duração para porte médio (minutos, opcional)"
+        label="Duração para porte médio (min, opcional)"
         name={`${idPrefix}-duration-medium`}
         min={MIN_SERVICE_MINUTES}
         max={MAX_SERVICE_MINUTES}
@@ -32,7 +32,7 @@ export function DurationFields({
       />
       <Field
         {...props}
-        label="Duração para porte grande (minutos, opcional)"
+        label="Duração para porte grande (min, opcional)"
         name={`${idPrefix}-duration-large`}
         min={MIN_SERVICE_MINUTES}
         max={MAX_SERVICE_MINUTES}
@@ -43,11 +43,11 @@ export function DurationFields({
       />
       <Field
         {...props}
-        label="Minutos a mais para pelo longo, cacheado ou duplo (opcional)"
+        label="Extra por tipo de pelo (min, opcional)"
         name={`${idPrefix}-coat-extra`}
         min={0}
         max={MAX_COAT_EXTRA_MINUTES}
-        hint="Somados à duração do porte. Vazio = nenhum."
+        hint="Somados ao porte quando o pelo é longo, cacheado ou duplo. Vazio = nenhum."
         value={text.coatExtra}
         error={errors.coatExtra}
         onChange={(e) => onChange({ ...text, coatExtra: e.target.value }, 'coatExtra')}
