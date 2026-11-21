@@ -72,7 +72,7 @@ export function WaitlistDay({ date, timeZone, studioName }: { date: string; time
                     Chamar
                   </a>
                 )}
-                <button type="button" className="button secondary" disabled={busyId !== null} aria-label={`Tirar ${who} da lista`} onClick={() => remove(entry)}>
+                <button type="button" className="button secondary" disabled={busyId !== null} aria-label={`Tirar da lista: ${who}`} onClick={() => remove(entry)}>
                   {busyId === entry.id ? 'Tirando…' : 'Tirar da lista'}
                 </button>
               </span>
