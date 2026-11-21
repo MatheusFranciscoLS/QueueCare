@@ -10,6 +10,8 @@ export class ApiError extends Error {
   readonly reason?: string
   readonly fieldErrors: Record<string, string>
   readonly retryAfterSeconds?: number
+  /** Código da requisição (cabeçalho X-Request-Id, ADR 0029): quem atende o erro o usa para achar as linhas do log. */
+  readonly requestId?: string
 
   constructor(
     status: number,
@@ -17,6 +19,7 @@ export class ApiError extends Error {
     reason?: string,
     fieldErrors: Record<string, string> = {},
     retryAfterSeconds?: number,
+    requestId?: string,
   ) {
     super(message)
     this.name = 'ApiError'
@@ -24,6 +27,7 @@ export class ApiError extends Error {
     this.reason = reason
     this.fieldErrors = fieldErrors
     this.retryAfterSeconds = retryAfterSeconds
+    this.requestId = requestId
   }
 }
 
@@ -86,5 +90,6 @@ async function toApiError(response: Response): Promise<ApiError> {
     // corpo vazio ou que não é JSON: segue só com o status
   }
   const retryAfter = Number(response.headers.get('Retry-After'))
-  return new ApiError(response.status, detail, reason, fieldErrors, Number.isFinite(retryAfter) && retryAfter > 0 ? retryAfter : undefined)
+  const requestId = response.headers.get('X-Request-Id') ?? undefined
+  return new ApiError(response.status, detail, reason, fieldErrors, Number.isFinite(retryAfter) && retryAfter > 0 ? retryAfter : undefined, requestId)
 }

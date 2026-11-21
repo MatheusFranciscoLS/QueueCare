@@ -67,8 +67,11 @@ export function describeError(error: unknown): string {
       return error.retryAfterSeconds
         ? `Muitas tentativas. Tente de novo em ${formatWait(error.retryAfterSeconds)}.`
         : 'Muitas tentativas. Tente de novo mais tarde.'
-    default:
-      return 'Algo deu errado no servidor. Tente novamente em instantes.'
+    default: {
+      // Erro do servidor: o código da requisição vai na mensagem para a pessoa poder informá-lo e quem atende achar a causa no log (ADR 0029).
+      const base = 'Algo deu errado no servidor. Tente novamente em instantes.'
+      return error.requestId ? `${base} Se continuar, informe o código ${error.requestId}.` : base
+    }
   }
 }
 
