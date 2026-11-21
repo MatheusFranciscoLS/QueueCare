@@ -84,6 +84,8 @@ export function agendaApi(request: Request) {
     depositReceived: (appointmentId: string) => request<unknown>(`/api/appointments/${encodeURIComponent(appointmentId)}/deposit-received`, { method: 'POST' }),
     /** A pessoa faltou (ADR 0021): só a partir do horário marcado; estado final. */
     noShow: (appointmentId: string) => request<unknown>(`/api/appointments/${encodeURIComponent(appointmentId)}/no-show`, { method: 'POST' }),
+    /** Desfazer a última etapa de um atendimento em andamento (ADR 0026): chegou, começou ou ficou pronto. */
+    undo: (appointmentId: string) => request<unknown>(`/api/appointments/${encodeURIComponent(appointmentId)}/undo`, { method: 'POST' }),
     complete: (appointmentId: string) => request<unknown>(`/api/appointments/${encodeURIComponent(appointmentId)}/complete`, { method: 'POST' }),
     /** Remarcar: move o MESMO agendamento para o novo horário LOCAL do negócio (equipe: sem prazo e sem limite). */
     reschedule: (appointmentId: string, localStart: string) =>

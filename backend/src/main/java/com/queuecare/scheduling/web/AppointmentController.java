@@ -135,7 +135,7 @@ class AppointmentController {
 	 * Uma linha do histórico. {@code by}: CUSTOMER, STAFF ou SYSTEM. {@code actorName} só vem para a equipe do prestador (nulo para o cliente).
 	 * {@code previousStartsAt} e {@code newStartsAt} só nas remarcações (RESCHEDULED).
 	 */
-	record HistoryEntryResponse(String type, Instant at, String by, String actorName, Instant previousStartsAt, Instant newStartsAt) {
+	record HistoryEntryResponse(String type, Instant at, String by, String actorName, Instant previousStartsAt, Instant newStartsAt, String undone) {
 	}
 
 	/**
@@ -153,7 +153,7 @@ class AppointmentController {
 	@PreAuthorize("hasAnyRole('CUSTOMER','PROVIDER','ATTENDANT')")
 	List<HistoryEntryResponse> events(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID id) {
 		return historyService.history(id, userId(jwt)).stream()
-				.map(e -> new HistoryEntryResponse(e.type().name(), e.at(), e.by().name(), e.actorName(), e.previousStartsAt(), e.newStartsAt())).toList();
+				.map(e -> new HistoryEntryResponse(e.type().name(), e.at(), e.by().name(), e.actorName(), e.previousStartsAt(), e.newStartsAt(), e.undone())).toList();
 	}
 
 	/** Uma visita anterior do pet neste prestador (ADR 0019, fatia 6). */
@@ -219,6 +219,13 @@ class AppointmentController {
 	}
 
 	/** Atendimento concluído (pet retirado). Só a equipe do prestador. */
+	/** Desfazer a última etapa de um atendimento em andamento (ADR 0026): só a equipe. */
+	@PostMapping("/{id}/undo")
+	@PreAuthorize("hasAnyRole('PROVIDER','ATTENDANT')")
+	AppointmentResponse undo(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID id) {
+		return respond(List.of(attendanceService.undo(id, userId(jwt)))).get(0);
+	}
+
 	@PostMapping("/{id}/complete")
 	@PreAuthorize("hasAnyRole('PROVIDER','ATTENDANT')")
 	AppointmentResponse complete(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID id) {

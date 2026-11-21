@@ -120,6 +120,40 @@ public class AttendanceService {
 		});
 	}
 
+	/**
+	 * Desfazer a última etapa (ADR 0026): quem tocou sem querer em "Chegou", "Começar" ou "Pronto" volta UMA etapa (pronto para em atendimento ou chegou; em atendimento
+	 * para chegou; chegou para agendado). Só de atendimento EM ANDAMENTO: concluído, faltou e cancelado são finais (INVALID_STATE / ALREADY_CANCELLED). O evento da etapa
+	 * desfeita sai (a etapa pode ser refeita; quem chega de novo vai para o fim da fila) e entra um UNDONE com quem desfez e qual etapa era.
+	 */
+	public Appointment undo(UUID appointmentId, UUID actorId) {
+		return run(() -> {
+			UserAccount actor = users.findById(actorId).filter(UserAccount::isActive).orElseThrow(() -> new AccessDeniedException("usuário inválido"));
+			if (actor.getRole() != UserRole.PROVIDER && actor.getRole() != UserRole.ATTENDANT) {
+				throw new AccessDeniedException("perfil sem acesso ao atendimento");
+			}
+			UUID providerId = staffAccess.providerIdOf(actor).orElseThrow(() -> new AccessDeniedException("sem vínculo com um prestador"));
+			Appointment appointment = appointments.findById(appointmentId).filter(a -> a.getProviderId().equals(providerId)).orElseThrow(AppointmentNotFoundException::new);
+			if (appointment.getStatus() == AppointmentStatus.CANCELLED) {
+				throw new AttendanceRejectedException(Reason.ALREADY_CANCELLED);
+			}
+			AppointmentEventType undone = switch (appointment.getStatus()) {
+				case CHECKED_IN -> AppointmentEventType.CHECKED_IN;
+				case IN_PROGRESS -> AppointmentEventType.STARTED;
+				case READY -> AppointmentEventType.READY;
+				default -> throw new AttendanceRejectedException(Reason.INVALID_STATE);
+			};
+			events.deleteByAppointmentIdAndEventType(appointment.getId(), undone);
+			Set<AppointmentEventType> remaining = events.findByAppointmentId(appointment.getId()).stream().map(AppointmentEvent::getEventType)
+					.collect(java.util.stream.Collectors.toSet());
+			AppointmentStatus previous = remaining.contains(AppointmentEventType.STARTED) ? AppointmentStatus.IN_PROGRESS
+					: remaining.contains(AppointmentEventType.CHECKED_IN) ? AppointmentStatus.CHECKED_IN : AppointmentStatus.SCHEDULED;
+			appointment.stepBackTo(previous);
+			Appointment saved = appointments.saveAndFlush(appointment);
+			events.save(new AppointmentEvent(saved.getId(), actor.getId(), AppointmentEventType.UNDONE, clock.instant(), undone.name()));
+			return saved;
+		});
+	}
+
 	/** Começa o atendimento (ADR 0019): só de quem chegou. */
 	public Appointment start(UUID appointmentId, UUID actorId) {
 		return run(() -> inTransaction(appointmentId, actorId, EnumSet.of(AppointmentStatus.CHECKED_IN), AppointmentEventType.STARTED, Appointment::start, false));

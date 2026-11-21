@@ -8,5 +8,7 @@ public enum AppointmentEventType {
 	/** Remarcação (ADR 0017): é o ÚNICO tipo que pode se repetir no mesmo agendamento. */
 	RESCHEDULED,
 	/** A pessoa faltou (ADR 0021); um por agendamento, é o último evento. */
-	NO_SHOW
+	NO_SHOW,
+	/** Desfazer etapa (ADR 0026): a equipe voltou uma etapa do atendimento; {@code notes} diz qual. Pode se repetir. */
+	UNDONE
 }

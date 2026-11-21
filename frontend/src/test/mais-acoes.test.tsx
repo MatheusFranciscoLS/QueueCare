@@ -1,8 +1,8 @@
-import { act, screen, within } from '@testing-library/react'
+import { act, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { todayIn } from '../api/dates'
-import { json, mockApi, PASSWORD, renderWithHarness, token, USER, type Call } from './helpers'
+import { json, mockApi, PASSWORD, problem, renderWithHarness, token, USER, type Call } from './helpers'
 
 vi.mock('../pages/customer/CustomerPanel', () => ({ CustomerPanel: () => null }))
 vi.mock('../pages/provider/SetupPanel', () => ({ SetupPanel: () => null }))
@@ -31,7 +31,11 @@ const item = (id: string, extra: object = {}) => ({
 })
 
 async function open(menuItem: 'Agenda' | 'Fila', routes: Routes) {
-  mockApi({
+  return (await openWithCalls(menuItem, routes)).user
+}
+
+async function openWithCalls(menuItem: 'Agenda' | 'Fila', routes: Routes) {
+  const { calls } = mockApi({
     'POST /api/auth/login': () => token(),
     'GET /api/me': () => json(200, { ...USER, role: 'ATTENDANT', name: 'Maria Souza' }),
     'GET /api/agenda/workplace': () => json(200, { providerId: 'p-1', businessName: 'Estúdio', timeZone: ZONE, cancellationDeadlineMinutes: 720 }),
@@ -42,7 +46,7 @@ async function open(menuItem: 'Agenda' | 'Fila', routes: Routes) {
   await screen.findByRole('heading', { name: 'Olá, Maria Souza' })
   const user = userEvent.setup()
   await user.click(within(screen.getByRole('navigation')).getByRole('link', { name: menuItem }))
-  return user
+  return { user, calls }
 }
 
 describe('Agenda: uma ação principal e "Mais ações"', () => {
@@ -79,10 +83,39 @@ describe('Agenda: uma ação principal e "Mais ações"', () => {
     expect(within(rows[1]).queryByRole('button', { name: /Sinal recebido de/ })).not.toBeInTheDocument()
   })
 
-  it('quem já chegou só tem a ação de concluir: não há "Mais ações" para nada', async () => {
-    await open('Agenda', { [AGENDA]: () => json(200, [item('a-1', { status: 'IN_PROGRESS' })]) })
+  it('quem já chegou tem "Concluir" como principal e SÓ "Desfazer" em "Mais ações" (nada de remarcar, cancelar ou faltou)', async () => {
+    const user = await open('Agenda', { [AGENDA]: () => json(200, [item('a-1', { status: 'IN_PROGRESS' })]) })
     expect(await screen.findByRole('button', { name: 'Concluir atendimento' })).toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: /^Mais ações/ })).not.toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Mais ações de Joana Lima' }))
+    const group = screen.getByRole('group', { name: 'Mais ações de Joana Lima' })
+    expect(within(group).getAllByRole('button').map((b) => b.textContent)).toEqual(['Desfazer início'])
+  })
+
+  it('desfazer a chegada chama a API, avisa o que foi desfeito e relê a agenda', async () => {
+    let status = 'CHECKED_IN'
+    const { calls, user } = await openWithCalls('Agenda', {
+      [AGENDA]: () => json(200, [item('a-1', { status })]),
+      'POST /api/appointments/a-1/undo': () => {
+        status = 'SCHEDULED'
+        return json(200, { id: 'a-1', status: 'SCHEDULED' })
+      },
+    })
+    await user.click(await screen.findByRole('button', { name: 'Mais ações de Joana Lima' }))
+    await user.click(screen.getByRole('button', { name: 'Desfazer chegada' }))
+
+    expect(await screen.findByText('Desfeito: chegada de Joana Lima.')).toBeInTheDocument()
+    expect(calls.some((c) => c.method === 'POST' && c.path === '/api/appointments/a-1/undo')).toBe(true)
+    expect(await screen.findByRole('button', { name: 'Chegou' })).toBeInTheDocument() // voltou a "Agendado": a principal é "Chegou" de novo
+  })
+
+  it('o histórico conta a correção com a etapa e quem desfez', async () => {
+    const user = await open('Agenda', {
+      [AGENDA]: () => json(200, [item('a-1')]),
+      'GET /api/appointments/a-1/events': () =>
+        json(200, [{ type: 'UNDONE', at: '2026-11-21T15:00:00Z', by: 'STAFF', actorName: 'Maria Souza', undone: 'CHECKED_IN' }]),
+    })
+    await user.click(await screen.findByRole('button', { name: 'Histórico' }))
+    expect(await screen.findByText(/Etapa desfeita \(chegada\) por Maria Souza/)).toBeInTheDocument()
   })
 
   it('faltas, sinal e lembrete ficam numa linha de indicadores discreta, separada do estado do atendimento', async () => {
@@ -160,10 +193,39 @@ describe('Fila: uma ação principal por estado', () => {
     expect(screen.getByRole('button', { name: 'Concluir atendimento' })).toBeInTheDocument()
   })
 
-  it('pronto para retirada: "Pet retirado" é a principal e o WhatsApp é o secundário; sem "Mais ações"', async () => {
-    await open('Fila', { 'GET /api/agenda/queue': () => json(200, [queueItem('a-1', 'READY')]) })
+  it('pronto para retirada: "Pet retirado" é a principal, o WhatsApp é o secundário e "Mais ações" só desfaz', async () => {
+    const user = await open('Fila', { 'GET /api/agenda/queue': () => json(200, [queueItem('a-1', 'READY')]) })
     expect(await screen.findByRole('button', { name: 'Pet retirado (concluir)' })).toBeInTheDocument()
     expect(screen.getByRole('link', { name: /Avisar no WhatsApp/ })).toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: /^Mais ações/ })).not.toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Mais ações de Joana Lima' }))
+    const group = screen.getByRole('group', { name: 'Mais ações de Joana Lima' })
+    expect(within(group).getAllByRole('button').map((b) => b.textContent)).toEqual(['Desfazer pronto'])
+  })
+
+  it('desfazer a chegada na fila tira a pessoa da fila e avisa', async () => {
+    let queue = [queueItem('a-1', 'CHECKED_IN')]
+    const { calls, user } = await openWithCalls('Fila', {
+      'GET /api/agenda/queue': () => json(200, queue),
+      'POST /api/appointments/a-1/undo': () => {
+        queue = []
+        return json(200, { id: 'a-1', status: 'SCHEDULED' })
+      },
+    })
+    await user.click(await screen.findByRole('button', { name: 'Mais ações de Joana Lima' }))
+    await user.click(screen.getByRole('button', { name: 'Desfazer chegada' }))
+
+    expect(await screen.findByText('Desfeito: chegada de Mel (Joana Lima).')).toBeInTheDocument()
+    expect(calls.some((c) => c.method === 'POST' && c.path === '/api/appointments/a-1/undo')).toBe(true)
+    await waitFor(() => expect(screen.queryByRole('button', { name: 'Começar atendimento' })).not.toBeInTheDocument())
+  })
+
+  it('o servidor já ter mudado (409) mostra o erro e refaz a fila', async () => {
+    const { user } = await openWithCalls('Fila', {
+      'GET /api/agenda/queue': () => json(200, [queueItem('a-1', 'IN_PROGRESS')]),
+      'POST /api/appointments/a-1/undo': () => problem(409, 'estado', { reason: 'INVALID_STATE' }),
+    })
+    await user.click(await screen.findByRole('button', { name: 'Mais ações de Joana Lima' }))
+    await user.click(screen.getByRole('button', { name: 'Desfazer início' }))
+    expect(await screen.findByRole('alert')).toBeInTheDocument()
   })
 })

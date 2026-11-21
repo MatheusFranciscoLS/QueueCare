@@ -154,7 +154,7 @@ function QueueRow({
 }) {
   const { request } = useAuth()
   const api = useMemo(() => agendaApi(request), [request])
-  const [busy, setBusy] = useState<'start' | 'ready' | 'complete' | null>(null)
+  const [busy, setBusy] = useState<'start' | 'ready' | 'complete' | 'undo' | null>(null)
   const [moreOpen, setMoreOpen] = useState(false) // pular etapas (ex.: concluir sem passar por "em atendimento") fica atrás de "Mais ações"
   const once = useSingleFlight()
   const customer = item.customerName ?? 'Cliente'
@@ -162,7 +162,7 @@ function QueueRow({
   const petName = item.pet?.name
 
   /** Roda um passo do atendimento: bloqueia o botão durante o envio, avisa o resultado e refaz a fila (que traz a situação nova do servidor). */
-  async function act(step: 'start' | 'ready' | 'complete', run: () => Promise<unknown>, message: string, leavesQueue = false) {
+  async function act(step: 'start' | 'ready' | 'complete' | 'undo', run: () => Promise<unknown>, message: string, leavesQueue = false) {
     await once(async () => {
       setProblem(null)
       setNotice(null)
@@ -185,6 +185,8 @@ function QueueRow({
   const start = () => act('start', () => api.start(item.id), `Atendimento de ${who} iniciado.`)
   const ready = () => act('ready', () => api.ready(item.id), `${petName ?? 'O pet'} está pronto para retirada.`)
   const complete = () => act('complete', () => api.complete(item.id), `Atendimento de ${who} concluído.`, true)
+  const undoLabel = status === 'READY' ? 'pronto' : status === 'IN_PROGRESS' ? 'início' : 'chegada'
+  const undo = () => act('undo', () => api.undo(item.id), `Desfeito: ${status === 'READY' ? 'pronto para retirada' : status === 'IN_PROGRESS' ? 'início do atendimento' : 'chegada'} de ${who}.`, status === 'CHECKED_IN')
   const readyMessage = `Olá, ${customer}! ${petName ? `O ${petName} está` : 'O seu pet está'} pronto para retirada no ${businessName}.`
 
   return (
@@ -240,18 +242,21 @@ function QueueRow({
             {busy === 'complete' ? 'Enviando…' : 'Pet retirado (concluir)'}
           </button>
         )}
-        {status !== 'READY' && (
-          <MoreActions who={customer} open={moreOpen} onOpenChange={setMoreOpen} disabled={busy !== null}>
-            {status === 'CHECKED_IN' && (
-              <button type="button" className="button secondary" disabled={busy !== null} onClick={ready}>
-                {busy === 'ready' ? 'Enviando…' : 'Pronto para retirada'}
-              </button>
-            )}
+        <MoreActions who={customer} open={moreOpen} onOpenChange={setMoreOpen} disabled={busy !== null}>
+          {status === 'CHECKED_IN' && (
+            <button type="button" className="button secondary" disabled={busy !== null} onClick={ready}>
+              {busy === 'ready' ? 'Enviando…' : 'Pronto para retirada'}
+            </button>
+          )}
+          {status !== 'READY' && (
             <button type="button" className="button secondary" disabled={busy !== null} onClick={complete}>
               {busy === 'complete' ? 'Enviando…' : 'Concluir atendimento'}
             </button>
-          </MoreActions>
-        )}
+          )}
+          <button type="button" className="button secondary" disabled={busy !== null} onClick={undo}>
+            {busy === 'undo' ? 'Desfazendo…' : `Desfazer ${undoLabel}`}
+          </button>
+        </MoreActions>
       </span>
     </li>
   )
