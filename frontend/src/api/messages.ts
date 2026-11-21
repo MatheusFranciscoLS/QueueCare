@@ -15,6 +15,7 @@ const BY_REASON: Record<string, string> = {
   CONCURRENT_UPDATE: 'O agendamento acabou de ser alterado por outra pessoa. Atualize a agenda.',
   INVALID_STATE: 'Esse agendamento já mudou de situação. Atualize a agenda.',
   WRONG_DAY: 'A chegada só pode ser registrada no dia do agendamento.',
+  TOO_EARLY: 'Só dá para registrar a falta a partir do horário do agendamento.',
   CANNOT_DEACTIVATE_SELF: 'Você não pode desativar a própria conta.',
   LAST_ACTIVE_ADMIN: 'É preciso manter ao menos um administrador ativo.',
   USER_NOT_FOUND: 'Essa conta não foi encontrada.',

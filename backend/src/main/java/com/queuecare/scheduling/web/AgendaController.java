@@ -46,13 +46,14 @@ class AgendaController {
 
 	/**
 	 * {@code customerPhone}: só dígitos com DDI; presente na agenda do dia e na fila, nulo na semana e quando o tutor não informou.
+	 * {@code customerNoShows}: quantas vezes o tutor faltou NESTE estúdio (ADR 0021); só na agenda do dia, zero na semana.
 	 * {@code priceCents}: valor congelado na reserva (ADR 0019), também só no dia e na fila; nulo na semana e quando era "a combinar".
 	 */
 	record AgendaResponse(UUID id, Instant startsAt, Instant endsAt, String status, UUID serviceId, String serviceName, UUID customerId,
-			String customerName, String customerPhone, Integer priceCents, AgendaPetResponse pet) {
+			String customerName, String customerPhone, Integer priceCents, AgendaPetResponse pet, int customerNoShows) {
 		static AgendaResponse from(AgendaItem i) {
 			return new AgendaResponse(i.id(), i.startsAt(), i.endsAt(), i.status().name(), i.serviceId(), i.serviceName(), i.customerId(), i.customerName(),
-					i.customerPhone(), i.priceCents(), AgendaPetResponse.from(i.pet()));
+					i.customerPhone(), i.priceCents(), AgendaPetResponse.from(i.pet()), i.customerNoShows());
 		}
 	}
 

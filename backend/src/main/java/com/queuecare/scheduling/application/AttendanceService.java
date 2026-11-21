@@ -65,6 +65,14 @@ public class AttendanceService {
 		return run(() -> inTransaction(appointmentId, actorId, EnumSet.of(AppointmentStatus.SCHEDULED), AppointmentEventType.CHECKED_IN, Appointment::checkIn, true));
 	}
 
+	/**
+	 * Faltou (ADR 0021): só de quem estava SCHEDULED e só a partir do horário marcado (antes disso, TOO_EARLY): ninguém falta a um horário que ainda não chegou.
+	 * Estado final; o agendamento continua ocupando o horário no banco (já passou ou está passando).
+	 */
+	public Appointment noShow(UUID appointmentId, UUID actorId) {
+		return run(() -> inTransaction(appointmentId, actorId, EnumSet.of(AppointmentStatus.SCHEDULED), AppointmentEventType.NO_SHOW, Appointment::markNoShow, false));
+	}
+
 	/** Começa o atendimento (ADR 0019): só de quem chegou. */
 	public Appointment start(UUID appointmentId, UUID actorId) {
 		return run(() -> inTransaction(appointmentId, actorId, EnumSet.of(AppointmentStatus.CHECKED_IN), AppointmentEventType.STARTED, Appointment::start, false));
@@ -107,6 +115,9 @@ public class AttendanceService {
 			throw new AttendanceRejectedException(Reason.INVALID_STATE);
 		}
 		Instant now = clock.instant();
+		if (event == AppointmentEventType.NO_SHOW && now.isBefore(appointment.getStartsAt())) {
+			throw new AttendanceRejectedException(Reason.TOO_EARLY);
+		}
 		if (sameDayOnly) {
 			Provider provider = providers.findById(providerId).orElseThrow(AppointmentNotFoundException::new);
 			ZoneId zone = ZoneId.of(provider.getTimeZone());

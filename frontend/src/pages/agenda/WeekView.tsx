@@ -11,7 +11,7 @@ import { hourHeight } from './weekScale'
 import { RefreshWarning } from '../RefreshWarning'
 import { useLoad } from '../useLoad'
 
-const STATE_BY_STATUS: Record<string, AppointmentState> = { SCHEDULED: 'scheduled', CHECKED_IN: 'waiting', IN_PROGRESS: 'inprogress', READY: 'ready', COMPLETED: 'done' }
+const STATE_BY_STATUS: Record<string, AppointmentState> = { SCHEDULED: 'scheduled', CHECKED_IN: 'waiting', IN_PROGRESS: 'inprogress', READY: 'ready', COMPLETED: 'done', NO_SHOW: 'missed' }
 
 /** "HH:mm" em minutos desde a meia-noite. */
 const minutesOf = (hhmm: string) => Number(hhmm.slice(0, 2)) * 60 + Number(hhmm.slice(3, 5))

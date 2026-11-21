@@ -85,6 +85,8 @@ public final class AppointmentExceptions {
 			INVALID_STATE,
 			/** O check-in só vale no dia do agendamento, no fuso do prestador (422). */
 			WRONG_DAY,
+			/** Faltou só pode ser registrado a partir do horário marcado (422). */
+			TOO_EARLY,
 			/** Outra requisição alterou o mesmo agendamento ao mesmo tempo (409). */
 			CONCURRENT_UPDATE
 		}

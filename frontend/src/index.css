@@ -119,9 +119,28 @@ body {
   background: var(--st-done-bg);
 }
 
-.badge[data-status='CANCELLED'] {
+.badge[data-status='CANCELLED'],
+.badge[data-status='NO_SHOW'] {
   color: var(--st-cancelled);
   background: var(--st-cancelled-bg);
+}
+
+/* tutor com falta neste estúdio (ADR 0021): texto + tom de atenção, na linha do tutor */
+.appt-noshows {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.0625rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--st-waiting);
+  background: var(--st-waiting-bg);
+}
+
+.week-block[data-state='missed'] .week-block__open {
+  border-color: var(--st-cancelled);
+  background: var(--st-cancelled-bg);
+  color: var(--st-cancelled);
 }
 
 .card {

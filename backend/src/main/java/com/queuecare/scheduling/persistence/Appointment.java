@@ -165,6 +165,11 @@ public class Appointment {
 		this.status = AppointmentStatus.READY;
 	}
 
+	/** A pessoa faltou (SCHEDULED para NO_SHOW). O serviço confere a situação e o horário antes; aqui só se muda. */
+	public void markNoShow() {
+		this.status = AppointmentStatus.NO_SHOW;
+	}
+
 	/** Atendimento concluído, ou seja, o pet foi retirado (CHECKED_IN, IN_PROGRESS ou READY para COMPLETED). */
 	public void complete() {
 		this.status = AppointmentStatus.COMPLETED;

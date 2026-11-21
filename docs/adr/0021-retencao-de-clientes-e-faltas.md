@@ -37,3 +37,7 @@ Três fatias, cada uma um PR. **Sem pagamento online e sem multa automática** (
 ## Consequências
 - O tutor entende a regra antes de errar, e o atraso vira conversa, não perda do cliente.
 - O estúdio passa a ter dado real de faltas para decidir uma política mais firme depois.
+
+## Andamento
+- **Fatia 1** (PR 79): política visível e WhatsApp do estúdio. Mesclada em 21/11/2026.
+- **Fatia 2** (PR 80): "Faltou". `NO_SHOW` é estado final e **continua ocupando o horário no banco** (a restrição de exclusão só ignora `CANCELLED`): o horário já passou ou está passando, então nada novo cabe nele, e evitar mexer na restrição de exclusão mantém o risco baixo. Limitação conhecida: se a pessoa faltar no começo de um atendimento longo, o resto do horário não volta para a agenda do dia. A contagem de faltas vem só na agenda do dia (como o telefone) e só do próprio estúdio.
