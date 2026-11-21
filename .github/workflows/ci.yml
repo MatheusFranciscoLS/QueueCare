@@ -109,7 +109,9 @@ jobs:
           sudo apt-get install -y -qq postgresql-common gnupg
           sudo /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y
           sudo apt-get install -y -qq postgresql-client-16
-          pg_dump --version
+          # O runner já tem o 18 no PATH: o 16 vai na frente para os passos seguintes.
+          echo "/usr/lib/postgresql/16/bin" >> "$GITHUB_PATH"
+          /usr/lib/postgresql/16/bin/pg_dump --version
       - name: Aplicar TODAS as migrações na origem, na ordem do Flyway
         run: |
           for f in $(ls backend/src/main/resources/db/migration/V*.sql | sort -V); do
