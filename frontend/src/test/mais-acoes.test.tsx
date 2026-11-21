@@ -100,6 +100,23 @@ describe('Agenda: uma ação principal e "Mais ações"', () => {
     expect(flags.contains(status)).toBe(false) // o estado é um só e fica fora dos indicadores
   })
 
+  it('atendimento concluído não repete a ficha do pet; o agendado de hoje mostra', async () => {
+    const ficha = { coat: 'SHORT', weightKg: 4.2, vaccinated: true, temperament: 'CALM', healthNotes: 'Pele sensível', notes: 'Tem medo de secador' }
+    await open('Agenda', {
+      [AGENDA]: () =>
+        json(200, [
+          item('a-1', { status: 'COMPLETED', customerName: 'Concluída Silva', pet: { name: 'Mel', species: 'CAT', breed: null, size: 'SMALL', ...ficha } }),
+          item('a-2', { customerName: 'Agendada Souza', pet: { name: 'Thor', species: 'DOG', breed: null, size: 'LARGE', ...ficha } }),
+        ]),
+    })
+    const rows = await screen.findAllByRole('listitem')
+    expect(within(rows[0]).getByText('Mel')).toBeInTheDocument() // o pet continua identificado
+    expect(within(rows[0]).queryByText(/Pele sensível/)).not.toBeInTheDocument()
+    expect(within(rows[0]).queryByText(/medo de secador/)).not.toBeInTheDocument()
+    expect(within(rows[1]).getByText(/Pele sensível/)).toBeInTheDocument()
+    expect(within(rows[1]).getByText(/medo de secador/)).toBeInTheDocument()
+  })
+
   it('sem indicadores, a linha de indicadores nem existe', async () => {
     await open('Agenda', { [AGENDA]: () => json(200, [item('a-1')]) })
     const row = (await screen.findAllByRole('listitem'))[0]

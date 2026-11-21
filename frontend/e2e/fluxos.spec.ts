@@ -91,6 +91,7 @@ test('estúdio registra a falta e o horário volta para a agenda; lembra o tutor
   await page.getByRole('button', { name: 'Dia anterior' }).click()
   await page.locator('.appt').first().waitFor()
   const linha = page.locator('.appt', { hasText: 'João Ferreira' })
+  await linha.getByRole('button', { name: /^Mais ações de/ }).click() // "Faltou" fica atrás de "Mais ações"
   await linha.getByRole('button', { name: 'Faltou', exact: true }).click()
   await expect(page.getByText(/Registrar que João Ferreira faltou\? Não dá para desfazer\./)).toBeVisible()
   await page.getByRole('button', { name: 'Confirmar falta' }).click()
@@ -187,6 +188,7 @@ test('tutor novo vê o sinal por Pix antes de confirmar, e a equipe marca o sina
   await acharNaAgenda(estudio, /Sinal pendente · R\$ 30,00/)
   const linha = estudio.locator('.appt', { hasText: 'Pipoca' })
   await expect(linha).toContainText('Sinal pendente')
+  await linha.getByRole('button', { name: /^Mais ações de/ }).click() // o sinal também fica atrás de "Mais ações"
   await linha.getByRole('button', { name: /^Sinal recebido de/ }).click()
   await expect(estudio.getByText(/Sinal de .* registrado como recebido\./)).toBeVisible()
   await expect(estudio.locator('.appt', { hasText: 'Pipoca' }).getByText('Sinal recebido', { exact: true })).toBeVisible()
