@@ -2131,3 +2131,52 @@ a.button {
   clip-path: inset(50%);
   white-space: nowrap;
 }
+
+/* ===== Visual, rodada 3: Meus agendamentos, Meu negócio, Contas ===== */
+
+/* Meus agendamentos: data e hora numa linha, detalhes na de baixo (o ponto do texto fica só para leitores de tela) */
+.rows .row > span:has(> .appt-head) {
+  display: grid;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.appt-head {
+  font-size: 1.0625rem;
+}
+
+.appt-sep {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.appt-detail {
+  color: var(--muted);
+}
+
+/* Contas: nome, perfil e botão numa linha só (no celular voltam a empilhar) */
+.search-bar {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) auto;
+  gap: 0 1.25rem;
+  align-items: end;
+  margin-bottom: var(--space-4);
+}
+
+.search-bar .button {
+  margin-bottom: var(--space-4);
+}
+
+@media (max-width: 720px) {
+  .search-bar {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .search-bar .button {
+    margin-bottom: 0;
+  }
+}

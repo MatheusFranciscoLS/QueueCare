@@ -164,15 +164,21 @@ function Row({
     <li className="row" ref={rowRef} tabIndex={-1}>
       {item.pet && <PetAvatar species={item.pet.species} />}
       <span>
-        <strong>{longDate(todayIn(zone, new Date(item.startsAt)))}</strong>, {timeIn(item.startsAt, zone)}–{timeIn(item.endsAt, zone)} · {what}
-        {item.pet && (
-          <>
-            {' '}
-            · {item.pet.name} ({SPECIES_LABEL[item.pet.species] ?? item.pet.species})
-          </>
-        )}
-        {item.priceCents != null && <> · {formatMoney(item.priceCents)}</>}{' '}
-        <span className="badge" data-status={status}>{STATUS_LABEL[status] ?? status}</span>
+        <span className="appt-head">
+          <strong>{longDate(todayIn(zone, new Date(item.startsAt)))}</strong>, {timeIn(item.startsAt, zone)}–{timeIn(item.endsAt, zone)}
+        </span>{' '}
+        <span className="appt-sep">·</span>{' '}
+        <span className="appt-detail">
+          {what}
+          {item.pet && (
+            <>
+              {' '}
+              · {item.pet.name} ({SPECIES_LABEL[item.pet.species] ?? item.pet.species})
+            </>
+          )}
+          {item.priceCents != null && <> · {formatMoney(item.priceCents)}</>}{' '}
+          <span className="badge" data-status={status}>{STATUS_LABEL[status] ?? status}</span>
+        </span>
       </span>
       {status === 'SCHEDULED' && (
         <span className="actions">

@@ -34,7 +34,7 @@ export function UsersPage() {
   return (
     <section className="card">
       <h1>Contas</h1>
-      <form onSubmit={search} role="search" aria-label="Buscar contas" noValidate>
+      <form className="search-bar" onSubmit={search} role="search" aria-label="Buscar contas" noValidate>
         <Field label="Nome ou e-mail" name="users-q" autoComplete="off" maxLength={100} value={draft.q} onChange={(e) => setDraft((d) => ({ ...d, q: e.target.value }))} />
         <div className="field">
           <label htmlFor="users-role">Perfil</label>

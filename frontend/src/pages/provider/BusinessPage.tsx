@@ -104,6 +104,7 @@ function BusinessForm({ business, saved, setSaved, onSaved }: { business?: Busin
           </select>
           <p className="hint">Os horários do expediente valem neste fuso.</p>
         </div>
+        <div className="field-row">
         <Field
           label="Antecedência mínima (minutos)"
           name="notice"
@@ -128,6 +129,7 @@ function BusinessForm({ business, saved, setSaved, onSaved }: { business?: Busin
           error={errors.deadline}
           onChange={(e) => { setDeadline(e.target.value); clear('deadline') }}
         />
+        </div>
         <p role="alert" className="error" hidden={!errors.form}>
           {errors.form}
         </p>
