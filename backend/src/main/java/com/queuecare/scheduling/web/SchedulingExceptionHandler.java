@@ -45,6 +45,16 @@ class SchedulingExceptionHandler {
 		return problem(HttpStatus.CONFLICT, "RESOURCE_BUSY", "recurso ocupado; tente novamente");
 	}
 
+	@ExceptionHandler(com.queuecare.scheduling.application.WaitlistExceptions.WaitlistEntryNotFoundException.class)
+	ProblemDetail waitlistNotFound(com.queuecare.scheduling.application.WaitlistExceptions.WaitlistEntryNotFoundException e) {
+		return problem(HttpStatus.NOT_FOUND, "WAITLIST_ENTRY_NOT_FOUND", "entrada não encontrada");
+	}
+
+	@ExceptionHandler(com.queuecare.scheduling.application.WaitlistExceptions.WaitlistRejectedException.class)
+	ProblemDetail waitlistRejected(com.queuecare.scheduling.application.WaitlistExceptions.WaitlistRejectedException e) {
+		return problem(HttpStatus.UNPROCESSABLE_ENTITY, e.reason().name(), "pedido recusado");
+	}
+
 	@ExceptionHandler(AppointmentNotFoundException.class)
 	ProblemDetail notFound(AppointmentNotFoundException e) {
 		return problem(HttpStatus.NOT_FOUND, "APPOINTMENT_NOT_FOUND", "agendamento não encontrado");

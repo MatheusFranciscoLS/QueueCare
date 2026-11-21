@@ -2,6 +2,7 @@ import { formatMoney } from '../../api/money'
 import { reminderMessage } from '../../api/policy'
 import { whatsappLink } from '../../api/phone'
 import { ContactLink } from './ContactLink'
+import { WaitlistDay } from './WaitlistDay'
 import { PetFicha } from './PetFicha'
 import { PetVisitsList } from './PetVisitsList'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
@@ -109,6 +110,7 @@ function Day({ workplace }: { workplace: Workplace }) {
           <h2>{longDate(date)}</h2>
           {/* A chave é a data: trocar de dia refaz a lista do zero (nunca aparece a lista de outro dia sob a data nova). */}
           <DayList key={date} date={date} timeZone={workplace.timeZone} workplace={workplace} />
+          <WaitlistDay key={'wait-' + date} date={date} timeZone={workplace.timeZone} studioName={workplace.businessName} />
         </>
       )}
     </section>

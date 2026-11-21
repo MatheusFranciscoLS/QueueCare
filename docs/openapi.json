@@ -324,6 +324,35 @@
         },
         "type" : "object"
       },
+      "EntryResponse" : {
+        "properties" : {
+          "createdAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "date" : {
+            "format" : "date",
+            "type" : "string"
+          },
+          "id" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "petId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "providerId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "serviceId" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
       "HistoryEntryResponse" : {
         "properties" : {
           "actorName" : {
@@ -348,6 +377,28 @@
             "type" : "string"
           }
         },
+        "type" : "object"
+      },
+      "JoinRequest" : {
+        "properties" : {
+          "date" : {
+            "format" : "date",
+            "type" : "string"
+          },
+          "petId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "providerId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "serviceId" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        },
+        "required" : [ "date", "petId", "providerId", "serviceId" ],
         "type" : "object"
       },
       "LinkRequest" : {
@@ -375,6 +426,36 @@
           }
         },
         "required" : [ "email", "password" ],
+        "type" : "object"
+      },
+      "MineResponse" : {
+        "properties" : {
+          "businessName" : {
+            "type" : "string"
+          },
+          "createdAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "date" : {
+            "format" : "date",
+            "type" : "string"
+          },
+          "id" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "petName" : {
+            "type" : "string"
+          },
+          "providerId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "serviceName" : {
+            "type" : "string"
+          }
+        },
         "type" : "object"
       },
       "PetRequest" : {
@@ -1281,6 +1362,50 @@
         "tags" : [ "agenda-controller" ]
       }
     },
+    "/api/agenda/waitlist" : {
+      "get" : {
+        "description" : "Perfis: PROVIDER, ATTENDANT.",
+        "operationId" : "day_1",
+        "parameters" : [ {
+          "in" : "query",
+          "name" : "date",
+          "required" : true,
+          "schema" : {
+            "format" : "date",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/StaffResponse"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "401" : {
+            "description" : "Sem token ou token inválido. Corpo vazio; o cabeçalho WWW-Authenticate: Bearer indica o esquema."
+          },
+          "403" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "O perfil não tem permissão (corpo vazio) ou a troca de senha é obrigatória (application/problem+json com reason PASSWORD_CHANGE_REQUIRED)."
+          }
+        },
+        "tags" : [ "waitlist-controller" ]
+      }
+    },
     "/api/agenda/week" : {
       "get" : {
         "description" : "Perfis: PROVIDER, ATTENDANT.",
@@ -1422,7 +1547,7 @@
     "/api/appointments/mine" : {
       "get" : {
         "description" : "Perfis: CUSTOMER.",
-        "operationId" : "mine",
+        "operationId" : "mine_1",
         "parameters" : [ {
           "in" : "query",
           "name" : "page",
@@ -3393,6 +3518,158 @@
         },
         "security" : [ ],
         "tags" : [ "public-studio-controller" ]
+      }
+    },
+    "/api/waitlist" : {
+      "post" : {
+        "description" : "Perfis: CUSTOMER.",
+        "operationId" : "join",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/JoinRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "201" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/EntryResponse"
+                }
+              }
+            },
+            "description" : "Created"
+          },
+          "401" : {
+            "description" : "Sem token ou token inválido. Corpo vazio; o cabeçalho WWW-Authenticate: Bearer indica o esquema."
+          },
+          "403" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "O perfil não tem permissão (corpo vazio) ou a troca de senha é obrigatória (application/problem+json com reason PASSWORD_CHANGE_REQUIRED)."
+          }
+        },
+        "tags" : [ "waitlist-controller" ]
+      }
+    },
+    "/api/waitlist/mine" : {
+      "get" : {
+        "description" : "Perfis: CUSTOMER.",
+        "operationId" : "mine",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/MineResponse"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "401" : {
+            "description" : "Sem token ou token inválido. Corpo vazio; o cabeçalho WWW-Authenticate: Bearer indica o esquema."
+          },
+          "403" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "O perfil não tem permissão (corpo vazio) ou a troca de senha é obrigatória (application/problem+json com reason PASSWORD_CHANGE_REQUIRED)."
+          }
+        },
+        "tags" : [ "waitlist-controller" ]
+      }
+    },
+    "/api/waitlist/{id}" : {
+      "delete" : {
+        "description" : "Perfis: CUSTOMER, PROVIDER, ATTENDANT.",
+        "operationId" : "remove",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "204" : {
+            "description" : "No Content"
+          },
+          "401" : {
+            "description" : "Sem token ou token inválido. Corpo vazio; o cabeçalho WWW-Authenticate: Bearer indica o esquema."
+          },
+          "403" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "O perfil não tem permissão (corpo vazio) ou a troca de senha é obrigatória (application/problem+json com reason PASSWORD_CHANGE_REQUIRED)."
+          }
+        },
+        "tags" : [ "waitlist-controller" ]
+      }
+    },
+    "/api/waitlist/{id}/called" : {
+      "post" : {
+        "description" : "Perfis: PROVIDER, ATTENDANT.",
+        "operationId" : "called",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/EntryResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "401" : {
+            "description" : "Sem token ou token inválido. Corpo vazio; o cabeçalho WWW-Authenticate: Bearer indica o esquema."
+          },
+          "403" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "O perfil não tem permissão (corpo vazio) ou a troca de senha é obrigatória (application/problem+json com reason PASSWORD_CHANGE_REQUIRED)."
+          }
+        },
+        "tags" : [ "waitlist-controller" ]
       }
     }
   },

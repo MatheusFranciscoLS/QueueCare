@@ -478,14 +478,14 @@ describe('botão Hoje com a página aberta de um dia para o outro', () => {
       const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
       await user.click(menu('Agenda'))
       await screen.findByText('Nenhum agendamento neste dia.')
-      expect(calls.at(-1)?.path).toBe('/api/agenda?date=2026-11-13')
+      expect(calls.filter((c) => c.path.startsWith('/api/agenda?date=')).at(-1)?.path).toBe('/api/agenda?date=2026-11-13') // (a lista de espera do dia também chama a API)
 
       await act(async () => {
         vi.advanceTimersByTime(20 * 60 * 1000) // passa da meia-noite do negócio (agora 00:15 de 14/11)
       })
       await user.click(screen.getByRole('button', { name: 'Hoje' }))
 
-      await waitFor(() => expect(calls.at(-1)?.path).toBe('/api/agenda?date=2026-11-14')) // o dia NOVO, não o 13
+      await waitFor(() => expect(calls.filter((c) => c.path.startsWith('/api/agenda?date=')).at(-1)?.path).toBe('/api/agenda?date=2026-11-14')) // o dia NOVO, não o 13
     } finally {
       vi.useRealTimers()
     }
