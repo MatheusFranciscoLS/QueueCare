@@ -97,6 +97,29 @@ public class AttendanceService {
 		});
 	}
 
+	/**
+	 * Sinal recebido (ADR 0023): a equipe confirma que o Pix do sinal chegou. Só de agendamento com sinal PEDIDO e que não foi cancelado; marcar de novo
+	 * ou sem sinal pedido é INVALID_STATE. Não muda a situação do atendimento e não cancela nada sozinho.
+	 */
+	public Appointment depositReceived(UUID appointmentId, UUID actorId) {
+		return run(() -> {
+			UserAccount actor = users.findById(actorId).filter(UserAccount::isActive).orElseThrow(() -> new AccessDeniedException("usuário inválido"));
+			if (actor.getRole() != UserRole.PROVIDER && actor.getRole() != UserRole.ATTENDANT) {
+				throw new AccessDeniedException("perfil sem acesso ao atendimento");
+			}
+			UUID providerId = staffAccess.providerIdOf(actor).orElseThrow(() -> new AccessDeniedException("sem vínculo com um prestador"));
+			Appointment appointment = appointments.findById(appointmentId).filter(a -> a.getProviderId().equals(providerId)).orElseThrow(AppointmentNotFoundException::new);
+			if (appointment.getStatus() == AppointmentStatus.CANCELLED) {
+				throw new AttendanceRejectedException(Reason.ALREADY_CANCELLED);
+			}
+			if (appointment.getDepositStatus() != com.queuecare.scheduling.persistence.DepositStatus.REQUESTED) {
+				throw new AttendanceRejectedException(Reason.INVALID_STATE);
+			}
+			appointment.markDepositReceived(clock.instant());
+			return appointments.saveAndFlush(appointment);
+		});
+	}
+
 	/** Começa o atendimento (ADR 0019): só de quem chegou. */
 	public Appointment start(UUID appointmentId, UUID actorId) {
 		return run(() -> inTransaction(appointmentId, actorId, EnumSet.of(AppointmentStatus.CHECKED_IN), AppointmentEventType.STARTED, Appointment::start, false));

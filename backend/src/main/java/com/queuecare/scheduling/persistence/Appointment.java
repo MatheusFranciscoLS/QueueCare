@@ -96,6 +96,17 @@ public class Appointment {
 	@Column(name = "price_cents", updatable = false)
 	private Integer priceCents;
 
+	/** Sinal por Pix (ADR 0023): valor pedido, congelado na reserva; situação; e quando a equipe marcou "recebido". */
+	@Column(name = "deposit_cents", updatable = false)
+	private Integer depositCents;
+
+	@jakarta.persistence.Enumerated(jakarta.persistence.EnumType.STRING)
+	@Column(name = "deposit_status", nullable = false)
+	private DepositStatus depositStatus = DepositStatus.NONE;
+
+	@Column(name = "deposit_received_at")
+	private Instant depositReceivedAt;
+
 	/** Quando a equipe lembrou o tutor pelo WhatsApp (ADR 0021); nulo = ainda não. */
 	@Column(name = "reminded_at")
 	private Instant remindedAt;
@@ -167,6 +178,26 @@ public class Appointment {
 	/** O pet está pronto para retirada (CHECKED_IN ou IN_PROGRESS para READY). */
 	public void markReady() {
 		this.status = AppointmentStatus.READY;
+	}
+
+	/** Pede sinal neste agendamento NOVO (ADR 0023): congela o valor. Só na criação, antes de gravar. */
+	public void attachDeposit(int cents) {
+		this.depositCents = cents;
+		this.depositStatus = DepositStatus.REQUESTED;
+	}
+
+	/** A equipe marcou o sinal como recebido (REQUESTED para RECEIVED). O serviço confere a situação antes. */
+	public void markDepositReceived(Instant at) {
+		this.depositStatus = DepositStatus.RECEIVED;
+		this.depositReceivedAt = Objects.requireNonNull(at);
+	}
+
+	public Integer getDepositCents() {
+		return depositCents;
+	}
+
+	public DepositStatus getDepositStatus() {
+		return depositStatus;
 	}
 
 	/** A equipe lembrou o tutor (ADR 0021). O serviço confere a situação antes; vale o último lembrete. */

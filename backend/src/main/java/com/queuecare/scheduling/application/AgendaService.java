@@ -74,7 +74,8 @@ public class AgendaService {
 
 	/** Um agendamento da agenda. */
 	public record AgendaItem(UUID id, Instant startsAt, Instant endsAt, AppointmentStatus status, UUID serviceId, String serviceName,
-			UUID customerId, String customerName, String customerPhone, Integer priceCents, PetInfo pet, int customerNoShows, Instant remindedAt) {
+			UUID customerId, String customerName, String customerPhone, Integer priceCents, PetInfo pet, int customerNoShows, Instant remindedAt,
+			Integer depositCents, com.queuecare.scheduling.persistence.DepositStatus depositStatus) {
 	}
 
 	/** Uma pessoa na fila: posição (1 = a primeira a chegar), quem é, o que vai fazer e quando chegou. */
@@ -150,7 +151,8 @@ public class AgendaService {
 		return found.stream().map(a -> new AgendaItem(a.getId(), a.getStartsAt(), a.getEndsAt(), a.getStatus(), a.getServiceId(),
 				serviceNames.get(a.getServiceId()), a.getCustomerId(), customers.get(a.getCustomerId()).getName(),
 				petDetails ? customers.get(a.getCustomerId()).getPhone() : null, petDetails ? a.getPriceCents() : null, PetInfo.of(a, petDetails),
-				noShows.getOrDefault(a.getCustomerId(), 0L).intValue(), petDetails ? a.getRemindedAt() : null)).toList();
+				noShows.getOrDefault(a.getCustomerId(), 0L).intValue(), petDetails ? a.getRemindedAt() : null,
+				petDetails ? a.getDepositCents() : null, petDetails ? a.getDepositStatus() : com.queuecare.scheduling.persistence.DepositStatus.NONE)).toList();
 	}
 
 

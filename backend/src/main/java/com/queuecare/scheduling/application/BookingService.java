@@ -43,12 +43,13 @@ public class BookingService {
 	private final AppointmentRepository appointments;
 	private final AppointmentEventRepository events;
 	private final RowLocks locks;
+	private final DepositPolicy depositPolicy;
 	private final TransactionTemplate transaction;
 	private final Clock clock;
 
 	public BookingService(ProviderRepository providers, ServiceOfferingRepository services, UserAccountRepository users,
 			SlotRules slotRules, AppointmentRepository appointments, AppointmentEventRepository events,
-			RowLocks locks, PlatformTransactionManager transactionManager, Clock clock) {
+			RowLocks locks, DepositPolicy depositPolicy, PlatformTransactionManager transactionManager, Clock clock) {
 		this.providers = providers;
 		this.services = services;
 		this.users = users;
@@ -56,6 +57,7 @@ public class BookingService {
 		this.appointments = appointments;
 		this.events = events;
 		this.locks = locks;
+		this.depositPolicy = depositPolicy;
 		this.transaction = new TransactionTemplate(transactionManager);
 		this.clock = clock;
 	}
@@ -102,6 +104,10 @@ public class BookingService {
 		Appointment draft = new Appointment(provider.getId(), service.getId(), customer.getId(), range.startsAt(), range.endsAt(), now);
 		draft.attachPet(pet); // cópia dos dados do pet no momento da reserva (ADR 0016)
 		draft.attachPrice(service.priceFor(pet.getSize())); // valor congelado pelo porte do pet (ADR 0019)
+		Integer deposit = depositPolicy.requiredCents(provider, customer.getId());
+		if (deposit != null) {
+			draft.attachDeposit(deposit); // sinal por Pix pedido, valor congelado na reserva (ADR 0023)
+		}
 		Appointment appointment = appointments.saveAndFlush(draft);
 		events.save(new AppointmentEvent(appointment.getId(), customer.getId(), AppointmentEventType.SCHEDULED, now, null));
 		return appointment;

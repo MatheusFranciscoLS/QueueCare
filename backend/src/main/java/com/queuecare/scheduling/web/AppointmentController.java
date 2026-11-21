@@ -71,12 +71,13 @@ class AppointmentController {
 	}
 
 	/**
+	 * {@code depositCents}/{@code depositStatus}/{@code studioPixKey}: sinal por Pix (ADR 0023); a chave só vem enquanto o sinal está pendente.
 	 * {@code freeChangeUntil}: até quando o cliente cancela ou remarca sem falar com o estúdio; {@code studioPhone}: o WhatsApp do estúdio (ADR 0021).
 	 * Agendamento do próprio cliente, com o nome do negócio, o fuso (para mostrar o horário local) e o nome do serviço. Os nomes
 	 * vêm do histórico: continuam aparecendo mesmo se o prestador ou o serviço forem desativados depois.
 	 */
 	record AppointmentResponse(UUID id, UUID providerId, UUID serviceId, Instant startsAt, Instant endsAt, String status, String businessName,
-			String timeZone, String serviceName, Integer priceCents, AppointmentPetResponse pet, Instant freeChangeUntil, String studioPhone) {
+			String timeZone, String serviceName, Integer priceCents, AppointmentPetResponse pet, Instant freeChangeUntil, String studioPhone, Integer depositCents, String depositStatus, String studioPixKey) {
 	}
 
 	/** Pet do agendamento (cópia gravada nele): só nome e espécie; ausente (nulo) em agendamento sem pet. */
@@ -99,7 +100,10 @@ class AppointmentController {
 					// Limite para cancelar ou remarcar de graça (ADR 0021): só enquanto agendado; depois dele, o tutor fala com o estúdio.
 					provider == null || a.getStatus() != com.queuecare.scheduling.persistence.AppointmentStatus.SCHEDULED ? null
 							: a.getStartsAt().minusSeconds(60L * provider.getCancellationDeadlineMinutes()),
-					provider == null ? null : provider.getPhone());
+					provider == null ? null : provider.getPhone(),
+					// Sinal por Pix (ADR 0023): a chave só vai enquanto o sinal está PENDENTE (depois de recebido, não há o que pagar).
+					a.getDepositCents(), a.getDepositStatus().name(),
+					provider != null && a.getDepositStatus() == com.queuecare.scheduling.persistence.DepositStatus.REQUESTED ? provider.getPixKey() : null);
 		}).toList();
 	}
 
@@ -184,6 +188,13 @@ class AppointmentController {
 	@PreAuthorize("hasAnyRole('PROVIDER','ATTENDANT')")
 	AppointmentResponse noShow(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID id) {
 		return respond(List.of(attendanceService.noShow(id, userId(jwt)))).get(0);
+	}
+
+	/** A equipe confirmou que o Pix do sinal chegou (ADR 0023). Só a equipe do prestador; só de agendamento com sinal pedido. */
+	@PostMapping("/{id}/deposit-received")
+	@PreAuthorize("hasAnyRole('PROVIDER','ATTENDANT')")
+	AppointmentResponse depositReceived(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID id) {
+		return respond(List.of(attendanceService.depositReceived(id, userId(jwt)))).get(0);
 	}
 
 	/** A equipe lembrou o tutor pelo WhatsApp (ADR 0021): guarda quando. Só a equipe do prestador, só de quem está agendado e ainda não começou. */

@@ -8,7 +8,13 @@ export interface Business {
   cancellationDeadlineMinutes: number
   /** WhatsApp do estúdio (só dígitos com DDI); nulo = não informado (ADR 0021). */
   phone?: string | null
+  /** Sinal por Pix (ADR 0023): chave, valor em centavos e quando pedir (padrão NEVER). */
+  pixKey?: string | null
+  depositCents?: number | null
+  depositRule?: DepositRule
 }
+
+export type DepositRule = 'NEVER' | 'NEW_CUSTOMERS' | 'NEW_OR_REPEAT_NO_SHOW'
 
 export type BusinessInput = Omit<Business, 'id' | 'phone'> & { phone?: string }
 
@@ -54,6 +60,8 @@ type Request = AuthApi['request']
 export function providerApi(request: Request) {
   return {
     getBusiness: () => request<Business>('/api/provider'),
+    /** Sinal por Pix (ADR 0023). Chave vazia limpa; regra ligada exige chave e valor. */
+    updateDeposit: (input: { pixKey: string; depositCents: number | null; depositRule: DepositRule }) => request<Business>('/api/provider/deposit', { method: 'PUT', body: input }),
     createBusiness: (input: BusinessInput) => request<Business>('/api/provider', { method: 'POST', body: input }),
     updateBusiness: (input: BusinessInput) => request<Business>('/api/provider', { method: 'PUT', body: input }),
     listServices: () => request<Service[]>('/api/provider/services'),

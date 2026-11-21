@@ -52,6 +52,13 @@
           "customerPhone" : {
             "type" : "string"
           },
+          "depositCents" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "depositStatus" : {
+            "type" : "string"
+          },
           "endsAt" : {
             "format" : "date-time",
             "type" : "string"
@@ -104,6 +111,13 @@
           "businessName" : {
             "type" : "string"
           },
+          "depositCents" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "depositStatus" : {
+            "type" : "string"
+          },
           "endsAt" : {
             "format" : "date-time",
             "type" : "string"
@@ -144,6 +158,9 @@
           "studioPhone" : {
             "type" : "string"
           },
+          "studioPixKey" : {
+            "type" : "string"
+          },
           "timeZone" : {
             "type" : "string"
           }
@@ -182,6 +199,13 @@
             "format" : "int32",
             "type" : "integer"
           },
+          "depositCents" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "depositRule" : {
+            "type" : "string"
+          },
           "id" : {
             "format" : "uuid",
             "type" : "string"
@@ -191,6 +215,9 @@
             "type" : "integer"
           },
           "phone" : {
+            "type" : "string"
+          },
+          "pixKey" : {
             "type" : "string"
           },
           "timeZone" : {
@@ -320,6 +347,37 @@
           "userId" : {
             "format" : "uuid",
             "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "DepositRequest" : {
+        "properties" : {
+          "depositCents" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "depositRule" : {
+            "type" : "string"
+          },
+          "pixKey" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "depositRule" ],
+        "type" : "object"
+      },
+      "DepositTermsResponse" : {
+        "properties" : {
+          "depositCents" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "pixKey" : {
+            "type" : "string"
+          },
+          "required" : {
+            "type" : "boolean"
           }
         },
         "type" : "object"
@@ -1721,6 +1779,47 @@
         "tags" : [ "appointment-controller" ]
       }
     },
+    "/api/appointments/{id}/deposit-received" : {
+      "post" : {
+        "description" : "Perfis: PROVIDER, ATTENDANT.",
+        "operationId" : "depositReceived",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/AppointmentResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "401" : {
+            "description" : "Sem token ou token inválido. Corpo vazio; o cabeçalho WWW-Authenticate: Bearer indica o esquema."
+          },
+          "403" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "O perfil não tem permissão (corpo vazio) ou a troca de senha é obrigatória (application/problem+json com reason PASSWORD_CHANGE_REQUIRED)."
+          }
+        },
+        "tags" : [ "appointment-controller" ]
+      }
+    },
     "/api/appointments/{id}/events" : {
       "get" : {
         "description" : "Perfis: CUSTOMER, PROVIDER, ATTENDANT.",
@@ -2215,6 +2314,66 @@
                     "$ref" : "#/components/schemas/ProviderResponse"
                   },
                   "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "401" : {
+            "description" : "Sem token ou token inválido. Corpo vazio; o cabeçalho WWW-Authenticate: Bearer indica o esquema."
+          },
+          "403" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "O perfil não tem permissão (corpo vazio) ou a troca de senha é obrigatória (application/problem+json com reason PASSWORD_CHANGE_REQUIRED)."
+          },
+          "429" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Muitos pedidos (application/problem+json sem detalhes).",
+            "headers" : {
+              "Retry-After" : {
+                "description" : "Segundos até poder tentar de novo.",
+                "schema" : {
+                  "format" : "int32",
+                  "type" : "integer"
+                }
+              }
+            }
+          }
+        },
+        "tags" : [ "catalog-controller" ]
+      }
+    },
+    "/api/catalog/providers/{providerId}/deposit-terms" : {
+      "get" : {
+        "description" : "Perfis: CUSTOMER.",
+        "operationId" : "depositTerms",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "providerId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/DepositTermsResponse"
                 }
               }
             },
@@ -2914,6 +3073,48 @@
                     "$ref" : "#/components/schemas/WindowResponse"
                   },
                   "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "401" : {
+            "description" : "Sem token ou token inválido. Corpo vazio; o cabeçalho WWW-Authenticate: Bearer indica o esquema."
+          },
+          "403" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "O perfil não tem permissão (corpo vazio) ou a troca de senha é obrigatória (application/problem+json com reason PASSWORD_CHANGE_REQUIRED)."
+          }
+        },
+        "tags" : [ "provider-controller" ]
+      }
+    },
+    "/api/provider/deposit" : {
+      "put" : {
+        "description" : "Perfis: PROVIDER.",
+        "operationId" : "updateDeposit",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/DepositRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/BusinessResponse"
                 }
               }
             },
