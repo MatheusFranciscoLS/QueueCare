@@ -46,9 +46,15 @@ jobs:
           fi
       - uses: actions/checkout@v4
         if: steps.segredos.outputs.ativo == 'sim'
-      - name: Cliente PostgreSQL e GPG
+      - name: Cliente PostgreSQL 16 e GPG
         if: steps.segredos.outputs.ativo == 'sim'
-        run: sudo apt-get update -qq && sudo apt-get install -y -qq postgresql-client-16 gnupg
+        # O Ubuntu do runner traz só a versão mais nova do PostgreSQL (hoje a 18): o cliente 16 vem do repositório oficial do PostgreSQL (PGDG).
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq postgresql-common gnupg
+          sudo /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y
+          sudo apt-get install -y -qq postgresql-client-16
+          pg_dump --version
       - name: Backup criptografado
         if: steps.segredos.outputs.ativo == 'sim'
         run: bash ops/backup/backup.sh "$RUNNER_TEMP/backups"
