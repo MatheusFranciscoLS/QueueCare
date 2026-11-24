@@ -44,7 +44,7 @@ jobs:
           else
             echo "ativo=sim" >> "$GITHUB_OUTPUT"
           fi
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         if: steps.segredos.outputs.ativo == 'sim'
       - name: Cliente PostgreSQL 16 e GPG
         if: steps.segredos.outputs.ativo == 'sim'
