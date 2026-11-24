@@ -36,4 +36,4 @@ Zero: o repositório usa os runners padrão do GitHub Actions. O job leva alguns
 - **Navegadores múltiplos (Firefox, WebKit):** o produto é uma PWA usada em Chrome/Edge/Safari; um segundo navegador dobra o tempo sem uma pergunta concreta a responder.
 
 ## Resultado das primeiras execuções
-Preenchido depois do primeiro CI verde (tempo do job e eventual "flaky").
+Medido nas duas primeiras execuções verdes (no PR e na main, 24/11/2026): o job inteiro levou **2 min 12 s** e **2 min 24 s** (instalar o Chromium, compilar a API de desenvolvimento e rodar os testes), sempre em paralelo aos demais jobs, que levam de 6 s a 2 min 30 s. Os testes em si: **11 em 54 s** e **8 em 42 s**. **Nenhum teste apareceu como "flaky"** (nenhum precisou da segunda tentativa). A regra acima continua valendo: se algum aparecer, é consertado.
