@@ -1,6 +1,7 @@
 package com.queuecare.scheduling.web;
 
 import com.queuecare.auth.CounterCustomers;
+import com.queuecare.auth.CounterImport;
 import com.queuecare.scheduling.application.CounterBooking;
 import com.queuecare.scheduling.application.StudioCustomerService;
 import com.queuecare.scheduling.application.SlotService.Slot;
@@ -40,10 +41,12 @@ class CounterController {
 
 	private final CounterCustomers customers;
 	private final CounterBooking booking;
+	private final CounterImport importer;
 
-	CounterController(CounterCustomers customers, CounterBooking booking) {
+	CounterController(CounterCustomers customers, CounterBooking booking, CounterImport importer) {
 		this.customers = customers;
 		this.booking = booking;
+		this.importer = importer;
 	}
 
 	/** {@code phone} obrigatório (é como o estúdio fala com o tutor); {@code email} opcional: sem ele a conta não tem como entrar no app. */
@@ -96,5 +99,29 @@ class CounterController {
 	@ResponseStatus(HttpStatus.CREATED)
 	CounterAppointmentResponse book(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID customerId, @Valid @RequestBody CounterBookingRequest request) {
 		return CounterAppointmentResponse.from(booking.book(UUID.fromString(jwt.getSubject()), customerId, request.serviceId(), request.localStart(), request.petId()));
+	}
+
+	/** Uma linha da planilha, já interpretada pela tela; {@code petSpecies} é DOG ou CAT (qualquer outra coisa conta como não reconhecida). */
+	record ImportRow(@Size(max = 200) String name, @Size(max = 40) String phone, @Size(max = 254) String email, @Size(max = 200) String petName, @Size(max = 20) String petSpecies) {
+	}
+
+	record ImportRequest(@NotNull @Size(max = CounterImport.MAX_ROWS) List<@Valid ImportRow> rows) {
+	}
+
+	/** O resultado por linha diz só o número e o motivo, NUNCA o que veio na planilha (nome, telefone e e-mail são dados pessoais). */
+	record ImportRowResponse(int row, String status, boolean petCreated, boolean petSkipped) {
+	}
+
+	record ImportResponse(int created, int duplicates, int invalid, int emailTaken, int petsCreated, int petsSkipped, List<ImportRowResponse> rows) {
+	}
+
+	@Operation(operationId = "importCounterCustomers")
+	@PostMapping("/api/agenda/customers/import")
+	@PreAuthorize("hasRole('PROVIDER')")
+	ImportResponse importCustomers(@AuthenticationPrincipal Jwt jwt, @Valid @RequestBody ImportRequest request) {
+		var result = importer.run(UUID.fromString(jwt.getSubject()),
+				request.rows().stream().map(r -> new CounterImport.Row(r.name(), r.phone(), r.email(), r.petName(), r.petSpecies())).toList());
+		return new ImportResponse(result.created(), result.duplicates(), result.invalid(), result.emailTaken(), result.petsCreated(), result.petsSkipped(),
+				result.rows().stream().map(r -> new ImportRowResponse(r.row(), r.status().name(), r.petCreated(), r.petSkipped())).toList());
 	}
 }

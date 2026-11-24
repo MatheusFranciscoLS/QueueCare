@@ -107,6 +107,27 @@ public class StudioCustomerService {
 		return digitNeedle.length() >= 3 && account.getPhone() != null && account.getPhone().contains(digitNeedle);
 	}
 
+	/**
+	 * Os telefones (só dígitos) de todos os tutores do estúdio: os que ele já atendeu e os que ele cadastrou pelo balcão. Serve para a importação NÃO duplicar quem já existe
+	 * (ADR 0034). Só o telefone, nada mais, e só do próprio estúdio.
+	 */
+	@Transactional(readOnly = true)
+	public Set<String> knownPhones(UUID providerId) {
+		Set<String> phones = new java.util.HashSet<>();
+		List<UUID> attended = appointments.customerStats(providerId).stream().map(CustomerStat::customerId).toList();
+		for (UserAccount u : users.findAllById(attended)) {
+			if (u.getRole() == UserRole.CUSTOMER && u.isActive() && u.getPhone() != null) {
+				phones.add(u.getPhone());
+			}
+		}
+		for (UserAccount u : users.findByCreatedByProviderId(providerId)) {
+			if (u.getRole() == UserRole.CUSTOMER && u.isActive() && u.getPhone() != null) {
+				phones.add(u.getPhone());
+			}
+		}
+		return phones;
+	}
+
 	/** Conta cadastrada pelo balcão sem e-mail tem um endereço reservado (.invalid): não há como entrar no app até o estúdio informar um e-mail. */
 	public static boolean hasEmail(UserAccount account) {
 		return !account.getEmail().endsWith("@balcao.invalid");

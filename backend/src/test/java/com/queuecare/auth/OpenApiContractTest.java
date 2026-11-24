@@ -131,7 +131,7 @@ class OpenApiContractTest extends AuthIntegrationTestBase {
 	void respostaDe429SoExisteNasRotasRealmenteLimitadas() throws Exception {
 		JsonNode paths = spec().get("paths");
 		java.util.Set<String> expected = java.util.Set.of("post /api/auth/login", "post /api/auth/register", "post /api/auth/change-password", "post /api/admin/providers",
-				"post /api/provider/staff/accounts", "post /api/provider/customers/{customerId}/reset-password", "post /api/me/delete-account", "post /api/agenda/customers", "get /api/catalog/providers", "get /api/catalog/providers/{providerId}/services", "get /api/catalog/providers/{providerId}/deposit-terms", "get /api/catalog/providers/{providerId}/closures", "get /api/providers/{providerId}/slots", "get /api/public/studios/{slug}");
+				"post /api/provider/staff/accounts", "post /api/provider/customers/{customerId}/reset-password", "post /api/me/delete-account", "post /api/agenda/customers", "post /api/agenda/customers/import", "get /api/catalog/providers", "get /api/catalog/providers/{providerId}/services", "get /api/catalog/providers/{providerId}/deposit-terms", "get /api/catalog/providers/{providerId}/closures", "get /api/providers/{providerId}/slots", "get /api/public/studios/{slug}");
 		java.util.Set<String> found = new java.util.TreeSet<>();
 		paths.fieldNames().forEachRemaining(path -> paths.get(path).fieldNames().forEachRemaining(method -> {
 			JsonNode op = paths.get(path).get(method);

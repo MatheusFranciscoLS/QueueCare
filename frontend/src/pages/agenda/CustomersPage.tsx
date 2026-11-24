@@ -11,6 +11,7 @@ import { useLoad } from '../useLoad'
 import { useSingleFlight } from '../useSingleFlight'
 import { ContactLink } from './ContactLink'
 import { CounterBookingPanel, type CounterTarget } from './CounterBookingPanel'
+import { ImportClientsPanel } from './ImportClientsPanel'
 import { NewCustomerForm } from './NewCustomerForm'
 
 /** Espera depois da última tecla antes de buscar (o balcão digita rápido: uma busca só, não uma por letra). */
@@ -32,7 +33,7 @@ export function CustomersPage() {
   const { data, error, loading, reload } = useLoad<StudioCustomer[]>(load)
   const isOwner = user?.role === 'PROVIDER'
   // Cadastrar e agendar pelo balcão (ADR 0033): uma coisa por vez, no alto da tela.
-  const [mode, setMode] = useState<{ kind: 'idle' } | { kind: 'new' } | { kind: 'book'; customer: CounterTarget }>({ kind: 'idle' })
+  const [mode, setMode] = useState<{ kind: 'idle' } | { kind: 'new' } | { kind: 'import' } | { kind: 'book'; customer: CounterTarget }>({ kind: 'idle' })
 
   useEffect(() => {
     const timer = setTimeout(() => setQuery(typed.trim()), TYPING_DELAY_MS)
@@ -54,7 +55,24 @@ export function CustomersPage() {
           <button type="button" className="button" onClick={() => setMode({ kind: 'new' })}>
             Novo cliente
           </button>
+          {isOwner && (
+            <>
+              {' '}
+              <button type="button" className="button secondary" onClick={() => setMode({ kind: 'import' })}>
+                Importar planilha
+              </button>
+            </>
+          )}
         </p>
+      )}
+      {mode.kind === 'import' && (
+        <ImportClientsPanel
+          onCancel={() => setMode({ kind: 'idle' })}
+          onDone={() => {
+            setMode({ kind: 'idle' })
+            reload()
+          }}
+        />
       )}
       {mode.kind === 'new' && (
         <NewCustomerForm
