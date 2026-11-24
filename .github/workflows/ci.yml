@@ -26,6 +26,16 @@ jobs:
           distribution: temurin
           java-version: '21'
           cache: maven
+      # A distribuição do próprio Maven (baixada pelo wrapper, FORA do cache de dependências acima): guardada por versão, quase nunca precisa baixar.
+      - uses: actions/cache@v4
+        with:
+          path: ~/.m2/wrapper
+          key: maven-wrapper-${{ hashFiles('backend/.mvn/wrapper/maven-wrapper.properties') }}
+      - name: Testes do ops/retry.sh
+        run: bash ../ops/retry.test.sh
+      # O que baixa da rede (o Maven e as dependências) tem tentativas: uma falha passageira do repositório central não pode derrubar o PR (ADR 0013).
+      - name: Baixar o Maven e as dependências (com tentativas)
+        run: bash ../ops/retry.sh -n 4 -w 15 -- ./mvnw -B -q dependency:go-offline
       - name: Build e testes
         run: ./mvnw -B verify
 

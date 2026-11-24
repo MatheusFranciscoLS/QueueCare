@@ -5,7 +5,15 @@ FROM eclipse-temurin:21-jdk@sha256:0a3f329821dcadf54b2a3033a15e2e9f007069a9db43d
 WORKDIR /app
 COPY .mvn .mvn
 COPY mvnw pom.xml ./
-RUN chmod +x mvnw && ./mvnw -B -q dependency:go-offline
+# O Maven Wrapper baixa o Maven AQUI, com um wget sem nenhuma tentativa: uma falha passageira da rede derrubava a publicação inteira, sem relação com o código.
+# Até 4 tentativas com espera crescente (10 s, 20 s, 30 s): a mesma lógica do ops/retry.sh, que não está no contexto desta imagem.
+RUN chmod +x mvnw && \
+    for i in 1 2 3 4; do \
+      ./mvnw -B -q dependency:go-offline && exit 0; \
+      echo "Falha ao baixar o Maven ou as dependencias (tentativa $i de 4); nova tentativa em $((i * 10))s..." >&2; \
+      sleep $((i * 10)); \
+    done; \
+    exit 1
 COPY src src
 RUN ./mvnw -B -q -DskipTests package && cp target/queuecare-api-*.jar /app/app.jar
 
