@@ -92,6 +92,88 @@ Outras decisões e práticas, cada uma com seu ADR: operação e diagnóstico ([
 
 **Pelo & Ponto** é o nome do produto; **peloeponto** é o nome do repositório; **QueueCare**, `com.queuecare` e `queuecare-api` são nomes técnicos herdados do início do projeto e foram mantidos de propósito (renomear pacotes e serviços não traria valor e arriscaria quebrar o que funciona).
 
+## Limitações conhecidas
+
+Declaradas de propósito, cada uma com o motivo:
+
+- **Um atendimento por vez por estúdio.** A trava de reserva do banco considera o estúdio inteiro; um estúdio com dois tosadores não consegue marcar dois pets no mesmo horário. Mudar isso mexe no núcleo do agendamento e ficou como decisão consciente ([ADR 0043](docs/adr/0043-um-atendimento-por-vez-por-estudio.md)).
+- **Hospedagem gratuita.** A API dorme sem uso; a partida leva cerca de 50 segundos e a primeira chamada pode levar mais. O site avisa e já começa a acordá-la ao abrir.
+- **Lembretes são manuais.** O estúdio chama o tutor pelo WhatsApp com um clique (link pronto); não há envio automático, que exigiria um serviço pago.
+- **A demonstração pública é compartilhada.** Visitantes ao mesmo tempo veem as alterações uns dos outros; os dados voltam ao original no primeiro acesso depois de 60 minutos.
+
+## Qualidade
+
+| 785 | 638 | 19 | 79 | 29 | 43 |
+| :---: | :---: | :---: | :---: | :---: | :---: |
+| testes no backend | testes no frontend | testes de navegador (Playwright) | operações na matriz de autorização | migrações versionadas | decisões documentadas (ADRs) |
+
+- **CI** com backend, frontend, navegador, imagem Docker, restauração de backup e varredura de segredos em paralelo (em torno de 3 minutos no total). O backend roda contra PostgreSQL de verdade, sem Docker.
+- **Contrato OpenAPI** ([`docs/openapi.json`](docs/openapi.json)) gerado do código e conferido por teste: mudar a API sem atualizar o contrato reprova o build.
+- Números conferidos em 24/11/2026.
+
+## Stack
+
+| Camada | Tecnologias |
+| :--- | :--- |
+| Frontend | React 19, TypeScript, Vite, Vitest, PWA instalável |
+| Backend | Java 21, Spring Boot 4, Spring Security (JWT), JPA, Flyway |
+| Dados | PostgreSQL 16 (Neon) |
+| Testes | JUnit, Vitest, Playwright, PostgreSQL embutido nos testes |
+| Entrega | GitHub Actions, Vercel (site), Render (API), Neon (banco) |
+
+## Estrutura do repositório
+
+```text
+peloeponto/
+├── backend/               # API Java (Spring Boot)
+├── frontend/              # aplicação React + TypeScript
+│   └── e2e/               # testes de navegador (Playwright)
+├── infra/                 # Docker Compose para banco local
+├── ops/                   # backup, restauração e verificação pós-deploy
+├── docs/                  # regras, modelo de dados, arquitetura, ADRs e operação
+├── .github/workflows/     # CI, backup diário e monitor
+└── render.yaml            # infraestrutura da API
+```
+
+## Execução local
+
+Pré-requisitos: JDK 21, Node 22 ou superior e, para um banco de verdade, Docker (ou PostgreSQL 16). O Maven vem junto, pelo Maven Wrapper (`mvnw`).
+
+**Tudo em um comando, sem Docker** (a primeira vez baixa as dependências):
+
+```bash
+git clone https://github.com/MatheusFranciscoLS/peloeponto.git
+cd peloeponto/frontend
+npm ci
+npm run demo
+```
+
+Sobe a API com PostgreSQL embutido e dados fictícios e o site em `http://127.0.0.1:5173`, e imprime as contas (dono, atendente, tutora e administrador; a senha é a mesma para todas e aparece no terminal).
+
+**Testes:**
+
+```bash
+# Backend: build e testes (usam PostgreSQL embutido, não precisa de banco instalado)
+cd backend
+./mvnw verify          # no Windows (PowerShell): .\mvnw.cmd verify
+
+# Frontend: lint, testes e build
+cd frontend
+npm ci
+npm run lint
+npm test
+npm run build
+```
+
+**Banco local (PostgreSQL)**, na raiz do repositório:
+
+```bash
+cp .env.example .env   # troque as senhas
+docker compose --env-file .env -f infra/docker-compose.yml up -d
+```
+
+A API lê `DB_URL`, `DB_USER`, `DB_PASSWORD` e **`JWT_SECRET`** (obrigatório, Base64 de pelo menos 32 bytes; gere com `openssl rand -base64 32`) do ambiente (veja `.env.example`). O esquema do banco só muda por migrations do Flyway. Primeiro administrador (uma vez só, por comando explícito, sem senha em arquivo): [`docs/adr/0005-provisionamento-de-contas.md`](docs/adr/0005-provisionamento-de-contas.md). Publicação gratuita (sem cartão): [`docs/publicacao.md`](docs/publicacao.md).
+
 ## Documentação
 
 [Funcionalidades](docs/funcionalidades.md) · [Regras de negócio](docs/regras.md) · [Modelo de dados](docs/modelo-dados.md) · [Arquitetura](docs/arquitetura.md) · [ADRs](docs/adr/) · [Operação](docs/operacao.md) · [Backup](docs/backup.md) · [Privacidade](docs/privacidade-dados.md) · [Roadmap](docs/roadmap.md)
