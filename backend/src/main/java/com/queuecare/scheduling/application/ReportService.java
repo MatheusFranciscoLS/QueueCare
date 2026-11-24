@@ -171,6 +171,7 @@ public class ReportService {
 			throw new InvalidConfigurationException("days", "entre " + MIN_LAPSED_DAYS + " e " + MAX_LAPSED_DAYS + " dias");
 		}
 		Instant now = clock.instant();
+		java.time.ZoneId zone = java.time.ZoneId.of(provider.getTimeZone());
 		Instant limit = now.minus(java.time.Duration.ofDays(days));
 		List<Object[]> found = rows("select a.customer_id, max(a.starts_at) from appointments a where a.provider_id = ?1 and a.status = 'COMPLETED' "
 				+ "and not exists (select 1 from appointments f where f.provider_id = a.provider_id and f.customer_id = a.customer_id "
@@ -185,12 +186,20 @@ public class ReportService {
 				continue;
 			}
 			Instant last = toInstant(r[1]);
-			result.add(new LapsedRow(account.getId(), account.getName(), account.getPhone(), last, java.time.Duration.between(last, now).toDays()));
+			result.add(new LapsedRow(account.getId(), account.getName(), account.getPhone(), last, calendarDaysSince(last, now, zone)));
 			if (result.size() == MAX_LAPSED) {
 				break;
 			}
 		}
 		return result;
+	}
+
+	/**
+	 * Dias de CALENDÁRIO do estúdio entre a última visita e agora, e não períodos de 24 h: a mesma visita não pode aparecer como "70 dias" à tarde e "69 dias" de manhã. É a
+	 * mesma convenção do resto do resumo (o dia é o do fuso do estúdio, ADR 0031).
+	 */
+	static long calendarDaysSince(Instant last, Instant now, java.time.ZoneId zone) {
+		return java.time.temporal.ChronoUnit.DAYS.between(last.atZone(zone).toLocalDate(), now.atZone(zone).toLocalDate());
 	}
 
 	@SuppressWarnings("unchecked")
