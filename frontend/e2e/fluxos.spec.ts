@@ -266,3 +266,42 @@ test('o dono acha a tutora em Clientes, gera a senha temporária uma vez, e ela 
   await expect(tutora.getByRole('heading', { level: 1, name: 'Defina a sua senha' })).toBeVisible()
   await tutora.context().close()
 })
+
+test('o atendente cadastra o tutor pelo balcão, cadastra o pet e agenda por ele; o cadastro aparece em Clientes sem acesso ao app (ADR 0033)', async ({ page }) => {
+  await bloquearWhatsapp(page)
+  await entrar(page, 'atendente')
+  await irPeloMenu(page, 'Clientes', 1280)
+  await page.getByRole('heading', { level: 1, name: 'Clientes' }).waitFor()
+
+  await page.getByRole('button', { name: 'Novo cliente' }).click()
+  await page.getByLabel('Nome do tutor').fill('Dona Marta do Balcão')
+  await page.getByLabel('WhatsApp do tutor').fill('(11) 98888-7777')
+  await page.getByRole('button', { name: 'Cadastrar cliente' }).click()
+  await page.getByRole('heading', { name: 'Agendar para Dona Marta do Balcão' }).waitFor()
+
+  await page.getByLabel('Nome do pet').fill('Bidu')
+  await page.getByLabel('Espécie').selectOption({ label: 'Cachorro' })
+  await page.getByRole('button', { name: 'Cadastrar pet' }).click()
+  await expect(page.getByLabel('Pet', { exact: true })).toHaveValue(/.+/)
+
+  await page.getByLabel('Serviço').selectOption({ index: 1 })
+  // anda pelos dias até haver horário livre (hoje pode já ter passado do expediente)
+  for (let i = 0; i < 7; i++) {
+    await page.locator('.slots .button').first().or(page.getByText(/Nenhum horário livre neste dia/)).waitFor()
+    if ((await page.locator('.slots .button').count()) > 0) break
+    await page.getByRole('button', { name: 'Próximo dia' }).click()
+  }
+  await page.locator('.slots .button').first().click()
+  await page.getByRole('button', { name: /^Agendar às/ }).click()
+
+  await page.getByRole('heading', { name: 'Horário marcado' }).waitFor()
+  await expect(page.getByRole('status')).toContainText('de Bidu para Dona Marta do Balcão')
+  await expect(page.getByRole('link', { name: /Confirmar pelo WhatsApp/ })).toHaveAttribute('href', /^https:\/\/wa\.me\/5511988887777/)
+  await page.getByRole('button', { name: 'Concluir' }).click()
+
+  await page.getByLabel('Buscar cliente').fill('marta do balc')
+  const linha = page.getByRole('listitem').filter({ hasText: 'Dona Marta do Balcão' }).first()
+  await expect(linha).toContainText('Cadastrado no balcão · sem acesso ao app')
+  await expect(linha).toContainText('Pets: Bidu')
+  await expect(linha.getByRole('button', { name: /Redefinir senha/ })).toHaveCount(0)
+})

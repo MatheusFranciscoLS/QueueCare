@@ -85,7 +85,7 @@ describe('Clientes: busca no balcão', () => {
       'GET /api/agenda/customers?q=': () => json(200, []),
       'GET /api/agenda/customers?q=zzz': () => json(200, []),
     })
-    expect(await screen.findByText('Ainda não há clientes: eles aparecem aqui depois do primeiro agendamento.')).toBeInTheDocument()
+    expect(await screen.findByText('Ainda não há clientes: eles aparecem aqui depois do primeiro agendamento, ou cadastre um pelo botão Novo cliente.')).toBeInTheDocument()
     await user.type(screen.getByLabelText('Buscar cliente'), 'zzz{Enter}')
     expect(await screen.findByText('Nenhum cliente encontrado para “zzz”.')).toBeInTheDocument()
   })

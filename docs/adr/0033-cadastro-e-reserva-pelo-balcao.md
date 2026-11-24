@@ -1,6 +1,6 @@
 # ADR 0033: cadastro e reserva pelo balcão
 
-- **Status:** Accepted (backend em 24/11/2026; telas no PR seguinte)
+- **Status:** Accepted (implementado em 24/11/2026: API no PR 108, telas no PR 109)
 - **Data:** 24/11/2026
 - **Esforço:** ALTO (migração, 5 rotas, regra de quem pode agir por quem, 11 testes de integração)
 
