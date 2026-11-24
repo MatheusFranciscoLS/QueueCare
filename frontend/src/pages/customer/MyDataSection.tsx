@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { describeError } from '../../api/messages'
 import { downloadJson, privacyApi } from '../../api/privacy'
+import { isDemoUser } from '../../auth/demo'
 import { useAuth } from '../../auth/session'
 import { Field } from '../Field'
 import { useSingleFlight } from '../useSingleFlight'
@@ -11,7 +12,8 @@ import { useSingleFlight } from '../useSingleFlight'
  * ainda marcados são cancelados), por isso pede a senha e explica o que acontece antes.
  */
 export function MyDataSection() {
-  const { request, logout } = useAuth()
+  const { request, logout, user } = useAuth()
+  const demo = isDemoUser(user)
   const api = useMemo(() => privacyApi(request), [request])
   const [exported, setExported] = useState(false)
   const [step, setStep] = useState<'idle' | 'confirm'>('idle')
@@ -73,7 +75,11 @@ export function MyDataSection() {
         Arquivo meus-dados.json baixado: conta, pets, agendamentos e lista de espera.
       </p>
 
-      {step === 'idle' && (
+      {demo && (
+        <p className="hint">Na demonstração a exclusão da conta fica desligada: a conta é compartilhada por todos os visitantes. Em um estúdio de verdade ela funciona normalmente.</p>
+      )}
+
+      {!demo && step === 'idle' && (
         <p>
           <button type="button" className="button secondary" disabled={busy} onClick={() => setStep('confirm')}>
             Excluir minha conta
