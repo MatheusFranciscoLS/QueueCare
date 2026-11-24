@@ -180,7 +180,7 @@ A API lê `DB_URL`, `DB_USER`, `DB_PASSWORD` e **`JWT_SECRET`** (obrigatório, B
 
 ## Autoria e uso de IA
 
-Projeto de portfólio de Matheus Francisco, desenvolvido sob a direção do dono do produto e **com assistência substancial de IA**: Claude implementa as partes técnicas (incluindo regras de negócio e testes) e o ChatGPT faz a revisão independente de cada mudança; o Matheus define o produto, aprova o rumo e recebe resumos de cada entrega. Não é uma demonstração de implementação individual. O processo está em [`CLAUDE.md`](CLAUDE.md) e o material de estudo em [`docs/estudo/`](docs/estudo/).
+Projeto de portfólio com **autoria e direção de Matheus Francisco**, construído com **harness engineering**: eu defino o produto, as regras de negócio, os critérios de aceite e a revisão; agentes de IA executam sob a minha especificação e aprovação (o Claude implementa e o ChatGPT faz a revisão independente de cada mudança). O uso de IA é declarado de propósito, e eu recebo um resumo de cada entrega para poder explicar e defender as decisões. O processo está em [`CLAUDE.md`](CLAUDE.md) e o material de estudo em [`docs/estudo/`](docs/estudo/).
 
 <details>
 <summary><strong>English overview</strong></summary>
