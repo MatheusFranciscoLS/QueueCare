@@ -8,5 +8,9 @@ public enum AuditAction {
 	/** ADR 0027: o tutor excluiu a PRÓPRIA conta, que foi anonimizada no lugar (ator = alvo = o tutor). */
 	ACCOUNT_ANONYMIZED,
 	/** ADR 0033: a equipe cadastrou um tutor pelo balcão (ator = quem cadastrou, alvo = o tutor). */
-	CUSTOMER_CREATED_BY_STUDIO
+	CUSTOMER_CREATED_BY_STUDIO,
+	/** ADR 0033: o dono baixou os dados de um tutor do balcão a pedido dele (ator = dono, alvo = o tutor). */
+	CUSTOMER_EXPORTED_BY_STUDIO,
+	/** ADR 0033: o dono excluiu (anonimizou) a conta de um tutor do balcão a pedido dele (ator = dono, alvo = o tutor). */
+	CUSTOMER_ANONYMIZED_BY_STUDIO
 }

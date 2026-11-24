@@ -94,6 +94,11 @@ export function PrivacyPage() {
             <strong>Excluir:</strong> em Meu perfil, &quot;Excluir minha conta&quot;. Pede a sua senha e não tem volta.
           </li>
           <li>
+            <strong>Se o estúdio cadastrou você pelo balcão:</strong> quando você pede um horário por telefone ou WhatsApp, o estúdio pode registrar o seu nome, o seu WhatsApp e os
+            dados do seu pet para agendar por você. Você não precisa entrar no app. Para ver, levar ou apagar esses dados, peça ao estúdio: ele baixa o arquivo para você ou exclui o
+            cadastro (o nome, o telefone e os pets são apagados e os horários marcados voltam para a agenda).
+          </li>
+          <li>
             <strong>Perguntar ou reclamar:</strong> fale com o responsável pelo projeto (veja o perfil do repositório no GitHub). Você também pode recorrer à Autoridade Nacional de
             Proteção de Dados (ANPD).
           </li>

@@ -45,4 +45,20 @@ class PrivacyController {
 	void delete(@AuthenticationPrincipal Jwt jwt, @Valid @RequestBody DeleteAccountRequest request) {
 		privacy.deleteAccount(UUID.fromString(jwt.getSubject()), request.password());
 	}
+
+	/** Os dados de um tutor do balcão, para o dono entregar a ele (ADR 0033). Só o dono (a rota é /api/provider/**), sem cache. */
+	@GetMapping("/api/provider/customers/{customerId}/export")
+	@PreAuthorize("hasRole('PROVIDER')")
+	ResponseEntity<Export> exportForStudio(@AuthenticationPrincipal Jwt jwt, @org.springframework.web.bind.annotation.PathVariable UUID customerId) {
+		return ResponseEntity.ok().header(HttpHeaders.CACHE_CONTROL, "no-store").header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"dados-do-tutor.json\"")
+				.body(privacy.exportForStudio(UUID.fromString(jwt.getSubject()), customerId));
+	}
+
+	/** Exclui (anonimiza) a conta de um tutor do balcão a pedido dele, enquanto ele nunca a assumiu (ADR 0033). Só o dono. */
+	@PostMapping("/api/provider/customers/{customerId}/anonymize")
+	@PreAuthorize("hasRole('PROVIDER')")
+	@ResponseStatus(HttpStatus.NO_CONTENT)
+	void anonymizeForStudio(@AuthenticationPrincipal Jwt jwt, @org.springframework.web.bind.annotation.PathVariable UUID customerId) {
+		privacy.anonymizeForStudio(UUID.fromString(jwt.getSubject()), customerId);
+	}
 }

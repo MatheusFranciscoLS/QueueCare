@@ -72,6 +72,13 @@ class ApiExceptionHandler {
 		return problem;
 	}
 
+	@ExceptionHandler(AuthExceptions.CustomerHasAccessException.class)
+	ProblemDetail customerHasAccess(AuthExceptions.CustomerHasAccessException e) {
+		ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, "o tutor já acessa o app: ele mesmo exclui a conta em Meu perfil");
+		problem.setProperty("reason", "CUSTOMER_HAS_ACCESS");
+		return problem;
+	}
+
 	@ExceptionHandler(SelfResetException.class)
 	ProblemDetail selfReset(SelfResetException e) {
 		ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, "para trocar a própria senha use a troca de senha");
