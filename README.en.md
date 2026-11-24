@@ -1,6 +1,6 @@
 # QueueCare
 
-[![CI](https://github.com/MatheusFranciscoLS/QueueCare/actions/workflows/ci.yml/badge.svg)](https://github.com/MatheusFranciscoLS/QueueCare/actions/workflows/ci.yml)
+[![CI](https://github.com/MatheusFranciscoLS/peloeponto/actions/workflows/ci.yml/badge.svg)](https://github.com/MatheusFranciscoLS/peloeponto/actions/workflows/ci.yml)
 
 Scheduling and attendance queue for **pet grooming studios** (brand "Pelo & Ponto"). A Full Stack portfolio project: **Java 21 + Spring Boot**, **React + TypeScript**, **PostgreSQL**. Versão em português: [README.md](README.md).
 
@@ -8,7 +8,7 @@ It is built to the quality and feature level a real studio would use every day (
 
 ## See it working
 
-- **Live site:** [queuecare-psi.vercel.app](https://queuecare-psi.vercel.app). The API runs on Render's free plan and sleeps when idle, so the first visit after an idle period can take up to 2 minutes (the page says so, and the site starts waking it as soon as it opens). On the sign-in page, **"Conhecer sem cadastro"** (explore without signing up) opens a fictional studio in one click (owner, attendant or customer), with a sample agenda, queue and clients; you can also create a real customer account. The same sample studio runs on your machine with the command below.
+- **Live site:** [peloeponto.vercel.app](https://peloeponto.vercel.app). The API runs on Render's free plan and sleeps when idle, so the first visit after an idle period can take up to 2 minutes (the page says so, and the site starts waking it as soon as it opens). On the sign-in page, **"Conhecer sem cadastro"** (explore without signing up) opens a fictional studio in one click (owner, attendant or customer), with a sample agenda, queue and clients; you can also create a real customer account. The same sample studio runs on your machine with the command below.
 - **Everything in one command, no Docker** (JDK 21 and Node 22+; the first run downloads dependencies):
 
   ```bash

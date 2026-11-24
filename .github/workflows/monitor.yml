@@ -23,7 +23,7 @@ concurrency:
 
 env:
   API_URL: https://queuecare-api-z5dh.onrender.com
-  SITE_URL: https://queuecare-psi.vercel.app
+  SITE_URL: https://peloeponto.vercel.app
 
 jobs:
   acordar:
