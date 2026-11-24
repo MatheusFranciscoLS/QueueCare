@@ -11,12 +11,12 @@ Plataforma de agendamento e fila de atendimento para pequenos prestadores de ser
 
 **Administração:** criação e manutenção de contas.
 
-### Pronto para uso real (ADRs 0024 a 0034)
+### Pronto para uso real (ADRs 0024 a 0033)
 O que separa uma demonstração de um sistema que um estúdio usa todo dia:
 
 | Frente | O que existe |
 |---|---|
-| **Operação** | [Folgas, feriados e férias](docs/adr/0024-folgas-feriados-e-ferias.md) (o tutor não agenda em dia fechado); [Clientes](docs/adr/0025-clientes-do-estudio-e-senha-temporaria.md) (busca no balcão e senha temporária gerada pelo dono, sem e-mail); [cadastro e reserva pelo balcão](docs/adr/0033-cadastro-e-reserva-pelo-balcao.md) (a equipe agenda por quem liga ou chama no WhatsApp); [importação de clientes por planilha](docs/adr/0034-importacao-de-clientes.md) (CSV do Excel, lido no navegador); [desfazer a última etapa](docs/adr/0026-desfazer-etapa-do-atendimento.md) do atendimento; [Resumo do estúdio](docs/adr/0031-resumo-do-estudio.md) (atendimentos, valores com nome honesto, faltas e clientes que sumiram) |
+| **Operação** | [Folgas, feriados e férias](docs/adr/0024-folgas-feriados-e-ferias.md) (o tutor não agenda em dia fechado); [Clientes](docs/adr/0025-clientes-do-estudio-e-senha-temporaria.md) (busca no balcão e senha temporária gerada pelo dono, sem e-mail); [cadastro e reserva pelo balcão](docs/adr/0033-cadastro-e-reserva-pelo-balcao.md) (a equipe agenda por quem liga ou chama no WhatsApp); [desfazer a última etapa](docs/adr/0026-desfazer-etapa-do-atendimento.md) do atendimento; [Resumo do estúdio](docs/adr/0031-resumo-do-estudio.md) (atendimentos, valores com nome honesto, faltas e clientes que sumiram) |
 | **Confiança e dados** | [Política de Privacidade, baixar os próprios dados e excluir a conta por anonimização](docs/adr/0027-lgpd-minima.md), com o [inventário de dados pessoais](docs/privacidade-dados.md) |
 | **Recuperação** | [Backup criptografado e restauração ensaiada a **cada PR**](docs/adr/0028-backup-e-restauracao.md) (a CI restaura num segundo PostgreSQL e exige que seja idêntico), com o [passo a passo](docs/backup.md) |
 | **Operação e suporte** | [Código de requisição em cada resposta e em cada linha de log](docs/adr/0029-identificador-de-requisicao-e-operacao.md), `ops/smoke.sh`, [API acordada no horário de atendimento e alerta de queda](docs/adr/0032-api-acordada-e-alerta.md) e o [roteiro de deploy, rollback e incidentes](docs/operacao.md) |
