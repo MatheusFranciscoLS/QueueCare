@@ -76,10 +76,22 @@ class BookingServiceIntegrationTest extends BookingIntegrationTestBase {
 	// --- R2: conflito ---
 
 	@Test
-	void mesmoHorarioEhConflito() {
+	void mesmoHorarioParaOutraPessoaEhConflito() {
 		bookingService.book(sp(17, 10, 0));
+		UUID other = user("outra@exemplo.test", "CUSTOMER", true);
+		jdbc.update("INSERT INTO pets (customer_id, name, species) VALUES (?, 'Mel', 'CAT')", other);
 
-		assertThrows(BookingConflictException.class, () -> bookingService.book(sp(17, 10, 0)));
+		assertThrows(BookingConflictException.class, () -> bookingService.book(bookingRequest(providerSp, serviceSp, other, LocalDateTime.of(2026, 11, 17, 10, 0))));
+		assertEquals(1, count("SELECT count(*) FROM appointments"));
+	}
+
+	/** O MESMO pedido repetido (resposta perdida, duplo envio) devolve a reserva que já existe, e não um conflito (ADR 0035). */
+	@Test
+	void mesmoPedidoRepetidoDevolveAReservaQueJaExiste() {
+		var first = bookingService.book(sp(17, 10, 0));
+		var again = bookingService.book(sp(17, 10, 0));
+
+		assertEquals(first.getId(), again.getId());
 		assertEquals(1, count("SELECT count(*) FROM appointments"));
 	}
 
