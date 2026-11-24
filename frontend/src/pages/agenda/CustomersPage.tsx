@@ -9,6 +9,8 @@ import { RefreshWarning } from '../RefreshWarning'
 import { useLoad } from '../useLoad'
 import { useSingleFlight } from '../useSingleFlight'
 import { ContactLink } from './ContactLink'
+import { CounterBookingPanel, type CounterTarget } from './CounterBookingPanel'
+import { NewCustomerForm } from './NewCustomerForm'
 
 /** Espera depois da última tecla antes de buscar (o balcão digita rápido: uma busca só, não uma por letra). */
 const TYPING_DELAY_MS = 300
@@ -28,6 +30,8 @@ export function CustomersPage() {
   const load = useCallback(() => api.search(query), [api, query])
   const { data, error, loading, reload } = useLoad<StudioCustomer[]>(load)
   const isOwner = user?.role === 'PROVIDER'
+  // Cadastrar e agendar pelo balcão (ADR 0033): uma coisa por vez, no alto da tela.
+  const [mode, setMode] = useState<{ kind: 'idle' } | { kind: 'new' } | { kind: 'book'; customer: CounterTarget }>({ kind: 'idle' })
 
   useEffect(() => {
     const timer = setTimeout(() => setQuery(typed.trim()), TYPING_DELAY_MS)
@@ -42,7 +46,40 @@ export function CustomersPage() {
   return (
     <section className="card customers">
       <h1>Clientes</h1>
-      <p className="hint">Tutores que o estúdio já atendeu. Busque por nome, telefone ou nome do pet.</p>
+      <p className="hint">Tutores que o estúdio já atendeu ou cadastrou. Busque por nome, telefone ou nome do pet.</p>
+
+      {mode.kind === 'idle' && (
+        <p>
+          <button type="button" className="button" onClick={() => setMode({ kind: 'new' })}>
+            Novo cliente
+          </button>
+        </p>
+      )}
+      {mode.kind === 'new' && (
+        <NewCustomerForm
+          onCancel={() => setMode({ kind: 'idle' })}
+          onUseExisting={(existing) => {
+            setTyped(existing.name)
+            setQuery(existing.name)
+            setMode({ kind: 'idle' })
+          }}
+          onCreated={(created) => {
+            reload()
+            setMode({ kind: 'book', customer: { id: created.id, name: created.name, phone: created.phone } })
+          }}
+        />
+      )}
+      {mode.kind === 'book' && (
+        <CounterBookingPanel
+          key={mode.customer.id}
+          customer={mode.customer}
+          onClose={() => {
+            setMode({ kind: 'idle' })
+            reload()
+          }}
+        />
+      )}
+
       <form role="search" onSubmit={submit} className="customers__search">
         <div className="field">
           <label htmlFor="customer-search">Buscar cliente</label>
@@ -62,13 +99,13 @@ export function CustomersPage() {
       )}
       {data && data.length === 0 && (
         <p className="notice">
-          {query ? <>Nenhum cliente encontrado para “{query}”.</> : 'Ainda não há clientes: eles aparecem aqui depois do primeiro agendamento.'}
+          {query ? <>Nenhum cliente encontrado para “{query}”.</> : 'Ainda não há clientes: eles aparecem aqui depois do primeiro agendamento, ou cadastre um pelo botão Novo cliente.'}
         </p>
       )}
       {data && data.length > 0 && (
         <ul className="rows customers__list">
           {data.map((customer) => (
-            <CustomerRow key={customer.id} customer={customer} isOwner={isOwner} timeZone={workplace?.timeZone} />
+            <CustomerRow key={customer.id} customer={customer} isOwner={isOwner} timeZone={workplace?.timeZone} onBook={() => setMode({ kind: 'book', customer: { id: customer.id, name: customer.name, phone: customer.phone } })} />
           ))}
         </ul>
       )}
@@ -81,7 +118,7 @@ function lastVisit(instant: string | null | undefined, timeZone: string | undefi
   return new Intl.DateTimeFormat('pt-BR', { timeZone, day: '2-digit', month: '2-digit', year: 'numeric' }).format(new Date(instant))
 }
 
-function CustomerRow({ customer, isOwner, timeZone }: { customer: StudioCustomer; isOwner: boolean; timeZone: string | undefined }) {
+function CustomerRow({ customer, isOwner, timeZone, onBook }: { customer: StudioCustomer; isOwner: boolean; timeZone: string | undefined; onBook: () => void }) {
   const { request } = useAuth()
   const api = useMemo(() => customersApi(request), [request])
   const [step, setStep] = useState<'idle' | 'confirm' | 'done'>('idle')
@@ -134,9 +171,19 @@ function CustomerRow({ customer, isOwner, timeZone }: { customer: StudioCustomer
           {last ? ` · último agendamento em ${last}` : ''}
         </span>
         {customer.pets.length > 0 && <span className="customer__pets">Pets: {customer.pets.join(', ')}</span>}
+        {customer.byCounter && <span className="customer__meta">Cadastrado no balcão{customer.hasEmail === false ? ' · sem acesso ao app' : ''}</span>}
       </span>
 
-      {isOwner && step === 'idle' && (
+      {customer.byCounter && step === 'idle' && (
+        <span className="actions">
+          <button type="button" className="button" aria-label={`Agendar para ${customer.name}`} onClick={onBook}>
+            Agendar
+          </button>
+        </span>
+      )}
+
+      {/* Sem e-mail não há como entrar no app: gerar senha não adiantaria. */}
+      {isOwner && step === 'idle' && customer.hasEmail !== false && (
         <span className="actions">
           <button type="button" className="button secondary" aria-label={`Redefinir senha de ${customer.name}`} onClick={() => setStep('confirm')}>
             Redefinir senha

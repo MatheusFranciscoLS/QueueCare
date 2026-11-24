@@ -56,6 +56,12 @@ class CounterController {
 		}
 	}
 
+	@Operation(operationId = "listCounterServices")
+	@GetMapping("/api/agenda/services")
+	List<CatalogController.ServiceResponse> services(@AuthenticationPrincipal Jwt jwt) {
+		return booking.services(UUID.fromString(jwt.getSubject())).stream().map(CatalogController.ServiceResponse::from).toList();
+	}
+
 	@Operation(operationId = "createCounterCustomer")
 	@PostMapping("/api/agenda/customers")
 	@ResponseStatus(HttpStatus.CREATED)

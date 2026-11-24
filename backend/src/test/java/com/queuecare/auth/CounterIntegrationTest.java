@@ -209,6 +209,18 @@ class CounterIntegrationTest extends AuthIntegrationTestBase {
 	}
 
 	@Test
+	void aEquipeVeSoOsServicosDoProprioEstudio() throws Exception {
+		jdbc.update("INSERT INTO services (provider_id, name, duration_minutes) VALUES (?, 'Tosa', 90)", providerA);
+		jdbc.update("INSERT INTO services (provider_id, name, duration_minutes) VALUES (?, 'Serviço do B', 30)", providerB);
+		for (String token : List.of(tokenOwnerA, tokenAttendantA)) {
+			String body = mvc.perform(get("/api/agenda/services").header(HttpHeaders.AUTHORIZATION, token)).andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+			List<String> names = JsonPath.read(body, "$[*].name");
+			assertEquals(List.of("Banho", "Tosa"), names.stream().sorted().toList());
+		}
+		mvc.perform(get("/api/agenda/services").header(HttpHeaders.AUTHORIZATION, tokenJoao)).andExpect(status().isForbidden());
+	}
+
+	@Test
 	void tutorNaoUsaAsRotasDaEquipe() throws Exception {
 		UUID marta = newCustomer(tokenOwnerA, "Dona Marta");
 		mvc.perform(get("/api/agenda/customers/" + marta + "/pets").header(HttpHeaders.AUTHORIZATION, tokenJoao)).andExpect(status().isForbidden());

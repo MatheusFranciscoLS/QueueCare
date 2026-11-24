@@ -2486,6 +2486,18 @@ label.check {
   min-height: 44px;
 }
 
+/* Cadastro e reserva pelo balcão (ADR 0033): o formulário e o painel ficam acima da busca, separados dela por um respiro e uma linha. */
+.customers__new,
+.counter {
+  margin-bottom: 1.5rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid var(--line);
+}
+
+.customers__similar .rows {
+  margin: 0.5rem 0;
+}
+
 .customer {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;

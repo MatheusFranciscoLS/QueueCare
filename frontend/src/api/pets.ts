@@ -104,8 +104,9 @@ export function petDescription(pet: Pick<PetOnAppointment, 'species' | 'breed' |
 type Request = AuthApi['request']
 
 /** Cadastro de pets do próprio cliente. O dono vem do token: nenhuma chamada envia o id do cliente. */
-export function petsApi(request: Request) {
-  const body = (input: PetInput) => ({
+/** O corpo da requisição a partir do que foi digitado (usado também pela equipe, ao cadastrar o pet de um tutor do balcão, ADR 0033). */
+export function petBody(input: PetInput) {
+  return {
     name: input.name,
     species: input.species,
     breed: input.breed,
@@ -116,7 +117,11 @@ export function petsApi(request: Request) {
     temperament: input.temperament,
     healthNotes: input.healthNotes,
     vaccinated: input.vaccinated === 'yes' ? true : input.vaccinated === 'no' ? false : null,
-  })
+  }
+}
+
+export function petsApi(request: Request) {
+  const body = petBody
   return {
     list: (includeArchived = false) => request<Pet[]>(includeArchived ? '/api/customer/pets?includeArchived=true' : '/api/customer/pets'),
     create: (input: PetInput) => request<Pet>('/api/customer/pets', { method: 'POST', body: body(input) }),
