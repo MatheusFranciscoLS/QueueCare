@@ -9,7 +9,9 @@ A CI procurava **segredos** (Gitleaks), mas nada avisava quando uma **dependênc
 
 ## Decisão
 1. **Dependabot** (`.github/dependabot.yml`): PRs **semanais** para Maven e npm (agrupando atualizações menores e de correção em um PR só, para não gerar ruído), **mensais** para GitHub Actions e para as imagens base do Dockerfile (que são fixadas por digest: o Dependabot propõe o digest novo e a CI constrói a imagem para provar que continua válida).
-2. **Atualizações MAIORES ficam de fora** do automático: mudam a API, pedem ler as notas de versão e decidir. Entram por decisão, não por PR de robô.
+2. **Atualizações MAIORES de Maven, npm e da imagem Docker ficam de fora** do automático: mudam a API ou o ambiente de execução, pedem ler as notas de versão e decidir. **Ações do GitHub podem subir de versão maior** pelo PR do Dependabot, porque a própria CI do PR executa a ação nova e prova que funciona. **O Spring Boot fica fora do grupo de atualizações menores** e chega em PR próprio: o primeiro grupo (Boot 4.1.2 para 4.2.0 junto de quatro correções simples) falhou no build, e um salto do Boot não deve segurar as correções.
+
+   *Lição do primeiro dia:* o Dependabot abriu 7 PRs na primeira execução, e o CI barrou o que devia (o grupo com o Boot novo). A imagem de execução 21 para 25 também veio; foi recusada porque a CI só constrói a imagem e não roda a API nela.
 3. **Auditoria no CI** do frontend: `npm audit --omit=dev --audit-level=high` derruba o PR se uma dependência de **produção** tiver vulnerabilidade conhecida alta ou crítica. Dependências só de desenvolvimento (testes, lint) ficam de fora: não chegam ao navegador de ninguém.
 4. **Cada PR do Dependabot passa pela mesma CI** (testes, backup, imagem, acessibilidade): uma atualização que quebra algo é barrada antes de entrar.
 
