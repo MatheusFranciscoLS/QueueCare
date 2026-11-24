@@ -4,6 +4,7 @@ import { ApiError } from '../api/client'
 import { describeError } from '../api/messages'
 import { formatPhone, validatePhone } from '../api/phone'
 import { ROLE_LABEL } from '../auth/roles'
+import { isDemoUser } from '../auth/demo'
 import { useAuth } from '../auth/session'
 import { Field } from './Field'
 import { useFocusFirstInvalid } from './useFocusFirstInvalid'
@@ -88,9 +89,13 @@ export function ProfilePage() {
           {busy ? 'Salvando…' : 'Salvar contato'}
         </button>
       </form>
-      <p className="aside">
-        <Link to="/trocar-senha">Trocar senha</Link>
-      </p>
+      {isDemoUser(user) ? (
+        <p className="hint">Na demonstração a troca de senha fica desligada: a conta é compartilhada por todos os visitantes.</p>
+      ) : (
+        <p className="aside">
+          <Link to="/trocar-senha">Trocar senha</Link>
+        </p>
+      )}
       {user.role === 'CUSTOMER' && <MyDataSection />}
     </section>
   )

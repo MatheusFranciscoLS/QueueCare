@@ -76,3 +76,39 @@ describe('demonstração pública', () => {
     expect(screen.getByRole('button', { name: 'Entrar como atendente' })).toBeEnabled()
   })
 })
+
+describe('perfil na demonstração', () => {
+  async function openProfile(demo: boolean) {
+    const user = userEvent.setup()
+    if (demo) {
+      vi.stubEnv('VITE_DEMO', 'true')
+      mockApi({ 'POST /api/auth/demo': () => token('t-demo'), 'GET /api/me': () => json(200, DEMO_USER) })
+      renderApp('/entrar')
+      await user.click(await screen.findByRole('button', { name: 'Entrar como tutora (cliente)' }))
+    } else {
+      mockApi({ 'POST /api/auth/login': () => token('t-1'), 'GET /api/me': () => json(200, USER) })
+      renderApp('/entrar')
+      await user.type(await screen.findByLabelText('E-mail'), USER.email)
+      await user.type(screen.getByLabelText('Senha'), 'senha-forte-123')
+      await user.click(screen.getByRole('button', { name: 'Entrar' }))
+    }
+    await screen.findByRole('heading', { level: 1, name: /^Olá,/ })
+    await user.click(screen.getAllByRole('link', { name: 'Meu perfil' })[0])
+    await screen.findByRole('heading', { level: 1, name: 'Meu perfil' })
+  }
+
+  it('a conta compartilhada não oferece trocar a senha nem excluir a conta (explica o motivo, em vez de falhar depois de pedir a senha)', async () => {
+    await openProfile(true)
+    expect(screen.queryByRole('link', { name: 'Trocar senha' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Excluir minha conta' })).not.toBeInTheDocument()
+    expect(screen.getByText(/troca de senha fica desligada/)).toBeInTheDocument()
+    expect(screen.getByText(/exclusão da conta fica desligada/)).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Baixar meus dados' })).toBeInTheDocument() // ler os próprios dados continua permitido
+  })
+
+  it('uma conta de verdade continua com as duas opções', async () => {
+    await openProfile(false)
+    expect(screen.getAllByRole('link', { name: 'Trocar senha' }).length).toBeGreaterThan(0)
+    expect(screen.getByRole('button', { name: 'Excluir minha conta' })).toBeInTheDocument()
+  })
+})
