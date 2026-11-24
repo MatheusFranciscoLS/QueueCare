@@ -1,49 +1,75 @@
 # QueueCare
 
-Scheduling and queue management for small service providers, now focused on **pet grooming studios** (brand "Pelo & Ponto"). Portuguese version: [README.md](README.md).
+[![CI](https://github.com/MatheusFranciscoLS/QueueCare/actions/workflows/ci.yml/badge.svg)](https://github.com/MatheusFranciscoLS/QueueCare/actions/workflows/ci.yml)
 
-> A full-stack portfolio project: React + TypeScript, Java 21 + Spring Boot, PostgreSQL. **Built with substantial AI assistance** (see "Authorship" below).
+Scheduling and attendance queue for **pet grooming studios** (brand "Pelo & Ponto"). A Full Stack portfolio project: **Java 21 + Spring Boot**, **React + TypeScript**, **PostgreSQL**. Versão em português: [README.md](README.md).
+
+It is built to the quality and feature level a real studio would use every day (agenda, queue, pet records, no-shows, waitlist, privacy, backups), but it is a portfolio project: there is no real studio behind it.
+
+## See it working
+
+- **Live site:** [queuecare-psi.vercel.app](https://queuecare-psi.vercel.app). The API runs on Render's free plan and sleeps when idle, so the first visit can take about a minute (the page says so). There you can create a customer account, add a pet and book. The studio side (agenda, queue, clients, summary) runs with one command below, on fictional data.
+- **Everything in one command, no Docker** (JDK 21 and Node 22+; the first run downloads dependencies):
+
+  ```bash
+  cd frontend
+  npm ci
+  npm run demo
+  ```
+
+  It starts the API with an embedded PostgreSQL and fictional data, plus the site at `http://127.0.0.1:5173`, and prints the accounts (owner, attendant, customer and admin; they share one password, shown in the terminal).
+
+| Daily agenda (studio) | Attendance queue (studio) |
+|---|---|
+| ![Daily agenda](docs/img/agenda.jpg) | ![Attendance queue](docs/img/fila.jpg) |
+
+| Studio summary | Booking on a phone (customer) |
+|---|---|
+| ![Studio summary](docs/img/resumo.jpg) | ![Booking on a phone](docs/img/agendar-celular.jpg) |
+
+## Engineering decisions worth discussing
+
+| Challenge | How it was solved |
+|---|---|
+| **Two people book the same slot at the same time** | The guarantee lives in the **database**: a PostgreSQL exclusion constraint over time ranges (`tstzrange` + `btree_gist`), which also prevents overlaps between services of different durations. Tested with simultaneous requests ([ADR 0002](docs/adr/0002-controle-de-concorrencia.md), PT). |
+| **The booking response is lost and the user retries** | Repeating the same request returns the booking that already exists instead of a conflict with the user's own booking (matters when the free-tier API is waking up). Any difference is still a conflict ([ADR 0035](docs/adr/0035-reserva-idempotente.md), PT). |
+| **Who may call what** | Authorization in the API, not the UI. A **role × route matrix generated from the OpenAPI contract** runs in CI: a new route without a declared rule **fails the build**. Another user's resource answers 404, identical to a missing one. |
+| **Time zones and daylight saving** | Everything stored in UTC with the studio's IANA zone; nonexistent or ambiguous local times are rejected with a clear message. |
+| **Privacy (LGPD)** | Customers download their own data and delete their account (anonymized in place, history kept); versioned privacy policy ([ADR 0027](docs/adr/0027-lgpd-minima.md), PT). |
+| **Backups you know how to restore** | Encrypted backups with the **restore rehearsed on every PR** by CI, which has already caught real bugs ([ADR 0028](docs/adr/0028-backup-e-restauracao.md), PT). |
+| **Accessibility measured, not assumed** | axe-core, visible focus, 44 px touch targets and no horizontal scroll, in light and dark, on every screen ([ADR 0018](docs/adr/0018-redesign.md), PT). |
+| **Operating and diagnosing** | A request id on every response and log line, **one access line per call with route, status and duration and no personal data**, a deploy and rollback runbook, and automatic deploy after CI ([ADR 0029](docs/adr/0029-identificador-de-requisicao-e-operacao.md), [ADR 0036](docs/adr/0036-log-de-acesso.md), [operations](docs/operacao.md), PT). |
+
+Every decision has an [ADR](docs/adr/) (in Portuguese) with what was **rejected** and the **known risks**, including the limits of running at zero cost ([ADR 0013](docs/adr/0013-hospedagem-custo-zero.md)).
 
 ## What it does
-- **Pet owners** register pets (size, coat, weight, temperament, health notes, vaccines) and book by service, pet, day and slot; the **duration and price follow the pet's size and coat**, and the app jumps to the first day with a free slot. They see **until when they can cancel or reschedule for free** before confirming and, after that, message the studio on WhatsApp. They follow the visit (arrived, in progress, ready for pickup), see each pet's history and join a **waiting list** when a day is full.
-- **Studios** (owner and attendants) run the day and week schedule and the queue, see the pet's file in front of whoever attends (with a behavior warning), open WhatsApp with a ready-made message (pet ready, **next-day reminder**, waiting-list call), record **no-shows** with a per-owner counter, and configure services (price and duration by size and coat), working hours, team, a public page and the cancellation window.
-- **Administrators** create and manage accounts, with no access to schedules or business data.
-- No online payment and no automatic messaging (zero-cost constraint): WhatsApp opens with the message ready and staff send it. A manual Pix deposit is proposed in ADR 0023.
 
-### Ready for real use (ADRs 0024 to 0033)
-| Area | What exists |
-|---|---|
-| **Operations** | [Time off and holidays](docs/adr/0024-folgas-feriados-e-ferias.md) (owners cannot book a closed day); [Clients](docs/adr/0025-clientes-do-estudio-e-senha-temporaria.md) (counter search and a temporary password generated by the studio owner, no e-mail needed); [counter registration and booking](docs/adr/0033-cadastro-e-reserva-pelo-balcao.md) (staff book for customers who call or message on WhatsApp); [undo the last attendance step](docs/adr/0026-desfazer-etapa-do-atendimento.md); [studio summary](docs/adr/0031-resumo-do-estudio.md) (attendances, honestly named amounts, no-shows and lapsed clients) |
-| **Trust and data** | [Privacy policy, download your data, delete your account by anonymization](docs/adr/0027-lgpd-minima.md) |
-| **Recovery** | [Encrypted backup with a restore drill on **every PR**](docs/adr/0028-backup-e-restauracao.md): CI restores into a second PostgreSQL and requires the result to be identical |
-| **Operations and support** | [A request id on every response and every log line](docs/adr/0029-identificador-de-requisicao-e-operacao.md), `ops/smoke.sh`, [a warm API during opening hours and a down alert](docs/adr/0032-api-acordada-e-alerta.md), and a [deploy, rollback and incident runbook](docs/operacao.md) |
-| **Mobile** | [Installable app that opens offline](docs/adr/0030-app-instalavel-e-offline.md) (the service worker never stores API data) |
-
-Every decision has an ADR with what was **rejected** and the **known risks**, including the limits of the zero-cost constraint.
-
-## Technical highlights
-- **No double booking, even under concurrency:** two layers, application validation plus a PostgreSQL **exclusion constraint** (`btree_gist` over `tstzrange`); two simultaneous requests for the same slot yield one success and one `409`. Tested against a real PostgreSQL.
-- **Authorization in the API**, not only in the UI: role rules on routes and `@PreAuthorize`; the provider a staff member operates on always comes from the database. For appointment and attendance operations, touching a record that belongs to another provider returns the same `404` as a missing record.
-- **Time zones done properly:** UTC storage, IANA zone per provider, local-time input with explicit handling of nonexistent/ambiguous daylight-saving times.
-- **Credential lifecycle:** short-lived JWT validated against a per-user version on every request, forced password change, rate limits and login lockout, append-only audit log.
-- **Frontend discipline:** token only in memory; every mutation handles stale responses, partial failures, double submits and focus management; each pattern is covered by tests that were verified with manual mutation checks (a test must fail when the behavior is removed).
-- **API contract generated from code** and verified in CI: [`docs/openapi.json`](docs/openapi.json) (roles per operation are read from the real `@PreAuthorize`).
-
-## Tests
-Backend: 456 tests (JUnit, MockMvc, real embedded PostgreSQL, concurrency races). Frontend: 262 tests (Vitest, Testing Library). CI also builds the production Docker image, scans for secrets (Gitleaks) and runs lint/build. Not done yet: browser end-to-end tests (Playwright).
+**Customers:** register pets (size, coat, weight, temperament, health, vaccines), book by service, pet, day and time (duration and price follow the pet's size and coat), see until when they can cancel for free, follow the attendance and join the waitlist when a day is full. **Studios:** daily and weekly agenda, attendance queue with states, pet record with a behavior warning, no-show tracking, counter registration and booking, time off and holidays, summary and clients. **Admins:** accounts. More detail in [`docs/features.en.md`](docs/features.en.md).
 
 ## Stack
-React 19 + TypeScript + Vite · Java 21 · Spring Boot 4 · Spring Security (JWT) · Spring Data JPA · Flyway · PostgreSQL 16 · Docker · GitHub Actions.
+
+- **Backend:** Java 21, Spring Boot 4, Spring Security (JWT), JPA, Flyway, PostgreSQL 16. [OpenAPI](docs/openapi.json) contract generated from the code and checked by a test.
+- **Frontend:** React 19, TypeScript, Vite; Vitest and Playwright.
+- **Delivery:** GitHub Actions (tests, Docker image, backup restore, lint, secret scan), Vercel, Render and Neon, all on free plans.
 
 ## Run locally
-Prerequisites: JDK 21, Node 22+, Docker (or PostgreSQL 16).
+
+Prerequisites: JDK 21, Node 22+, and Docker (or PostgreSQL 16) if you want a real database. The fastest path is `npm run demo` above.
+
+```bash
+# Backend: build and tests (they use an embedded PostgreSQL, nothing to install)
+cd backend && ./mvnw verify
+
+# Frontend: lint, tests and build
+cd frontend && npm ci && npm run lint && npm test && npm run build
+```
+
+With a real database:
+
 ```bash
 cp .env.example .env                       # change the values; never commit .env
 docker compose --env-file .env -f infra/docker-compose.yml up -d
-cd backend && ./mvnw verify                # build and tests (does not keep the API running)
-```
-Start the API (terminal 1) and the frontend (terminal 2). The API needs `DB_URL`, `DB_USER`, `DB_PASSWORD` and `JWT_SECRET` (see `.env.example`; `JWT_SECRET` must be Base64 of at least 32 random bytes, e.g. `openssl rand -base64 32`, so replace the placeholder first):
-```bash
+
 # terminal 1: load the variables from .env and run the API on http://localhost:8080
 set -a; source .env; set +a
 cd backend && ./mvnw spring-boot:run
@@ -51,16 +77,14 @@ cd backend && ./mvnw spring-boot:run
 # terminal 2: the frontend on http://localhost:5173 (proxies /api to :8080)
 cd frontend && npm ci && npm run dev
 ```
-The first administrator is created once with an explicit command (see [ADR 0005](docs/adr/0005-provisionamento-de-contas.md)); no migration inserts users.
 
-## Deployment (zero cost, no credit card)
-Cloudflare Pages (static site) + Render Free (API in a Docker image) + Neon Free (PostgreSQL). A step-by-step guide is in [`docs/publicacao.md`](docs/publicacao.md) (Portuguese); the reasoning, limits and a measured profile (the API starts in ~95 s and uses ~250 MB under 512 MB / 0.1 CPU) are in [ADR 0013](docs/adr/0013-hospedagem-custo-zero.md). It is a showcase that sleeps when idle, not production availability.
+The API needs `DB_URL`, `DB_USER`, `DB_PASSWORD` and `JWT_SECRET` (see `.env.example`; `JWT_SECRET` must be Base64 of at least 32 random bytes, e.g. `openssl rand -base64 32`). The first administrator is created once with an explicit command (see [ADR 0005](docs/adr/0005-provisionamento-de-contas.md)); no migration inserts users. Free deployment guide (no credit card): [`docs/publicacao.md`](docs/publicacao.md) (Portuguese).
 
 ## Documentation
-[Architecture](docs/architecture.en.md) · [Business rules](docs/regras.md) (PT) · [ADRs](docs/adr/) (PT) · [Study guides with interview questions](docs/estudo/) (PT) · [OpenAPI](docs/openapi.json).
+[Architecture](docs/architecture.en.md) · [Features](docs/features.en.md) · [Business rules](docs/regras.md) (PT) · [ADRs](docs/adr/) (PT) · [Operations](docs/operacao.md) (PT) · [Study guides with interview questions](docs/estudo/) (PT) · [OpenAPI](docs/openapi.json).
 
 ## Authorship
-Developed under the direction of the product owner (Matheus Francisco) with **substantial AI assistance**: Claude implements the technical work (including business rules and tests) and ChatGPT performs an independent review of every change before it is merged; the owner defines the product, approves the direction and receives a summary of each delivery. This is **not** a demonstration of individual implementation. The process is described in [`CLAUDE.md`](CLAUDE.md).
+Developed under the direction of the product owner (Matheus Francisco) with **substantial AI assistance**: Claude implements the technical work (including business rules and tests) and ChatGPT performs an independent review of every change before it is merged; Matheus defines the product, approves the direction and receives a summary of each delivery. This is not a demonstration of individual implementation. The process is in [`CLAUDE.md`](CLAUDE.md).
 
 ## License
 [MIT](LICENSE).
