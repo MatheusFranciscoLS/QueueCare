@@ -49,6 +49,8 @@ class DeploymentFilesTest {
 		}
 		assertFalse(Pattern.compile("(?m)^\\s*value:").matcher(render).find(), "nenhum valor literal no render.yaml");
 		assertTrue(Pattern.compile("(?m)^\\s*healthCheckPath:\\s*/actuator/health/liveness(\\s|$)").matcher(render).find(), "o health check do Render é a VIVACIDADE (não depende do banco)");
+		// só o backend (e o próprio render.yaml) publica a API: mudar README, docs ou frontend não reinicia a produção
+		assertTrue(Pattern.compile("(?s)buildFilter:\\s*paths:\\s*- backend/\\*\\*").matcher(render).find(), "a API só publica quando o backend muda (buildFilter)");
 		// publica sozinho, mas SÓ depois que o CI passa; nunca "commit" (publicaria antes dos testes) e nunca sem decisão do dono
 		assertTrue(Pattern.compile("(?m)^\\s*autoDeployTrigger:\\s*checksPass\\s*$").matcher(render).find(), "a API só publica sozinha depois que os checks passam (checksPass)");
 	}
