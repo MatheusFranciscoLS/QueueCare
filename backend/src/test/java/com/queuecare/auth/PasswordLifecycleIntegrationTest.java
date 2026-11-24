@@ -228,7 +228,9 @@ class PasswordLifecycleIntegrationTest extends AuthIntegrationTestBase {
 
 			// A tentativa também é limitada (3 por janela neste teste): vitória única e o resto recusado, nunca 500.
 			assertEquals(1, statuses.stream().filter(s -> s == 200).count(), statuses.toString());
-			assertTrue(statuses.stream().allMatch(s -> s == 200 || s == 400 || s == 429), statuses.toString());
+			// 400: senha atual já não confere (passou da autenticação ANTES de a vencedora confirmar); 401: o token já foi invalidado pela troca vencedora (chegou à autenticação DEPOIS, ADR 0006);
+			// 429: limite de tentativas. Qual dos três cada thread recebe depende só do ritmo delas, então os três são resultados válidos. Nunca 500, e exatamente uma vitória (acima).
+			assertTrue(statuses.stream().allMatch(s -> s == 200 || s == 400 || s == 401 || s == 429), statuses.toString());
 			assertEquals(1, row(id).get("token_version"));
 			assertEquals(1L, count("SELECT count(*) FROM audit_log"));
 			long working = 0;
