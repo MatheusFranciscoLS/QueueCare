@@ -1,7 +1,7 @@
 name: Monitor da API
 
 # ADR 0032. Custo zero: o GitHub Actions é gratuito em repositório público e nada aqui exige conta ou cartão.
-# Faz duas coisas: (1) mantém a API acordada no horário de atendimento, porque o Render gratuito dorme depois de ~15 min sem uso e o primeiro
+# Faz duas coisas: (1) acorda a API com frequência no horário de atendimento (a cada 30 min: NÃO a mantém acordada o tempo todo, ver o gatilho abaixo), porque o Render gratuito dorme depois de ~15 min sem uso e o primeiro
 # tutor do dia esperaria ~1 min; (2) avisa se a API ou o banco caírem: um passo vermelho vira e-mail do GitHub para quem editou este agendamento.
 # É um esforço honesto, não uma garantia: o GitHub pode atrasar ou pular execuções agendadas.
 
