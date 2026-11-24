@@ -1,4 +1,4 @@
-name: Backup diário
+name: Backup do banco (sob demanda)
 
 # Backup do banco de PRODUÇÃO (ADR 0028). Só funciona quando o dono cadastra os dois segredos abaixo; sem eles o job termina em sucesso sem fazer nada
 # (o projeto é de portfólio e não exige nenhum segredo). O arquivo sai CRIPTOGRAFADO (AES-256) e é guardado como artefato por 14 dias.
@@ -7,8 +7,9 @@ name: Backup diário
 #   BACKUP_PASSPHRASE     frase-senha com 16+ caracteres: guarde-a FORA do GitHub também, sem ela o backup não abre
 
 on:
-  schedule:
-    - cron: '17 6 * * *'   # todo dia, 06:17 UTC (03:17 em Brasília)
+  # SEM agendamento de propósito: sem os dois segredos acima o job diário só terminava em sucesso sem fazer nada, ou seja, ruído (uma execução por dia, para nada).
+  # O ensaio de restauração continua em CADA PR no ci.yml. Para fazer um backup real: cadastre os segredos e rode este workflow à mão (Actions > Run workflow);
+  # para voltar a agendar, acrescente de novo um gatilho schedule (ex.: cron 17 6 * * *).
   workflow_dispatch:
 
 permissions:
