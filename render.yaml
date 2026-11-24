@@ -7,7 +7,9 @@ services:
     dockerfilePath: ./backend/Dockerfile
     dockerContext: ./backend
     healthCheckPath: /actuator/health/liveness   # vivacidade: NÃO depende do banco (Neon pode estar acordando)
-    autoDeployTrigger: "off"
+    # Publica sozinho SÓ depois que os checks do GitHub passam (CI verde). Cada merge de backend roda as migrações em produção:
+    # a regra de expandir e contrair (docs/operacao.md) é obrigação. Se mudar aqui, mude também no painel (Settings > Build & Deploy > Auto-Deploy).
+    autoDeployTrigger: checksPass
     envVars:
       - key: DB_URL          # URL do Neon COM pooler, ex.: jdbc:postgresql://HOST-pooler/DB?sslmode=require&prepareThreshold=0
         sync: false

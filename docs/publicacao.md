@@ -69,5 +69,5 @@ Exportar o banco (`pg_dump`) → excluir o serviço no Render → excluir o proj
 - O Render pedir cartão, ou a API não subir com 512 MB: **parar**. Alternativa honesta: publicar só o site com dados simulados (com aviso) e gravar um vídeo do sistema rodando no computador.
 
 ## Estado da publicação (14/11/2026)
-- Banco: projeto `queuecare` no Neon (Oregon, plano gratuito). API: serviço `queuecare-api` no Render (gratuito, sem cartão cadastrado, publicação manual). Site: projeto `queuecare` na Vercel (pasta `frontend`, `VITE_API_URL` apontando para a API, proteção SSO desligada porque o site é público).
+- Banco: projeto `queuecare` no Neon (Oregon, plano gratuito). API: serviço `queuecare-api` no Render (gratuito, sem cartão cadastrado, publica sozinha depois que o CI passa). Site: projeto `queuecare` na Vercel (pasta `frontend`, `VITE_API_URL` apontando para a API, proteção SSO desligada porque o site é público).
 - `frontend/vercel.json` reescreve qualquer rota para `index.html` (o site usa rotas do React) e envia cabeçalhos básicos de segurança.

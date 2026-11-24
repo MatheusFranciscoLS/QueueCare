@@ -6,7 +6,7 @@ Para o backend rodar num servidor gratuito ele precisa virar uma "caixa" (imagem
 ## O que existe
 - **Dockerfile** em duas etapas (compila com o JDK, roda só com o JRE), como usuário comum, sem nenhum segredo, com as imagens-base fixadas por **digest**.
 - **Perfil `prod`:** porta que a plataforma informa, pool de conexões pequeno (3), migrations pela conexão DIRETA do banco (sem pooler) e só o health exposto.
-- **`render.yaml`:** só plano gratuito, todos os segredos preenchidos no painel, publicação manual.
+- **`render.yaml`:** só plano gratuito, todos os segredos preenchidos no painel, publicação automática após o CI (checksPass).
 - **Health separado:** `/actuator/health/liveness` (só o processo, o Render usa este) e `/actuator/health/readiness` (inclui o banco). Banco dormindo não derruba a API.
 - **CI:** um job constrói a imagem e confere que o UID é 10001 (não root).
 - **`docs/publicacao.md`:** passo a passo para criar as contas sem cartão, variáveis, primeiro administrador sem deixar senha no histórico do terminal, desligar tudo.
