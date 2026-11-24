@@ -11,9 +11,9 @@
  *
  * Mudou algo aqui? Troque VERSAO: os caches antigos são apagados na ativação.
  */
-const VERSAO = 'pp-v1'
+const VERSAO = 'pp-v2'
 const CACHE = `${VERSAO}-app`
-const INICIAIS = ['/', '/manifest.webmanifest', '/icon-192.png', '/icon-512.png']
+const INICIAIS = ['/', '/tema.js', '/manifest.webmanifest', '/icon-192.png', '/icon-512.png']
 
 const PAGINA_OFFLINE = `<!doctype html><html lang="pt-BR"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Sem conexão</title>
 <body style="font-family:system-ui,sans-serif;margin:0;display:grid;place-items:center;min-height:100vh;background:#eef2f4;color:#14202b"><main style="max-width:28rem;padding:1.5rem">

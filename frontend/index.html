@@ -14,13 +14,8 @@
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-title" content="Pelo & Ponto" />
-    <script>
-      // Tema salvo aplicado ANTES da primeira renderização (sem piscar claro antes do escuro). Sem armazenamento, segue o sistema.
-      try {
-        var t = localStorage.getItem('pp-tema')
-        if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t)
-      } catch (e) {}
-    </script>
+    <!-- Tema salvo aplicado antes da primeira renderização: em arquivo, porque a política de segurança do site proíbe script em linha (ADR 0038). -->
+    <script src="/tema.js"></script>
   </head>
   <body>
     <div id="root"></div>
