@@ -55,6 +55,19 @@ public class PetService {
 		return pets.findOfCustomer(customerId, includeArchived);
 	}
 
+	/** Os nomes dos pets ATIVOS de vários tutores, numa consulta só (a lista de clientes do balcão, ADR 0033). */
+	@Transactional(readOnly = true)
+	public java.util.Map<UUID, java.util.Set<String>> activeNamesOf(java.util.Collection<UUID> customerIds) {
+		java.util.Map<UUID, java.util.Set<String>> names = new java.util.HashMap<>();
+		if (customerIds.isEmpty()) {
+			return names;
+		}
+		for (Pet pet : pets.findActiveOfCustomers(customerIds)) {
+			names.computeIfAbsent(pet.getCustomerId(), k -> new java.util.TreeSet<>()).add(pet.getName());
+		}
+		return names;
+	}
+
 	@Transactional(readOnly = true)
 	public Pet get(UUID customerId, UUID petId) {
 		return pets.findByIdAndCustomerId(petId, customerId).orElseThrow(PetNotFoundException::new);

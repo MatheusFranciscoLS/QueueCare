@@ -109,7 +109,7 @@ public class BookingService {
 			draft.attachDeposit(deposit); // sinal por Pix pedido, valor congelado na reserva (ADR 0023)
 		}
 		Appointment appointment = appointments.saveAndFlush(draft);
-		events.save(new AppointmentEvent(appointment.getId(), customer.getId(), AppointmentEventType.SCHEDULED, now, null));
+		events.save(new AppointmentEvent(appointment.getId(), request.actorId() == null ? customer.getId() : request.actorId(), AppointmentEventType.SCHEDULED, now, null));
 		return appointment;
 	}
 

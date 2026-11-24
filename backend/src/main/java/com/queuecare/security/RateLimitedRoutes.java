@@ -33,10 +33,13 @@ public final class RateLimitedRoutes {
 	/** Responde 429 pelo limite por estúdio de senhas temporárias geradas (PasswordService, ADR 0025). */
 	static final Route RESET_CUSTOMER_PASSWORD = new Route(HttpMethod.POST, "/api/provider/customers/*/reset-password");
 
+	/** Responde 429 pelo limite por estúdio de tutores cadastrados pelo balcão (CounterCustomers, ADR 0033). */
+	static final Route CREATE_COUNTER_CUSTOMER = new Route(HttpMethod.POST, "/api/agenda/customers");
+
 	/** Responde 429 pelo limite de tentativas da senha na exclusão da conta (PrivacyService, ADR 0027). */
 	static final Route DELETE_ACCOUNT = new Route(HttpMethod.POST, "/api/me/delete-account");
 
-	private static final List<Route> ALL = List.of(LOGIN, REGISTER, CREATE_PROVIDER, CREATE_ATTENDANT, CATALOG, PUBLIC, SLOTS, CHANGE_PASSWORD, RESET_CUSTOMER_PASSWORD, DELETE_ACCOUNT);
+	private static final List<Route> ALL = List.of(LOGIN, REGISTER, CREATE_PROVIDER, CREATE_ATTENDANT, CATALOG, PUBLIC, SLOTS, CHANGE_PASSWORD, RESET_CUSTOMER_PASSWORD, DELETE_ACCOUNT, CREATE_COUNTER_CUSTOMER);
 
 	private RateLimitedRoutes() {
 	}

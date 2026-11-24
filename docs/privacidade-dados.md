@@ -30,6 +30,9 @@ O app **não** usa cookies de rastreamento, não tem analytics de terceiros nem 
 | Informação | Política de Privacidade (`/privacidade`), linkada no cadastro, na entrada e no menu |
 | Revogar / reclamar | Contato do responsável (perfil do repositório no GitHub) e ANPD |
 
+### Tutor cadastrado pelo balcão (ADR 0033)
+Quando a equipe do estúdio cadastra quem pediu horário por telefone ou WhatsApp, a conta guarda nome, telefone e, se informado, e-mail, mais `users.created_by_provider_id` (qual estúdio criou). A base é a execução do atendimento que a pessoa pediu; ela **não viu nem aceitou a política na tela** e, **sem acesso ao app, não consegue exportar nem excluir os próprios dados sozinha**. Até existir uma ação do estúdio para isso, o pedido é atendido pelo contato do responsável: o estúdio avisa, e o pedido de eliminação se resolve por **anonimização da conta** (mesmo efeito do ADR 0027). Cada cadastro fica na auditoria (`CUSTOMER_CREATED_BY_STUDIO`). A equipe só age por contas que o **próprio estúdio criou**.
+
 ## 3. Retenção
 
 - **Conta e pets:** enquanto existirem. Não há exclusão automática por inatividade (decisão consciente: sem rotina agendada nesta fase). Recomendação para um uso real: revisar contas sem acesso há mais de 24 meses.

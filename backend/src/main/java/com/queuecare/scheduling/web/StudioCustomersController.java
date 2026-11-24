@@ -32,9 +32,9 @@ class StudioCustomersController {
 	}
 
 	/** {@code visits}: atendimentos concluídos; {@code lastAppointmentAt}: início do agendamento mais recente, de qualquer estado. */
-	record CustomerResponse(UUID id, String name, String phone, long visits, long noShows, Instant lastAppointmentAt, List<String> pets) {
+	record CustomerResponse(UUID id, String name, String phone, long visits, long noShows, Instant lastAppointmentAt, List<String> pets, boolean byCounter, boolean hasEmail) {
 		static CustomerResponse from(CustomerView v) {
-			return new CustomerResponse(v.id(), v.name(), v.phone(), v.visits(), v.noShows(), v.lastAppointmentAt(), v.pets());
+			return new CustomerResponse(v.id(), v.name(), v.phone(), v.visits(), v.noShows(), v.lastAppointmentAt(), v.pets(), v.byCounter(), v.hasEmail());
 		}
 	}
 
