@@ -35,7 +35,9 @@ Um código vindo de fora só é aceito se tiver 8 a 64 caracteres entre letras, 
 
 **Antes:** CI verde (inclui o ensaio de restauração); se há migração nova, ler como ela se comporta em dados que já existem; ter um backup recente (*Actions → Backup diário*, se estiver ligado).
 
-**Publicar:** merge em `main`. A Vercel e o Render publicam sozinhos. A API leva alguns minutos (primeira subida ~2 min no plano gratuito); as migrações do Flyway rodam na subida, pela URL direta do banco.
+**Publicar:** merge em `main`. **A Vercel publica o site sozinha, mas a API no Render é de publicação MANUAL** (`autoDeploy` desligado no serviço `queuecare-api`): depois de mesclar uma mudança de backend, dispare o deploy no painel do Render (*Manual Deploy → Deploy latest commit*). A API leva alguns minutos (primeira subida ~2 min no plano gratuito); as migrações do Flyway rodam na subida, pela URL direta do banco.
+
+> **Por que isso importa:** em 23/11/2026 a API em produção estava parada no commit de 14/11 (banco na versão 6 das migrações) enquanto o site, que publica sozinho, já chamava rotas novas. Nada avisava. A forma de perceber é o `ops/smoke.sh` (o passo 3 exige o `X-Request-Id`, que só existe em versões recentes) e os logs do Flyway na subida (`Current version of schema`). **Antes de uma publicação que rode migrações, crie um branch do banco no Neon** (*Branches → Create branch*): é uma cópia instantânea e gratuita, e o Flyway não tem "desfazer". Se quiser que a API nunca fique para trás, ligue o *Auto-Deploy* no serviço; cada merge passará a rodar migrações em produção, e aí a regra de expandir e contrair abaixo deixa de ser recomendação e vira obrigação.
 
 **Depois:** `ops/smoke.sh <api> <site>` e entrar no app com uma conta de teste.
 
