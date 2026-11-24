@@ -53,6 +53,9 @@ jobs:
           cache: npm
           cache-dependency-path: frontend/package-lock.json
       - run: npm ci
+      # Vulnerabilidade conhecida (alta ou crítica) em dependência de PRODUÇÃO derruba o PR: o Gitleaks só procura segredos (ADR 0039). Dependências só de desenvolvimento ficam de fora.
+      - name: Auditoria das dependências de produção
+        run: npm audit --omit=dev --audit-level=high
       - run: npm run lint
       - run: npm test
       - run: npm run build
