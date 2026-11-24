@@ -1,3 +1,7 @@
 # Falso positivo conhecido e revisado (ADR 0025): senha temporária FICTÍCIA de um teste, no primeiro commit do PR 96.
 # O arquivo atual já a monta por partes; o varredor ainda a vê no histórico do PR. A impressão digital é exata (commit, arquivo, regra e linha).
 8fd629da8ad2a043bd55a6d24e771124b0ff9c9e:frontend/src/test/clientes.test.tsx:generic-api-key:107
+
+# Falso positivo conhecido e revisado (ADR 0041): senha FICTICIA de um teste da demonstracao (a "atual" errada numa troca de senha), no primeiro commit do PR 143.
+# O arquivo atual ja a monta por partes; o varredor ainda a ve no historico do PR. A impressao digital e exata (commit, arquivo, regra e linha).
+2a8e63979d3fc48604ec2029acf56aea18a340a7:backend/src/test/java/com/queuecare/auth/DemoIntegrationTest.java:generic-api-key:119
