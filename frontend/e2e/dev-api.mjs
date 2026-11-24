@@ -19,6 +19,9 @@ if (compiled.status !== 0) process.exit(compiled.status ?? 1)
 
 const classpath = [join(backend, 'target', 'test-classes'), join(backend, 'target', 'classes'), readFileSync(cpFile, 'utf8').trim()].join(delimiter)
 // O classpath vai por `java -cp` (e não pelo plugin do Spring Boot, que no Windows interpreta "\t" de "target\test-classes" como tabulação).
-const java = spawn('java', ['-cp', classpath, 'com.queuecare.dev.LocalDevServer'], { cwd: backend, stdio: 'inherit' })
+// O MESMO Java com que o Maven compilou: o mvnw usa o JAVA_HOME; chamar só "java" pegaria o do PATH, que pode ser mais antigo (UnsupportedClassVersionError, "class file version 65.0").
+const javaHome = process.env.JAVA_HOME
+const javaBin = javaHome && existsSync(join(javaHome, 'bin', process.platform === 'win32' ? 'java.exe' : 'java')) ? join(javaHome, 'bin', 'java') : 'java'
+const java = spawn(javaBin, ['-cp', classpath, 'com.queuecare.dev.LocalDevServer'], { cwd: backend, stdio: 'inherit' })
 java.on('exit', (code) => process.exit(code ?? 0))
 for (const signal of ['SIGINT', 'SIGTERM']) process.on(signal, () => java.kill())
