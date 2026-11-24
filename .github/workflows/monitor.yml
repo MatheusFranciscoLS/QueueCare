@@ -33,7 +33,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 8
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Chamar a vivacidade (com tentativas, a API pode estar acordando)
         run: bash ops/retry.sh -n 4 -w 20 -- curl --fail --silent --show-error --location --max-time 100 --output /dev/null "$API_URL/actuator/health/liveness"
 
@@ -43,6 +43,6 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: ops/smoke.sh
         run: bash ops/retry.sh -n 3 -w 30 -- bash ops/smoke.sh "$API_URL" "$SITE_URL"
