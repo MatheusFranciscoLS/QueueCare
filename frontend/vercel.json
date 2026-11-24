@@ -1,4 +1,14 @@
 {
+  "git": {
+    "deploymentEnabled": {
+      "docs/*": false,
+      "feature/*": false,
+      "fix/*": false,
+      "ci/*": false,
+      "deps/*": false,
+      "dependabot/**": false
+    }
+  },
   "rewrites": [
     {
       "source": "/(.*)",
