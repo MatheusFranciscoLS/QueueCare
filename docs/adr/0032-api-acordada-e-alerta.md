@@ -1,8 +1,10 @@
 # ADR 0032: API acordada no horário de atendimento e alerta de queda
 
-- **Status:** Accepted (implementado em 23/11/2026)
+- **Status:** Accepted (implementado em 23/11/2026); **premissa corrigida em 24/11/2026**, veja o aviso abaixo
 - **Data:** 23/11/2026
 - **Esforço:** BAIXO (um workflow, nenhuma linha de código da aplicação)
+
+> **Correção de 24/11/2026 (medida, não opinião).** A premissa deste ADR, "o GitHub Actions mantém a API acordada no horário de atendimento", **não se confirmou**. Em 15 horas o agendamento de 10 em 10 minutos nunca rodou (só a execução manual), e o backup diário agendado para 06:17 UTC rodou às 14:33 e às 18:04 UTC em dias diferentes: o GitHub atrasa por horas ou pula execuções agendadas deste repositório. A primeira chamada com a API dormindo levou **115 s**. O que de fato acorda a API é o próprio site ao abrir ([ADR 0037](0037-acordar-a-api-ao-abrir-o-site.md)). O workflow continua útil como roteiro de verificação **manual** (*Run workflow*) e como alerta quando roda, mas ninguém deve depender dele para manter a API acordada.
 
 ## Contexto: a análise crítica
 Duas coisas do uso real que o custo zero deixa de fora:
