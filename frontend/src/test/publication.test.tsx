@@ -3,6 +3,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { apiUrl } from '../api/base'
 import { apiRequest } from '../api/client'
 import { SLOW_AFTER_MS, trackRequest } from '../api/slow'
+import { MemoryRouter } from 'react-router-dom'
+import { AuthLayout } from '../pages/AuthLayout'
 import { WakingBanner } from '../pages/WakingBanner'
 
 afterEach(() => {
@@ -71,6 +73,22 @@ describe('aviso de servidor acordando', () => {
     done()
     await act(async () => vi.advanceTimersByTime(SLOW_AFTER_MS * 2))
     expect(screen.queryByRole('status')).not.toBeInTheDocument() // oculto: não existe para leitores de tela
+  })
+
+  it('nas telas de ENTRAR e CADASTRAR (a primeira chamada de quem chega com a API dormindo) o aviso também aparece, e some quando a chamada termina', async () => {
+    render(
+      <MemoryRouter>
+        <AuthLayout>
+          <p>formulário de entrada</p>
+        </AuthLayout>
+      </MemoryRouter>,
+    )
+    const done = trackRequest()
+    await act(async () => vi.advanceTimersByTime(SLOW_AFTER_MS))
+    expect(screen.getByRole('status')).toHaveTextContent('o servidor dorme quando ninguém usa')
+    expect(screen.getByText('formulário de entrada')).toBeInTheDocument()
+    await act(async () => done())
+    expect(screen.queryByRole('status')).not.toBeInTheDocument()
   })
 
   it('requisição que passa do limite mostra o aviso e ele some quando ela termina', async () => {
