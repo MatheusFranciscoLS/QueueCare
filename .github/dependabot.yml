@@ -1,4 +1,4 @@
-# Atualização de dependências (ADR 0039). O Gitleaks procura SEGREDOS; nada avisava quando uma dependência ganhava correção de segurança. O Dependabot abre PRs semanais
+# Atualização de dependências (ADR 0039). O Gitleaks procura SEGREDOS; nada avisava quando uma dependência ganhava correção de segurança. O Dependabot abre PRs mensais (menos ruído; os alertas de segurança continuam ligados e avisam na hora)
 # (a CI valida cada um) e, com os alertas ligados no repositório, avisa de vulnerabilidade conhecida. Atualizações MAIORES (que mudam a API) ficam de fora: pedem decisão e
 # leitura das notas de versão, não um PR automático.
 version: 2
@@ -6,8 +6,7 @@ updates:
   - package-ecosystem: maven
     directory: /backend
     schedule:
-      interval: weekly
-      day: monday
+      interval: monthly
     open-pull-requests-limit: 5
     ignore:
       - dependency-name: "*"
@@ -22,8 +21,7 @@ updates:
   - package-ecosystem: npm
     directory: /frontend
     schedule:
-      interval: weekly
-      day: monday
+      interval: monthly
     open-pull-requests-limit: 5
     ignore:
       - dependency-name: "*"

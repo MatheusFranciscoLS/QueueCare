@@ -10,7 +10,7 @@ Estratégia do ADR 0028. Os scripts ficam em `ops/backup/` e são **os mesmos** 
 | `restore.sh` | `ops/backup/` | Confere a soma, decifra para uma pasta temporária, **lista o dump antes de tocar no destino** e restaura parando no primeiro erro. Exige `CONFIRM_RESTORE=yes` |
 | `verify.sh` | `ops/backup/` | `compare`: origem e destino idênticos (tabelas, contagens, impressão digital dos e-mails). `smoke`: tabelas essenciais presentes e migrações sem falha |
 | Job **Backup (ensaio de restauração)** | `.github/workflows/ci.yml` | **A cada PR e push.** Aplica todas as migrações num PostgreSQL, planta dados fictícios, faz o backup, restaura num segundo PostgreSQL e exige que seja idêntico. Prova também as recusas (sem confirmação, frase errada, arquivo corrompido) e que não dá para gerar backup sem criptografia |
-| Workflow **Backup diário** | `.github/workflows/backup.yml` | Todo dia às 06:17 UTC e sob demanda. Backup do banco de produção, **prova de restauração num banco descartável** e guarda o arquivo criptografado por 14 dias |
+| Workflow **Backup do banco (sob demanda)** | `.github/workflows/backup.yml` | Só sob demanda (o agendamento diário foi removido: sem segredos cadastrados ele era ruído; a restauração continua ensaiada em cada PR pelo ci.yml). Backup do banco de produção, **prova de restauração num banco descartável** e guarda o arquivo criptografado por 14 dias |
 
 O backup diário **só roda se o dono cadastrar os segredos**; sem eles o job termina em sucesso, sem fazer nada. O projeto é de portfólio e não exige nenhum segredo.
 
