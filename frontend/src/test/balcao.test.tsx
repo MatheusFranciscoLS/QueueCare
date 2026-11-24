@@ -1,6 +1,6 @@
 import { act, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { counterBookingMessage, type StudioCustomer } from '../api/customers'
 import { todayIn } from '../api/dates'
 import { json, mockApi, PASSWORD, problem, renderWithHarness, token, USER, type Call } from './helpers'
@@ -256,5 +256,71 @@ describe('Clientes do balcão na lista', () => {
     expect(row).toHaveTextContent('Cadastrado no balcão')
     expect(row).not.toHaveTextContent('sem acesso ao app')
     expect(within(row).getByRole('button', { name: 'Redefinir senha de Dona Marta' })).toBeInTheDocument()
+  })
+})
+
+describe('Direitos do tutor do balcão (só o dono)', () => {
+  beforeEach(() => {
+    URL.createObjectURL = vi.fn(() => 'blob:dados-do-tutor')
+    URL.revokeObjectURL = vi.fn()
+  })
+  const base: Routes = { 'GET /api/agenda/customers?q=': () => json(200, [counterRow()]) }
+
+  it('só o dono vê "Baixar dados" e "Excluir cadastro", e só de quem foi cadastrado no balcão', async () => {
+    const selfRegistered: StudioCustomer = { id: 'c-1', name: 'João da Silva', phone: '5511911112222', visits: 2, noShows: 0, lastAppointmentAt: null, pets: ['Thor'] }
+    await openClientes('PROVIDER', { 'GET /api/agenda/customers?q=': () => json(200, [counterRow(), selfRegistered]) })
+    const rows = await screen.findAllByRole('listitem')
+    expect(within(rows[0]).getByRole('button', { name: 'Baixar dados de Dona Marta' })).toBeInTheDocument()
+    expect(within(rows[0]).getByRole('button', { name: 'Excluir cadastro de Dona Marta' })).toBeInTheDocument()
+    expect(within(rows[1]).queryByRole('button', { name: /Baixar dados|Excluir cadastro/ })).not.toBeInTheDocument()
+  })
+
+  it('o atendente não vê as ações de privacidade', async () => {
+    await openClientes('ATTENDANT', base)
+    await screen.findByText('Dona Marta')
+    expect(screen.queryByRole('button', { name: /Baixar dados|Excluir cadastro/ })).not.toBeInTheDocument()
+  })
+
+  it('baixa os dados do tutor como arquivo', async () => {
+    const click = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => undefined)
+    const { calls, user } = await openClientes('PROVIDER', { ...base, 'GET /api/provider/customers/c-9/export': () => json(200, { account: { name: 'Dona Marta' }, pets: [], appointments: [], waitlist: [] }) })
+    await user.click(await screen.findByRole('button', { name: 'Baixar dados de Dona Marta' }))
+    await waitFor(() => expect(click).toHaveBeenCalled())
+    expect(calls.some((c) => c.path === '/api/provider/customers/c-9/export')).toBe(true)
+    expect(URL.createObjectURL).toHaveBeenCalled()
+    click.mockRestore()
+  })
+
+  it('excluir pede confirmação, avisa o que acontece, e "Voltar" desiste sem chamar a API', async () => {
+    const { calls, user } = await openClientes('PROVIDER', base)
+    await user.click(await screen.findByRole('button', { name: 'Excluir cadastro de Dona Marta' }))
+    expect(screen.getByText(/Não dá para desfazer/)).toBeInTheDocument()
+    expect(calls.some((c) => c.path.endsWith('/anonymize'))).toBe(false)
+    await user.click(screen.getByRole('button', { name: 'Voltar' }))
+    expect(screen.getByRole('button', { name: 'Excluir cadastro de Dona Marta' })).toBeInTheDocument()
+    expect(calls.some((c) => c.path.endsWith('/anonymize'))).toBe(false)
+  })
+
+  it('confirmando, exclui e a lista é recarregada sem o cadastro', async () => {
+    let removed = false
+    const { calls, user } = await openClientes('PROVIDER', {
+      'GET /api/agenda/customers?q=': () => json(200, removed ? [] : [counterRow()]),
+      'POST /api/provider/customers/c-9/anonymize': () => {
+        removed = true
+        return new Response(null, { status: 204 })
+      },
+    })
+    await user.click(await screen.findByRole('button', { name: 'Excluir cadastro de Dona Marta' }))
+    await user.click(screen.getByRole('button', { name: 'Excluir cadastro' }))
+    await waitFor(() => expect(screen.queryByText('Dona Marta')).not.toBeInTheDocument())
+    expect(calls.some((c) => c.method === 'POST' && c.path === '/api/provider/customers/c-9/anonymize')).toBe(true)
+  })
+
+  it('tutor que já assumiu a conta: mostra o motivo e não exclui', async () => {
+    const { user } = await openClientes('PROVIDER', { ...base, 'POST /api/provider/customers/c-9/anonymize': () => problem(409, 'o tutor já acessa o app', { reason: 'CUSTOMER_HAS_ACCESS' }) })
+    await user.click(await screen.findByRole('button', { name: 'Excluir cadastro de Dona Marta' }))
+    await user.click(screen.getByRole('button', { name: 'Excluir cadastro' }))
+    expect(await screen.findByRole('alert')).toHaveTextContent('ele mesmo exclui a conta em Meu perfil')
+    expect(screen.getByText('Dona Marta')).toBeInTheDocument()
   })
 })

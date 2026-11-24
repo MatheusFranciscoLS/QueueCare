@@ -68,11 +68,13 @@ public class PrivacyService {
 	private final ProviderRepository providers;
 	private final ServiceOfferingRepository services;
 	private final Clock clock;
+	private final CounterCustomers counter;
 
 	public PrivacyService(UserAccountRepository users, PasswordEncoder passwordEncoder, AuditService audit,
 			@Qualifier(RateLimiter.LOGIN_LOCKOUT_LIMITER) RateLimiter limiter, RateLimitProperties limits, RowLocks rowLocks, PetService pets,
 			AppointmentRepository appointments, AppointmentEventRepository events, WaitlistEntryRepository waitlist, ProviderRepository providers,
-			ServiceOfferingRepository services, Clock clock) {
+			ServiceOfferingRepository services, Clock clock, CounterCustomers counter) {
+		this.counter = counter;
 		this.users = users;
 		this.passwordEncoder = passwordEncoder;
 		this.audit = audit;
@@ -145,13 +147,50 @@ public class PrivacyService {
 		if (!user.isActive() || user.getRole() != UserRole.CUSTOMER || currentPassword == null || !passwordEncoder.matches(currentPassword, user.getPasswordHash())) {
 			throw new InvalidCurrentPasswordException();
 		}
+		anonymizeAccount(user, userId, "conta excluída pelo tutor", AuditAction.ACCOUNT_ANONYMIZED);
+		limiter.clear(attemptKey);
+	}
+
+
+	/**
+	 * Os dados de um tutor cadastrado pelo balcão, para o DONO entregar a ele (ADR 0033): o tutor sem acesso ao app não consegue baixar sozinho. Só de conta que o
+	 * próprio estúdio criou (404 igual para qualquer outro alvo), e o pedido fica na auditoria (são dados pessoais saindo).
+	 */
+	@Transactional
+	public Export exportForStudio(UUID ownerUserId, UUID customerId) {
+		UserAccount customer = counter.requireOwned(ownerUserId, customerId).customer();
+		audit.record(ownerUserId, AuditAction.CUSTOMER_EXPORTED_BY_STUDIO, customer.getId(), UserRole.CUSTOMER);
+		return export(customer.getId());
+	}
+
+	/**
+	 * Exclui (anonimiza) a conta de um tutor do balcão a pedido dele (ADR 0033). Só o dono, só de conta criada pelo estúdio, e SÓ enquanto o tutor nunca assumiu a conta
+	 * ({@code must_change_password} ainda verdadeiro): quem já entrou no app tem a própria exclusão, com a própria senha, e o estúdio não apaga a conta de quem a usa.
+	 * Mesmos efeitos da exclusão feita pelo tutor: horários marcados voltam, lista de espera sai, pets e cópias nos agendamentos são anonimizados.
+	 */
+	@Transactional
+	public void anonymizeForStudio(UUID ownerUserId, UUID customerId) {
+		counter.requireOwned(ownerUserId, customerId);
+		UserAccount user = rowLocks.lockUser(customerId).orElseThrow(AuthExceptions.TargetUserNotFoundException::new);
+		if (!user.isActive() || user.getRole() != UserRole.CUSTOMER) {
+			throw new AuthExceptions.TargetUserNotFoundException();
+		}
+		if (!user.isMustChangePassword()) {
+			throw new AuthExceptions.CustomerHasAccessException();
+		}
+		anonymizeAccount(user, ownerUserId, "conta excluída a pedido do tutor, pelo estúdio", AuditAction.CUSTOMER_ANONYMIZED_BY_STUDIO);
+	}
+
+	/** O núcleo comum das duas exclusões; {@code actorId} é quem agiu (o tutor, ou o dono do estúdio) e vai no histórico e na auditoria. */
+	private void anonymizeAccount(UserAccount user, UUID actorId, String cancelNote, AuditAction auditAction) {
+		UUID userId = user.getId();
 		Instant now = clock.instant();
 
 		// Os horários que ainda estavam marcados voltam para o estúdio (com o evento de cancelamento no histórico).
 		for (Appointment appointment : appointments.findFutureScheduledOf(userId, now)) {
 			appointment.cancel();
 			appointments.saveAndFlush(appointment);
-			events.save(new AppointmentEvent(appointment.getId(), userId, AppointmentEventType.CANCELLED, now, "conta excluída pelo tutor"));
+			events.save(new AppointmentEvent(appointment.getId(), actorId, AppointmentEventType.CANCELLED, now, cancelNote));
 		}
 		for (WaitlistEntry entry : waitlist.findActiveOfCustomer(userId, LocalDate.of(2000, 1, 1))) {
 			entry.remove(now);
@@ -161,8 +200,7 @@ public class PrivacyService {
 		appointments.anonymizePetCopies(userId);
 
 		user.anonymize(passwordEncoder.encode(UUID.randomUUID().toString()), now);
-		audit.record(userId, AuditAction.ACCOUNT_ANONYMIZED, userId, UserRole.CUSTOMER);
-		limiter.clear(attemptKey);
+		audit.record(actorId, auditAction, userId, UserRole.CUSTOMER);
 	}
 
 	private UserAccount activeCustomer(UUID userId) {

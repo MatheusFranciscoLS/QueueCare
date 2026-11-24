@@ -59,6 +59,10 @@ export function customersApi(request: Request) {
       request<FreeSlot[]>(`/api/agenda/customers/${encodeURIComponent(customerId)}/slots?serviceId=${encodeURIComponent(serviceId)}&date=${encodeURIComponent(date)}` + (petId ? `&petId=${encodeURIComponent(petId)}` : '')),
     book: (customerId: string, input: { serviceId: string; localStart: string; petId: string }) =>
       request<CounterAppointment>(`/api/agenda/customers/${encodeURIComponent(customerId)}/appointments`, { method: 'POST', body: input }),
+    /** Os dados do tutor do balcão, para o dono entregar a ele (ADR 0033): o tutor sem acesso ao app não baixa sozinho. */
+    exportData: (customerId: string) => request<unknown>(`/api/provider/customers/${encodeURIComponent(customerId)}/export`),
+    /** Exclui (anonimiza) o cadastro a pedido do tutor; só vale enquanto ele nunca assumiu a conta (409 CUSTOMER_HAS_ACCESS). */
+    anonymize: (customerId: string) => request<void>(`/api/provider/customers/${encodeURIComponent(customerId)}/anonymize`, { method: 'POST' }),
     resetPassword: (customerId: string) => request<{ temporaryPassword: string }>(`/api/provider/customers/${encodeURIComponent(customerId)}/reset-password`, { method: 'POST' }),
   }
 }

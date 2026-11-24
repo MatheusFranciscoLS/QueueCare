@@ -55,6 +55,13 @@ final class AuthExceptions {
 		}
 	}
 
+	/** O tutor do balcão já assumiu a conta (trocou a senha): quem exclui é ele mesmo, em Meu perfil (HTTP 409). */
+	static class CustomerHasAccessException extends RuntimeException {
+		CustomerHasAccessException() {
+			super("o tutor já acessa o app");
+		}
+	}
+
 	/** O telefone não tem formato de telefone do Brasil (HTTP 400, errors.phone; nunca repete o valor). */
 	static class InvalidPhoneException extends RuntimeException {
 		InvalidPhoneException() {

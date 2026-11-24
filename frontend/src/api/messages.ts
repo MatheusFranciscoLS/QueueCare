@@ -24,6 +24,7 @@ const BY_REASON: Record<string, string> = {
   CANNOT_DEACTIVATE_SELF: 'Você não pode desativar a própria conta.',
   LAST_ACTIVE_ADMIN: 'É preciso manter ao menos um administrador ativo.',
   USER_NOT_FOUND: 'Essa conta não foi encontrada.',
+  CUSTOMER_HAS_ACCESS: 'Esse tutor já entra no app: ele mesmo exclui a conta em Meu perfil.',
   APPOINTMENT_NOT_FOUND: 'Agendamento não encontrado.',
   SLOT_TAKEN: 'Esse horário acabou de ser ocupado por outra pessoa. Escolha outro.',
   IN_THE_PAST: 'Esse horário já passou. Escolha outro.',

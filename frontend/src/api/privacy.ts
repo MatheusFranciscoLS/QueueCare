@@ -1,7 +1,7 @@
 import type { AuthApi } from '../auth/session'
 
 /** Versão da Política de Privacidade (AAAA-MM-DD): vai no cadastro, para ficar registrado QUAL texto a pessoa leu (ADR 0027). Muda junto com o texto da página. */
-export const PRIVACY_POLICY_VERSION = '2026-11-21'
+export const PRIVACY_POLICY_VERSION = '2026-11-24'
 
 type Request = AuthApi['request']
 

@@ -1,6 +1,6 @@
 # ADR 0033: cadastro e reserva pelo balcão
 
-- **Status:** Accepted (implementado em 24/11/2026: API no PR 108, telas no PR 109)
+- **Status:** Accepted (implementado em 24/11/2026: API no PR 108, telas no PR 109, direitos de privacidade no PR 110)
 - **Data:** 24/11/2026
 - **Esforço:** ALTO (migração, 5 rotas, regra de quem pode agir por quem, 11 testes de integração)
 
@@ -27,7 +27,7 @@ A lista de prioridades trazia "importação de clientes por planilha". Ela resol
 - **Importar planilha agora:** passa a reaproveitar este cadastro e vem depois.
 
 ## Riscos conhecidos
-- **Base legal e direitos do titular (LGPD, ADR 0027).** O estúdio cadastra dados de quem pediu o serviço: a base é a execução do atendimento que a pessoa solicitou. Mas essa pessoa **não aceitou a política na tela** e, sem acesso, **não consegue exportar nem excluir os próprios dados sozinha**. O caminho hoje é pedir ao estúdio, que tem o canal (WhatsApp); falta uma ação do estúdio para atender o pedido (exportar e anonimizar a conta que ele criou). Está registrado como o próximo passo de privacidade, e a política de privacidade deve dizer isso.
+- **Base legal e direitos do titular (LGPD, ADR 0027).** O estúdio cadastra dados de quem pediu o serviço: a base é a execução do atendimento que a pessoa solicitou. Como ela **não aceitou a política na tela** e, **sem acesso ao app, não exporta nem exclui os próprios dados sozinha**, o DONO atende o pedido por ela (PR 110): `GET /api/provider/customers/{id}/export` (arquivo JSON, sem cache) e `POST /api/provider/customers/{id}/anonymize` (mesmos efeitos da exclusão feita pelo tutor: horários marcados voltam, lista de espera sai, nome, telefone e pets são apagados). Só o dono, só de conta criada pelo estúdio, as duas ações ficam na auditoria (`CUSTOMER_EXPORTED_BY_STUDIO`, `CUSTOMER_ANONYMIZED_BY_STUDIO`), e **a exclusão só vale enquanto o tutor nunca assumiu a conta** (`must_change_password` ainda verdadeiro): quem já entrou no app tem a própria exclusão, com a própria senha, e o estúdio não apaga a conta de quem a usa (409 `CUSTOMER_HAS_ACCESS`). A Política de Privacidade (versão 2026-11-24) passou a dizer isso. Risco que sobra: a base legal depende de o pedido ter sido de fato feito pela pessoa; a auditoria registra quem agiu, não quem pediu.
 - **Duplicidade:** o mesmo tutor pode ser cadastrado duas vezes se a equipe não buscar antes (telefone não é único, porque família divide número). A tela deve buscar primeiro e mostrar quem já existe.
 - **Dar acesso depois** muda quem controla a conta: ao gerar a senha, o tutor passa a ver e mexer nos próprios dados, inclusive os que o estúdio cadastrou. É o comportamento esperado, mas o aviso precisa estar na tela.
 - **E-mail digitado errado** vira uma conta com um endereço que pertence a outra pessoa, que não recebe nada (não há envio) mas pode, no futuro, se cadastrar com ele e receber o conflito 409. O conflito é uniforme e não revela a conta.

@@ -3,6 +3,7 @@ import { agendaApi, type Workplace } from '../../api/agenda'
 import { customersApi, customerSummary, temporaryPasswordMessage, type StudioCustomer } from '../../api/customers'
 import { describeError } from '../../api/messages'
 import { whatsappLink } from '../../api/phone'
+import { downloadJson } from '../../api/privacy'
 import { useAuth } from '../../auth/session'
 import { Loading } from '../Loading'
 import { RefreshWarning } from '../RefreshWarning'
@@ -105,7 +106,7 @@ export function CustomersPage() {
       {data && data.length > 0 && (
         <ul className="rows customers__list">
           {data.map((customer) => (
-            <CustomerRow key={customer.id} customer={customer} isOwner={isOwner} timeZone={workplace?.timeZone} onBook={() => setMode({ kind: 'book', customer: { id: customer.id, name: customer.name, phone: customer.phone } })} />
+            <CustomerRow key={customer.id} customer={customer} isOwner={isOwner} timeZone={workplace?.timeZone} onBook={() => setMode({ kind: 'book', customer: { id: customer.id, name: customer.name, phone: customer.phone } })} onChanged={reload} />
           ))}
         </ul>
       )}
@@ -118,7 +119,7 @@ function lastVisit(instant: string | null | undefined, timeZone: string | undefi
   return new Intl.DateTimeFormat('pt-BR', { timeZone, day: '2-digit', month: '2-digit', year: 'numeric' }).format(new Date(instant))
 }
 
-function CustomerRow({ customer, isOwner, timeZone, onBook }: { customer: StudioCustomer; isOwner: boolean; timeZone: string | undefined; onBook: () => void }) {
+function CustomerRow({ customer, isOwner, timeZone, onBook, onChanged }: { customer: StudioCustomer; isOwner: boolean; timeZone: string | undefined; onBook: () => void; onChanged: () => void }) {
   const { request } = useAuth()
   const api = useMemo(() => customersApi(request), [request])
   const [step, setStep] = useState<'idle' | 'confirm' | 'done'>('idle')
@@ -126,6 +127,9 @@ function CustomerRow({ customer, isOwner, timeZone, onBook }: { customer: Studio
   const [copied, setCopied] = useState<'yes' | 'no' | null>(null)
   const [problem, setProblem] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
+  // Direitos do tutor do balcão (ADR 0033): ele não tem acesso ao app, então o dono baixa ou exclui os dados a pedido dele.
+  const [deleting, setDeleting] = useState(false)
+  const [rightsProblem, setRightsProblem] = useState<string | null>(null)
   const once = useSingleFlight()
   const last = lastVisit(customer.lastAppointmentAt, timeZone)
 
@@ -155,6 +159,34 @@ function CustomerRow({ customer, isOwner, timeZone, onBook }: { customer: Studio
     }
   }
 
+  async function exportData() {
+    await once(async () => {
+      setRightsProblem(null)
+      setBusy(true)
+      try {
+        downloadJson(`dados-de-${customer.name.trim().split(/s+/)[0].toLowerCase()}.json`, await api.exportData(customer.id))
+      } catch (e) {
+        setRightsProblem(describeError(e))
+      } finally {
+        setBusy(false)
+      }
+    })
+  }
+
+  async function removeRegistration() {
+    await once(async () => {
+      setRightsProblem(null)
+      setBusy(true)
+      try {
+        await api.anonymize(customer.id)
+        onChanged()
+      } catch (e) {
+        setRightsProblem(describeError(e))
+        setBusy(false)
+      }
+    })
+  }
+
   function close() {
     setPassword(null) // a senha some da tela e da memória: só dá para gerar outra
     setCopied(null)
@@ -180,6 +212,37 @@ function CustomerRow({ customer, isOwner, timeZone, onBook }: { customer: Studio
             Agendar
           </button>
         </span>
+      )}
+
+      {isOwner && customer.byCounter && step === 'idle' && !deleting && (
+        <span className="actions customer__rights">
+          <button type="button" className="button secondary" disabled={busy} aria-label={`Baixar dados de ${customer.name}`} onClick={exportData}>
+            Baixar dados
+          </button>
+          <button type="button" className="button secondary" disabled={busy} aria-label={`Excluir cadastro de ${customer.name}`} onClick={() => setDeleting(true)}>
+            Excluir cadastro
+          </button>
+        </span>
+      )}
+
+      {isOwner && deleting && (
+        <span className="actions customer__confirm">
+          <span>
+            Excluir o cadastro de {customer.name}? Use quando a pessoa pedir para apagar os dados dela. Os horários marcados voltam para a agenda e o nome, o telefone e os pets são apagados. Não dá para desfazer.
+          </span>
+          <button type="button" className="button" disabled={busy} onClick={removeRegistration}>
+            {busy ? 'Excluindo…' : 'Excluir cadastro'}
+          </button>
+          <button type="button" className="button secondary" disabled={busy} onClick={() => setDeleting(false)}>
+            Voltar
+          </button>
+        </span>
+      )}
+
+      {rightsProblem && (
+        <p role="alert" className="error customer__problem">
+          {rightsProblem}
+        </p>
       )}
 
       {/* Sem e-mail não há como entrar no app: gerar senha não adiantaria. */}
