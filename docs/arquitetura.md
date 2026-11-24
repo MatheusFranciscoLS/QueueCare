@@ -27,7 +27,7 @@ ADMIN (contas, sem acesso a agendas), PROVIDER (negócio, serviços, expediente,
 | 0010 | Catálogo de leitura para o cliente |
 | 0011 | Chegada, conclusão e fila do dia (transições só para frente, evento único por tipo) |
 | 0012 | Contrato OpenAPI gerado do código e conferido por teste |
-| 0013 | Hospedagem de custo zero e sem cartão (Cloudflare Pages + Render Free + Neon Free) |
+| 0013 | Hospedagem de custo zero e sem cartão (Vercel + Render Free + Neon Free em uso; Cloudflare Pages ficou como alternativa) |
 
 ## Concorrência e integridade (resumo)
 Duas camadas: validação na aplicação (transação) e garantia no banco (restrição de exclusão sobre `tstzrange`). Bloqueio otimista (`version`) nas transições do agendamento; bloqueios de linha e `lock_timeout` por transação nas operações administrativas (todos transacionais, compatíveis com pooler de conexões). Eventos do histórico com `UNIQUE (appointment_id, event_type)`.

@@ -33,7 +33,7 @@ Detalhes definidos na implementação (`BookingTimeRules` e `LocalTimeResolver`,
 Teste: T6.
 
 ## R6. Chegada, conclusão e fila
-A equipe do prestador (dono e atendente vinculado) registra a chegada (check-in) e a conclusão. Só se avança na ordem agendado, chegou, concluído; cancelado não chega; quem chegou não se cancela. O check-in só vale no dia do agendamento, no fuso do prestador. A fila do dia lista quem chegou e ainda não foi concluído, por ordem de chegada. Detalhes em ADR 0011 e `docs/estudo/chegada-e-fila.md`.
+A equipe do prestador (dono e atendente vinculado) registra a chegada (check-in) e a conclusão. Os estados do atendimento são agendado, chegou, em atendimento, pronto e concluído (ADR 0019), mais faltou e cancelado; só se avança nessa ordem, e a equipe pode **desfazer uma etapa** de um atendimento em andamento (ADR 0026); concluído, faltou e cancelado não voltam. Cancelado não chega; quem chegou não se cancela. O check-in só vale no dia do agendamento, no fuso do prestador. A fila do dia lista quem chegou e ainda não foi concluído, por ordem de chegada. Detalhes em ADR 0011 e `docs/estudo/chegada-e-fila.md`.
 Teste: T7.
 
 ## Testes que precisam existir

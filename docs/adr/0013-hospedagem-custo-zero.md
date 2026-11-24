@@ -1,9 +1,11 @@
 # ADR 0013: hospedagem com custo zero e sem cartão
 
-- **Status:** Proposed (depende de o Matheus criar as contas; nada foi cadastrado e nenhum cartão foi usado)
+- **Status:** Accepted (em uso: site na Vercel, API no Render Free e banco no Neon Free, sem cartão cadastrado; a Cloudflare Pages ficou como alternativa de site estático). Texto original da decisão (14/11/2026) abaixo.
 - **Imagens-base fixadas por digest** no Dockerfile (instruções de atualização no próprio arquivo).
 - **Data da pesquisa:** 14/11/2026. **Os planos gratuitos mudam: reconferir a página oficial de cada serviço na hora de criar a conta.**
 - **Quem decidiu:** o Matheus exigiu CUSTO ZERO e NENHUM CARTÃO (sem servidor comprado), o que descarta a AWS do roadmap (M5). Desenho de Claude, pesquisa e revisão do ChatGPT.
+
+> **Como ler este ADR (nota de 24/11/2026):** o texto abaixo é a decisão ORIGINAL de 14/11/2026. Na prática o site ficou na **Vercel** (e não na Cloudflare Pages, que ficou como alternativa de site estático), a API no Render Free e o banco no Neon Free, tudo já publicado e sem cartão. As etapas da tabela "Etapas" abaixo e as ressalvas de pesquisa (limites dos planos, Koyeb e outros descartados) permanecem como registro da época; o roteiro vigente de publicação e operação está em [publicacao.md](../publicacao.md) e [operacao.md](../operacao.md), e os limites medidos em produção estão no README.
 
 ## Contexto
 O projeto é de portfólio: pode "dormir" quando ninguém usa, mas não pode gerar cobrança nem pedir meio de pagamento. O banco precisa ser PostgreSQL de verdade (extensão `btree_gist`, restrição de exclusão, bloqueios de linha).

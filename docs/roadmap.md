@@ -1,5 +1,7 @@
 # Roadmap: 7 semanas (4 a 6 h por semana)
 
+> **Plano inicial, mantido como histórico (13/11/2026).** O projeto seguiu além dele: o estado real e as decisões estão no [README](../README.md) e nos ADRs (0001 a 0043). Itens de "Fora do escopo" abaixo refletem o plano original; o que entrou depois (por exemplo sinal por Pix manual, lista de espera, app instalável) tem ADR próprio.
+
 A semana é referência de planejamento, não um limite: abra o PR assim que a funcionalidade estiver pronta.
 
 ## Fase 1: produto e Java/Spring (semanas 1 a 3)
@@ -9,7 +11,7 @@ A semana é referência de planejamento, não um limite: abra o PR assim que a f
 - **M4 Operação (S3):** painel diário, check-in, fila simples, histórico; front React e integração. *Pronto (14/11/2026):* agenda do dia, chegada, conclusão e fila (ADR 0011), telas do prestador, do atendente, do cliente e do ADMIN.
 
 ## Fase 2: nuvem e DevOps (semanas 4 e 5)
-- **M5 Nuvem (CUSTO ZERO, ADR 0013):** a AWS foi descartada por decisão do dono (nenhum custo, nenhum cartão). Frontend na Cloudflare Pages, backend no Render Free e PostgreSQL no Neon (todos gratuitos e SEM cartão; a Koyeb exige cartão e foi descartada), segredos só nos painéis, deploy por GitHub Actions, aviso de cold start, medição de memória, procedimento de desligamento. Depende de o Matheus criar as contas.
+- **M5 Nuvem (CUSTO ZERO, ADR 0013):** a AWS foi descartada por decisão do dono (nenhum custo, nenhum cartão). Frontend na Vercel (em uso; a Cloudflare Pages ficou como alternativa), backend no Render Free e PostgreSQL no Neon (todos gratuitos e SEM cartão; a Koyeb exige cartão e foi descartada), segredos só nos painéis, deploy por GitHub Actions, aviso de cold start, medição de memória, procedimento de desligamento. Depende de o Matheus criar as contas.
 
 ## Fase 3: qualidade e apresentação internacional (semanas 6 e 7)
 - **M6 E2E (S6):** Playwright (reservar, cancelar, check-in, permissões), OpenAPI, testes de conflito e erro.
