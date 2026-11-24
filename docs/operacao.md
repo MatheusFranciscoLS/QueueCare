@@ -43,6 +43,8 @@ Um código vindo de fora só é aceito se tiver 8 a 64 caracteres entre letras, 
 
 **Depois:** `ops/smoke.sh <api> <site>` e entrar no app com uma conta de teste.
 
+> **Prévias de PR da Vercel estão desligadas** (`git.deploymentEnabled` em `frontend/vercel.json`, para os prefixos de branch `docs/`, `feature/`, `fix/`, `ci/`, `deps/` e `dependabot/`; só a `main` publica). Motivo: o plano gratuito da Vercel permite **100 implantações por dia para a conta inteira**, e em 24/11/2026 as 74 prévias de PR do QueueCare (uma por push) mais as do Vardão Central estouraram o limite; a Vercel passou a recusar até as publicações de produção do outro projeto ("Deployment rate limited — retry in 24 hours"). O CI do GitHub já valida cada PR; se uma prévia for realmente necessária, use um prefixo de branch fora da lista.
+
 ### Regra das migrações (a mais importante)
 O Flyway só anda **para frente**: não existe "desfazer a migração". Por isso, mude o esquema em **duas etapas** que cada uma pode ser publicada e revertida sozinha:
 1. **Expandir:** adicionar coluna/tabela nova, opcional, sem remover nada. O código antigo continua funcionando.
