@@ -16,8 +16,8 @@
 	<properties>
 		<java.version>21</java.version>
 		<!-- PostgreSQL embutido usado nos testes de banco: mesma versão principal do CI (16). -->
-		<embedded-postgres.version>2.2.2</embedded-postgres.version>
-		<embedded-postgres-binaries.version>16.15.0</embedded-postgres-binaries.version>
+		<embedded-postgres.version>2.2.3</embedded-postgres.version>
+		<embedded-postgres-binaries.version>16.16.0</embedded-postgres-binaries.version>
 	</properties>
 	<dependencyManagement>
 		<dependencies>
@@ -64,7 +64,7 @@
 		<dependency>
 			<groupId>org.springdoc</groupId>
 			<artifactId>springdoc-openapi-starter-webmvc-api</artifactId>
-			<version>3.2.0</version>
+			<version>3.2.1</version>
 		</dependency>
 		<dependency>
 			<groupId>org.flywaydb</groupId>
@@ -125,6 +125,13 @@
 			<groupId>io.zonky.test</groupId>
 			<artifactId>embedded-postgres</artifactId>
 			<version>${embedded-postgres.version}</version>
+			<scope>test</scope>
+		</dependency>
+		<!-- Jackson 2 (com.fasterxml) DECLARADO para os testes que leem o contrato OpenAPI e montam JSON (AuthorizationMatrixTest, OpenApiContractTest e outros). Antes ele chegava por
+		     HERANÇA do springdoc, e o springdoc 3.2.1 passou para o Jackson 3 (tools.jackson, o do Spring Boot 4): os testes deixaram de compilar. Versão gerenciada pelo BOM do Spring Boot. -->
+		<dependency>
+			<groupId>com.fasterxml.jackson.core</groupId>
+			<artifactId>jackson-databind</artifactId>
 			<scope>test</scope>
 		</dependency>
 	</dependencies>
