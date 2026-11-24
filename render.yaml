@@ -17,6 +17,8 @@ services:
         - backend/**
         - render.yaml
     envVars:
+      - key: DEMO_ENABLED    # demonstração pública (ADR 0041): "true" liga o estúdio fictício e a entrada sem senha (valor no painel; não é segredo)
+        sync: false
       - key: DB_URL          # URL do Neon COM pooler, ex.: jdbc:postgresql://HOST-pooler/DB?sslmode=require&prepareThreshold=0
         sync: false
       - key: DB_DIRECT_URL   # URL do Neon DIRETA (sem pooler), só para as migrations

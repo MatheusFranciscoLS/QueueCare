@@ -3,6 +3,10 @@ import { ApiError, apiRequest, type RequestOptions } from '../api/client'
 
 export type Role = 'ADMIN' | 'PROVIDER' | 'ATTENDANT' | 'CUSTOMER'
 
+/** Os três perfis da demonstração pública (nunca o administrador). */
+export type DemoProfile = 'OWNER' | 'ATTENDANT' | 'CUSTOMER'
+
+
 export interface User {
   id: string
   name: string
@@ -30,6 +34,8 @@ export interface AuthApi {
   /** A sessão acabou por expirar (e não porque a pessoa saiu); a tela de entrada avisa. */
   expired: boolean
   login(email: string, password: string): Promise<void>
+  /** Demonstração pública (ADR 0041): entra com um clique, sem senha, como um destes perfis de um estúdio fictício. */
+  loginDemo(profile: DemoProfile): Promise<void>
   /** `privacyPolicyVersion`: a versão da política que a pessoa leu (ADR 0027), gravada no cadastro. */
   register(name: string, email: string, password: string, phone?: string, privacyPolicyVersion?: string): Promise<void>
   /** Troca o próprio WhatsApp (vazio remove) e atualiza a sessão. */
@@ -111,6 +117,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       async login(email, password) {
         const operation = ++generation.current
         await enter(await apiRequest<TokenResponse>('/api/auth/login', { method: 'POST', body: { email, password } }), operation)
+      },
+      async loginDemo(profile) {
+        const operation = ++generation.current
+        await enter(await apiRequest<TokenResponse>('/api/auth/demo', { method: 'POST', body: { profile } }), operation)
       },
       async register(name, email, password, phone, privacyPolicyVersion) {
         const operation = ++generation.current

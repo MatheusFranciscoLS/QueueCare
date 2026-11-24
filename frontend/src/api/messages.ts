@@ -42,6 +42,7 @@ const BY_REASON: Record<string, string> = {
   PET_INACTIVE: 'Esse pet está arquivado. Reative-o em Meus pets ou escolha outro.',
   PET_LIMIT_REACHED: 'Você chegou ao limite de pets. Arquive um pet que não usa mais para cadastrar ou reativar outro.',
   INVALID_PET: 'Confira os dados do pet.',
+  DEMO_READ_ONLY: 'Na demonstração isto fica desligado, porque a conta é compartilhada por todos os visitantes. Em um estúdio de verdade funciona normalmente.',
 }
 
 export function describeError(error: unknown): string {

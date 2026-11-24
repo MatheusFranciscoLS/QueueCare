@@ -35,6 +35,7 @@ final class RateLimitFilter extends OncePerRequestFilter {
 	private static final Duration HOUR = Duration.ofHours(1);
 	// Casamentos montados da lista ÚNICA de rotas limitadas (RateLimitedRoutes), que o contrato OpenAPI também usa.
 	private static final RequestMatcher LOGIN = matcher(RateLimitedRoutes.LOGIN);
+	private static final RequestMatcher DEMO = matcher(RateLimitedRoutes.DEMO);
 	private static final RequestMatcher REGISTER = matcher(RateLimitedRoutes.REGISTER);
 	private static final RequestMatcher CREATE_PROVIDER = matcher(RateLimitedRoutes.CREATE_PROVIDER);
 	private static final RequestMatcher CREATE_ATTENDANT = matcher(RateLimitedRoutes.CREATE_ATTENDANT);
@@ -63,6 +64,9 @@ final class RateLimitFilter extends OncePerRequestFilter {
 		// Cada grupo de regras tem a SUA chave de ativação: o filtro existe sempre e cada regra confere a própria chave.
 		if (properties.enabled() && LOGIN.matches(request)) {
 			key = "login|" + request.getRemoteAddr();
+			limit = properties.loginPerMinute();
+		} else if (properties.enabled() && DEMO.matches(request)) {
+			key = "demo|" + request.getRemoteAddr();
 			limit = properties.loginPerMinute();
 		} else if (properties.enabled() && REGISTER.matches(request)) {
 			key = "register|" + request.getRemoteAddr();

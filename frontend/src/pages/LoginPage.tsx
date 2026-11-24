@@ -2,14 +2,22 @@ import { useState, type FormEvent } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { describeError } from '../api/messages'
 import { safeDestination } from '../auth/destinations'
-import { useAuth } from '../auth/session'
+import { useAuth, type DemoProfile } from '../auth/session'
 import { AuthLayout } from './AuthLayout'
 import { Field } from './Field'
 import { useFocusFirstInvalid } from './useFocusFirstInvalid'
 import { useSingleFlight } from './useSingleFlight'
 
+/** A demonstração pública (ADR 0041) aparece só no site publicado, que define VITE_DEMO=true no build (frontend/.env.production). */
+const demoEnabled = () => import.meta.env.VITE_DEMO === 'true'
+const DEMO_PROFILES: [DemoProfile, string][] = [
+  ['OWNER', 'Entrar como dona do estúdio'],
+  ['ATTENDANT', 'Entrar como atendente'],
+  ['CUSTOMER', 'Entrar como tutora (cliente)'],
+]
+
 export function LoginPage() {
-  const { login, expired } = useAuth()
+  const { login, loginDemo, expired } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
   const [email, setEmail] = useState('')
@@ -44,6 +52,20 @@ export function LoginPage() {
     })
   }
 
+  async function enterDemo(profile: DemoProfile) {
+    await once(async () => {
+      setError(null)
+      setBusy(true)
+      try {
+        await loginDemo(profile)
+        navigate('/', { replace: true })
+      } catch (e) {
+        setError(describeError(e))
+        setBusy(false)
+      }
+    })
+  }
+
   return (
     <AuthLayout>
     <section className="card narrow">
@@ -67,6 +89,19 @@ export function LoginPage() {
       <p className="aside">
         Ainda não tem conta? <Link to="/cadastro">Cadastre-se como cliente</Link>
       </p>
+      {demoEnabled() && (
+        <section className="demo-entry" aria-labelledby="demo-title">
+          <h2 id="demo-title">Conhecer sem cadastro</h2>
+          <p className="aside">Entre com um clique num estúdio fictício, com agenda, fila e clientes de exemplo. Nada aqui é real.</p>
+          <div className="demo-entry__buttons">
+            {DEMO_PROFILES.map(([profile, label]) => (
+              <button key={profile} type="button" className="button secondary" disabled={busy} onClick={() => enterDemo(profile)}>
+                {label}
+              </button>
+            ))}
+          </div>
+        </section>
+      )}
       <p className="aside">
         <Link to="/privacidade">Política de Privacidade</Link>
       </p>

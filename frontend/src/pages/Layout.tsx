@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, NavLink, Outlet } from 'react-router-dom'
 import { ROLE_LABEL } from '../auth/roles'
+import { isDemoUser } from '../auth/demo'
 import { useAuth, type User } from '../auth/session'
 import { Button } from '../ui/components'
 import { ThemeToggle } from '../ui/ThemeToggle'
@@ -47,9 +48,11 @@ function Account({ user, onNavigate }: { user: User; onNavigate?: () => void }) 
           <Link to="/perfil" className="pp-who__link" onClick={onNavigate}>
             Meu perfil
           </Link>
-          <Link to="/trocar-senha" className="pp-who__link" onClick={onNavigate}>
-            Trocar senha
-          </Link>
+          {!isDemoUser(user) && (
+            <Link to="/trocar-senha" className="pp-who__link" onClick={onNavigate}>
+              Trocar senha
+            </Link>
+          )}
           <Link to="/privacidade" className="pp-who__link" onClick={onNavigate}>
             Privacidade
           </Link>
@@ -130,6 +133,11 @@ export function Layout() {
         <main id="conteudo" ref={mainRef} tabIndex={-1} className="pp-main">
           <OfflineBanner />
           <WakingBanner />
+          {isDemoUser(user) && (
+            <p role="note" className="notice demo-banner">
+              Demonstração: tudo aqui é fictício e é reposto de tempos em tempos. Não digite dados reais.
+            </p>
+          )}
           <div className="pp-content">
             <Outlet />
           </div>

@@ -8,7 +8,7 @@ It is built to the quality and feature level a real studio would use every day (
 
 ## See it working
 
-- **Live site:** [queuecare-psi.vercel.app](https://queuecare-psi.vercel.app). The API runs on Render's free plan and sleeps when idle, so the first visit after an idle period can take up to 2 minutes (the page says so, and the site starts waking it as soon as it opens). There you can create a customer account, add a pet and book. The studio side (agenda, queue, clients, summary) runs with one command below, on fictional data.
+- **Live site:** [queuecare-psi.vercel.app](https://queuecare-psi.vercel.app). The API runs on Render's free plan and sleeps when idle, so the first visit after an idle period can take up to 2 minutes (the page says so, and the site starts waking it as soon as it opens). On the sign-in page, **"Conhecer sem cadastro"** (explore without signing up) opens a fictional studio in one click (owner, attendant or customer), with a sample agenda, queue and clients; you can also create a real customer account. The same sample studio runs on your machine with the command below.
 - **Everything in one command, no Docker** (JDK 21 and Node 22+; the first run downloads dependencies):
 
   ```bash
