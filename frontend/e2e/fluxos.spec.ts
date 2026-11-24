@@ -258,11 +258,11 @@ test('o dono acha a tutora em Clientes, gera a senha temporária uma vez, e ela 
   await tutora.goto('/entrar')
   await tutora.getByLabel('E-mail').fill(ACCOUNTS.cliente)
   await tutora.getByLabel('Senha').fill(PASSWORD)
-  await tutora.getByRole('button', { name: 'Entrar' }).click()
+  await tutora.getByRole('button', { name: 'Entrar', exact: true }).click()
   await expect(tutora.getByRole('alert')).toBeVisible() // credenciais recusadas
 
   await tutora.getByLabel('Senha').fill(senha)
-  await tutora.getByRole('button', { name: 'Entrar' }).click()
+  await tutora.getByRole('button', { name: 'Entrar', exact: true }).click()
   await expect(tutora.getByRole('heading', { level: 1, name: 'Defina a sua senha' })).toBeVisible()
   await tutora.context().close()
 })

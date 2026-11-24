@@ -82,7 +82,7 @@ export async function entrar(page: Page, perfil: Perfil): Promise<void> {
   await page.goto('/entrar')
   await page.getByLabel('E-mail').fill(ACCOUNTS[perfil])
   await page.getByLabel('Senha').fill(PASSWORD)
-  await page.getByRole('button', { name: 'Entrar' }).click()
+  await page.getByRole('button', { name: 'Entrar', exact: true }).click()
   await page.getByRole('heading', { level: 1 }).first().waitFor()
 }
 
