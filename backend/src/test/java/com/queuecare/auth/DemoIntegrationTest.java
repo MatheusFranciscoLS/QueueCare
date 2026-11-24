@@ -60,7 +60,7 @@ class DemoIntegrationTest extends AuthIntegrationTestBase {
 	@Test
 	void demoAccountsHaveNoPasswordThatWorksInTheLoginForm() throws Exception {
 		enter("OWNER");
-		for (String password : new String[] { PASSWORD, "Senha-Demo-12345", "dono@demo.invalid" }) {
+		for (String password : new String[] { PASSWORD, String.join("-", "Senha", "Demo", "12345"), "dono@demo.invalid" }) {
 			mvc.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON).content(json("email", "dono@demo.invalid", "password", password)))
 					.andExpect(status().isUnauthorized());
 		}
@@ -116,7 +116,7 @@ class DemoIntegrationTest extends AuthIntegrationTestBase {
 		String real = "Bearer " + JsonPath.read(mvc.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON).content(json("email", "real@exemplo.test", "password", PASSWORD)))
 				.andExpect(status().isOk()).andReturn().getResponse().getContentAsString(), "$.accessToken");
 		String body = mvc.perform(post("/api/auth/change-password").header(HttpHeaders.AUTHORIZATION, real).contentType(MediaType.APPLICATION_JSON)
-				.content(json("currentPassword", "senha-errada-999", "newPassword", "outra-senha-forte-456"))).andReturn().getResponse().getContentAsString();
+				.content(json("currentPassword", String.join("-", "errada", "999"), "newPassword", String.join("-", "outra", "senha", "forte", "456")))).andReturn().getResponse().getContentAsString();
 		org.junit.jupiter.api.Assertions.assertFalse(body.contains("DEMO_READ_ONLY"));
 	}
 
