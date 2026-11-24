@@ -15,6 +15,10 @@ public interface PetRepository extends JpaRepository<Pet, UUID> {
 	@Query("select p from Pet p where p.customerId = :customerId and (:includeArchived = true or p.active = true) order by lower(p.name) asc, p.id asc")
 	List<Pet> findOfCustomer(@Param("customerId") UUID customerId, @Param("includeArchived") boolean includeArchived);
 
+	/** Os pets ATIVOS de vários tutores de uma vez (a lista de clientes do balcão), sem uma consulta por tutor. */
+	@Query("select p from Pet p where p.customerId in :customerIds and p.active = true")
+	List<Pet> findActiveOfCustomers(@Param("customerIds") java.util.Collection<UUID> customerIds);
+
 	/** O dono é parte da consulta: pet de outro cliente é indistinguível de pet inexistente. */
 	Optional<Pet> findByIdAndCustomerId(UUID id, UUID customerId);
 

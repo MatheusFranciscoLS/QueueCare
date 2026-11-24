@@ -51,6 +51,28 @@ public class AccountProvisioner {
 		}
 	}
 
+	/**
+	 * Tutor cadastrado pelo balcão (ADR 0033): a senha já vem em hash (aleatória, ninguém a conhece) e a conta fica ligada ao estúdio que a criou.
+	 * E-mail repetido é {@link AccountConflictException} (409 uniforme, não revela de quem é). Participa da transação do chamador.
+	 */
+	@Transactional
+	UserAccount provisionCounterCustomer(java.util.UUID providerId, String name, String normalizedEmail, String normalizedPhone, String unusablePasswordHash) {
+		if (users.findByEmail(normalizedEmail).isPresent()) {
+			throw new AccountConflictException();
+		}
+		UserAccount user = new UserAccount(name.trim(), normalizedEmail, unusablePasswordHash, UserRole.CUSTOMER, clock.instant(), true);
+		user.setPhone(normalizedPhone);
+		user.markCreatedByProvider(providerId);
+		try {
+			return users.saveAndFlush(user);
+		} catch (DataIntegrityViolationException e) {
+			if (hasSqlState(e, UNIQUE_VIOLATION)) {
+				throw new AccountConflictException();
+			}
+			throw e;
+		}
+	}
+
 	private UserAccount create(UserRole role, String name, String email, String rawPassword, boolean mustChangePassword, String phone) {
 		AuthService.validatePassword(rawPassword);
 		String normalizedEmail = AuthService.normalizeEmail(email);

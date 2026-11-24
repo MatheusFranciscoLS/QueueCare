@@ -15,6 +15,9 @@ public interface UserAccountRepository extends JpaRepository<UserAccount, UUID> 
 
 	boolean existsByRole(UserRole role);
 
+	/** Os tutores que este estúdio cadastrou pelo balcão (ADR 0033). */
+	java.util.List<UserAccount> findByCreatedByProviderId(java.util.UUID providerId);
+
 	long countByRoleAndActiveTrue(UserRole role);
 
 	/**

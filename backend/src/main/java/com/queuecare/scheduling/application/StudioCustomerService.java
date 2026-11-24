@@ -36,14 +36,16 @@ public class StudioCustomerService {
 	private final AppointmentRepository appointments;
 	private final UserAccountRepository users;
 	private final StaffAccess staffAccess;
+	private final com.queuecare.pets.PetService petService;
 
-	public StudioCustomerService(AppointmentRepository appointments, UserAccountRepository users, StaffAccess staffAccess) {
+	public StudioCustomerService(AppointmentRepository appointments, UserAccountRepository users, StaffAccess staffAccess, com.queuecare.pets.PetService petService) {
+		this.petService = petService;
 		this.appointments = appointments;
 		this.users = users;
 		this.staffAccess = staffAccess;
 	}
 
-	public record CustomerView(UUID id, String name, String phone, long visits, long noShows, Instant lastAppointmentAt, List<String> pets) {
+	public record CustomerView(UUID id, String name, String phone, long visits, long noShows, Instant lastAppointmentAt, List<String> pets, boolean byCounter, boolean hasEmail) {
 	}
 
 	/** Busca por nome, telefone (só dígitos) ou nome de pet; sem texto, os mais recentes. Até {@value #MAX_RESULTS}, do agendamento mais recente para o mais antigo. */
@@ -75,7 +77,20 @@ public class StudioCustomerService {
 			if (!q.isEmpty() && !matches(account, petNames, textNeedle, digitNeedle)) {
 				continue;
 			}
-			found.add(new CustomerView(account.getId(), account.getName(), account.getPhone(), stat.visits(), stat.noShows(), stat.lastAt(), List.copyOf(petNames)));
+			found.add(new CustomerView(account.getId(), account.getName(), account.getPhone(), stat.visits(), stat.noShows(), stat.lastAt(), List.copyOf(petNames), providerId.equals(account.getCreatedByProviderId()), hasEmail(account)));
+		}
+		// Tutores cadastrados pelo balcão que ainda não têm agendamento (ADR 0033): sem isto o cadastro sumiria da lista até a primeira reserva.
+		List<UserAccount> fresh = users.findByCreatedByProviderId(providerId).stream()
+				.filter(u -> u.getRole() == UserRole.CUSTOMER && u.isActive() && !accounts.containsKey(u.getId())).toList();
+		if (!fresh.isEmpty()) {
+			Map<UUID, Set<String>> counterPets = petService.activeNamesOf(fresh.stream().map(UserAccount::getId).toList());
+			for (UserAccount account : fresh) {
+				Set<String> petNames = counterPets.getOrDefault(account.getId(), Set.of());
+				if (!q.isEmpty() && !matches(account, petNames, textNeedle, digitNeedle)) {
+					continue;
+				}
+				found.add(new CustomerView(account.getId(), account.getName(), account.getPhone(), 0, 0, null, List.copyOf(petNames), true, hasEmail(account)));
+			}
 		}
 		found.sort(Comparator.comparing(CustomerView::lastAppointmentAt, Comparator.nullsLast(Comparator.reverseOrder())).thenComparing(CustomerView::name, String.CASE_INSENSITIVE_ORDER));
 		return found.size() > MAX_RESULTS ? List.copyOf(found.subList(0, MAX_RESULTS)) : found;
@@ -90,6 +105,11 @@ public class StudioCustomerService {
 		}
 		// Telefone só conta com 3 dígitos ou mais (um dígito solto casaria com quase todos).
 		return digitNeedle.length() >= 3 && account.getPhone() != null && account.getPhone().contains(digitNeedle);
+	}
+
+	/** Conta cadastrada pelo balcão sem e-mail tem um endereço reservado (.invalid): não há como entrar no app até o estúdio informar um e-mail. */
+	public static boolean hasEmail(UserAccount account) {
+		return !account.getEmail().endsWith("@balcao.invalid");
 	}
 
 	/** Minúsculas e sem acento: "joão" encontra "Joao" e "JOÃO". */

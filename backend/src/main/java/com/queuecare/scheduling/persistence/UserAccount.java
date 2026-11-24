@@ -57,6 +57,10 @@ public class UserAccount {
 	@Column(name = "privacy_accepted_at")
 	private Instant privacyAcceptedAt;
 
+	/** Estúdio que cadastrou esta conta pelo balcão (ADR 0033); nulo = o próprio tutor se cadastrou. Só este vínculo autoriza a equipe a agir pelo tutor. */
+	@Column(name = "created_by_provider_id")
+	private UUID createdByProviderId;
+
 	/** Quando a conta foi anonimizada a pedido da própria pessoa (ADR 0027); nulo = conta normal. */
 	@Column(name = "anonymized_at")
 	private Instant anonymizedAt;
@@ -149,6 +153,15 @@ public class UserAccount {
 
 	public Instant getPrivacyAcceptedAt() {
 		return privacyAcceptedAt;
+	}
+
+	public UUID getCreatedByProviderId() {
+		return createdByProviderId;
+	}
+
+	/** Marca a conta como cadastrada pelo balcão deste estúdio; só no momento da criação. */
+	public void markCreatedByProvider(UUID providerId) {
+		this.createdByProviderId = Objects.requireNonNull(providerId);
 	}
 
 	public Instant getAnonymizedAt() {
