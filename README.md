@@ -8,7 +8,7 @@ O sistema foi construído com a qualidade e as funções que um estúdio de verd
 
 ## Veja funcionando
 
-- **Site publicado:** [queuecare-psi.vercel.app](https://queuecare-psi.vercel.app). A API roda no plano gratuito do Render e dorme quando ninguém usa: a primeira abertura pode levar cerca de 1 minuto (a tela avisa). Ali você cria uma conta de tutor, cadastra um pet e agenda. O lado do estúdio (agenda, fila, clientes, resumo) roda no comando abaixo, com dados fictícios.
+- **Site publicado:** [queuecare-psi.vercel.app](https://queuecare-psi.vercel.app). A API roda no plano gratuito do Render e dorme quando ninguém usa: a primeira abertura depois de um período parado pode levar até 2 minutos (a tela avisa, e o site já começa a acordá-la ao abrir). Ali você cria uma conta de tutor, cadastra um pet e agenda. O lado do estúdio (agenda, fila, clientes, resumo) roda no comando abaixo, com dados fictícios.
 - **Tudo em um comando, sem Docker** (JDK 21 e Node 22 ou superior; a primeira vez baixa as dependências):
 
   ```bash

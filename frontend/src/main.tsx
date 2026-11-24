@@ -4,11 +4,13 @@ import { BrowserRouter } from 'react-router-dom'
 import './index.css'
 import { App } from './App.tsx'
 import { AuthProvider } from './auth/session.tsx'
+import { warmUpServer } from './api/warmup'
 import { registerServiceWorker } from './pwa/register'
 import { applyTheme, readThemePreference } from './ui/theme'
 
 applyTheme(readThemePreference())
 registerServiceWorker()
+warmUpServer()
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
