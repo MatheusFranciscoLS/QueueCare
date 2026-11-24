@@ -34,7 +34,9 @@ class SecurityConfig {
 	SecurityFilterChain securityFilterChain(HttpSecurity http, ActiveUserJwtConverter jwtConverter,
 			@Qualifier(RateLimiter.REQUEST_LIMITER) RateLimiter rateLimiter,
 			RateLimitProperties rateLimitProperties,
-			@Value("${queuecare.http.max-body-bytes:65536}") long maxBodyBytes) throws Exception {
+			@Value("${queuecare.http.max-body-bytes:65536}") long maxBodyBytes,
+			@Value("${queuecare.demo.enabled:false}") boolean demoEnabled,
+			org.springframework.beans.factory.ObjectProvider<org.springframework.jdbc.core.JdbcTemplate> jdbc) throws Exception {
 		http
 				.csrf(AbstractHttpConfigurer::disable)
 				.cors(Customizer.withDefaults())
@@ -75,6 +77,10 @@ class SecurityConfig {
 		// O filtro é sempre registrado; cada grupo de regras liga/desliga pela própria propriedade (enabled, account-creations-enabled).
 			// Depois da leitura do token (conhece o usuário) e antes da autorização das rotas.
 		http.addFilterAfter(new RateLimitFilter(rateLimiter, rateLimitProperties), BearerTokenAuthenticationFilter.class);
+		// Demonstração pública (ADR 0041): só então as contas compartilhadas ganham a trava de operações que mexem na conta em si.
+		if (demoEnabled) {
+			http.addFilterAfter(new DemoGuardFilter(jdbc.getObject()), RateLimitFilter.class);
+		}
 		return http.build();
 	}
 

@@ -64,3 +64,6 @@ frontend/e2e/saida/
 
 # Artefatos de compilação do TypeScript
 *.tsbuildinfo
+
+# A demonstracao publica (ADR 0041) liga no site publicado: este arquivo NAO tem segredo, so o interruptor.
+!frontend/.env.production

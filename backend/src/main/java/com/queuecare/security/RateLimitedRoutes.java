@@ -17,6 +17,8 @@ public final class RateLimitedRoutes {
 	}
 
 	public static final Route LOGIN = new Route(HttpMethod.POST, "/api/auth/login");
+	/** Entrada da demonstração pública (ADR 0041): só existe com a demonstração ligada; limitada por endereço, como o login. */
+	public static final Route DEMO = new Route(HttpMethod.POST, "/api/auth/demo");
 	public static final Route REGISTER = new Route(HttpMethod.POST, "/api/auth/register");
 	public static final Route CREATE_PROVIDER = new Route(HttpMethod.POST, "/api/admin/providers");
 	public static final Route CREATE_ATTENDANT = new Route(HttpMethod.POST, "/api/provider/staff/accounts");
@@ -25,7 +27,7 @@ public final class RateLimitedRoutes {
 	public static final Route SLOTS = new Route(HttpMethod.GET, "/api/providers/*/slots");
 
 	/** Limitadas por minuto ou por hora pelo {@link RateLimitFilter}. */
-	static final List<Route> FILTERED = List.of(LOGIN, REGISTER, CREATE_PROVIDER, CREATE_ATTENDANT, CATALOG, PUBLIC, SLOTS);
+	static final List<Route> FILTERED = List.of(LOGIN, DEMO, REGISTER, CREATE_PROVIDER, CREATE_ATTENDANT, CATALOG, PUBLIC, SLOTS);
 
 	/** Responde 429 por OUTRO mecanismo: o limite de tentativas de troca de senha (PasswordService); o login também tem o bloqueio por tentativas. */
 	static final Route CHANGE_PASSWORD = new Route(HttpMethod.POST, "/api/auth/change-password");
@@ -39,7 +41,7 @@ public final class RateLimitedRoutes {
 	/** Responde 429 pelo limite de tentativas da senha na exclusão da conta (PrivacyService, ADR 0027). */
 	static final Route DELETE_ACCOUNT = new Route(HttpMethod.POST, "/api/me/delete-account");
 
-	private static final List<Route> ALL = List.of(LOGIN, REGISTER, CREATE_PROVIDER, CREATE_ATTENDANT, CATALOG, PUBLIC, SLOTS, CHANGE_PASSWORD, RESET_CUSTOMER_PASSWORD, DELETE_ACCOUNT, CREATE_COUNTER_CUSTOMER);
+	private static final List<Route> ALL = List.of(LOGIN, DEMO, REGISTER, CREATE_PROVIDER, CREATE_ATTENDANT, CATALOG, PUBLIC, SLOTS, CHANGE_PASSWORD, RESET_CUSTOMER_PASSWORD, DELETE_ACCOUNT, CREATE_COUNTER_CUSTOMER);
 
 	private RateLimitedRoutes() {
 	}

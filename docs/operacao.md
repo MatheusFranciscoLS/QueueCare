@@ -82,4 +82,5 @@ Nada disto está no repositório. Guarde cópia num gerenciador de senhas.
 | `JWT_SECRET` | Render (variável) | Todas as sessões caem: é o botão de emergência |
 | `DB_URL`, `DB_DIRECT_URL`, `DB_USER`, `DB_PASSWORD` | Render | A API perde o banco até corrigir |
 | `CORS_ALLOWED_ORIGINS` | Render | O site passa a ser recusado pela API |
+| `DEMO_ENABLED` | Render (variável, não é segredo) | `true` liga a demonstração pública (ADR 0041); `false` ou ausente a desliga: a rota some e as contas fictícias deixam de ser usadas. `DEMO_RESET_AFTER` (padrão `60m`) é o prazo da reposição dos dados |
 | `BACKUP_DATABASE_URL`, `BACKUP_PASSPHRASE` | GitHub Actions (opcionais) | Sem a frase, os backups não abrem |

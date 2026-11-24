@@ -129,7 +129,7 @@ public class AuthService {
 		return issueToken(user.get());
 	}
 
-	IssuedToken issueToken(UserAccount user) {
+	public IssuedToken issueToken(UserAccount user) {
 		Instant now = clock.instant();
 		Instant expiresAt = now.plus(jwtProperties.accessTokenTtl());
 		JwtClaimsSet claims = JwtClaimsSet.builder()
