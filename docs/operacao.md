@@ -83,6 +83,6 @@ Nada disto está no repositório. Guarde cópia num gerenciador de senhas.
 |---|---|---|
 | `JWT_SECRET` | Render (variável) | Todas as sessões caem: é o botão de emergência |
 | `DB_URL`, `DB_DIRECT_URL`, `DB_USER`, `DB_PASSWORD` | Render | A API perde o banco até corrigir |
-| `CORS_ALLOWED_ORIGINS` | Render | O site passa a ser recusado pela API. Desde 24/11/2026 aceita os DOIS endereços do site, separados por vírgula: `https://peloeponto.vercel.app` (o atual) e `https://queuecare-psi.vercel.app` (o antigo, que continua servindo o mesmo site); quando o antigo deixar de ser usado, tire-o da lista |
+| `CORS_ALLOWED_ORIGINS` | Render | O site passa a ser recusado pela API. Hoje só o endereço atual do site: `https://peloeponto.vercel.app`. O endereço antigo (`queuecare-psi.vercel.app`) foi retirado em 24/11/2026: com o nome livre na Vercel, deixá-lo autorizado permitiria que outra pessoa que o registrasse fizesse a página dela chamar a API. Se trocar o endereço do site de novo, **troque aqui antes de apagar o domínio antigo** |
 | `DEMO_ENABLED` | Render (variável, não é segredo) | `true` liga a demonstração pública (ADR 0041); `false` ou ausente a desliga: a rota some e as contas fictícias deixam de ser usadas. `DEMO_RESET_AFTER` (padrão `60m`) é o prazo da reposição dos dados |
 | `BACKUP_DATABASE_URL`, `BACKUP_PASSPHRASE` | GitHub Actions (opcionais) | Sem a frase, os backups não abrem |
