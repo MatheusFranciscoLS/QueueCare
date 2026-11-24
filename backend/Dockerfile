@@ -1,7 +1,7 @@
 # Imagem do backend (ADR 0013). Duas etapas: compila com o JDK e roda só com o JRE, como usuário comum (sem root).
 # Imagens base FIXADAS por digest (reprodutível). Para receber correções de segurança: docker pull eclipse-temurin:21-jdk (e 21-jre), copie o novo
 # Digest (docker image inspect --format '{{index .RepoDigests 0}}') para as duas linhas FROM, rode o CI e revise o PR.
-FROM eclipse-temurin:21-jdk@sha256:0a3f329821dcadf54b2a3033a15e2e9f007069a9db43d7f51897e6b80e726b07 AS build
+FROM eclipse-temurin:21-jdk@sha256:8ad118b146aa92da815b576441acd6b42b38236797ad0b6edc8c200b85bb0734 AS build
 WORKDIR /app
 COPY .mvn .mvn
 COPY mvnw pom.xml ./
@@ -17,7 +17,7 @@ RUN chmod +x mvnw && \
 COPY src src
 RUN ./mvnw -B -q -DskipTests package && cp target/queuecare-api-*.jar /app/app.jar
 
-FROM eclipse-temurin:21-jre@sha256:18bb4a91a3dea3f03ee31d3755af34dfb40f904fc77ab56cdc2f092e32fff9c2
+FROM eclipse-temurin:21-jre@sha256:d77e090ae1f6970c047b443c6f0a6c1358b0426d44432bb5a7753408cd43de0d
 RUN useradd --system --create-home --uid 10001 queuecare
 USER queuecare
 WORKDIR /home/queuecare
