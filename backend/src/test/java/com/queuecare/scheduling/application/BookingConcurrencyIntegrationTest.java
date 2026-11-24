@@ -9,6 +9,7 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.ExecutorService;
@@ -35,12 +36,14 @@ class BookingConcurrencyIntegrationTest extends BookingIntegrationTestBase {
 		}
 	}
 
-	private List<Outcome> race(int contenders, BookingRequest request) throws Exception {
+	private List<Outcome> race(List<BookingRequest> requests) throws Exception {
+		int contenders = requests.size();
 		ExecutorService pool = Executors.newFixedThreadPool(contenders);
 		CyclicBarrier startTogether = new CyclicBarrier(contenders);
 		try {
 			List<Callable<Outcome>> tasks = new ArrayList<>();
 			for (int i = 0; i < contenders; i++) {
+				BookingRequest request = requests.get(i);
 				tasks.add(() -> {
 					startTogether.await(10, TimeUnit.SECONDS);
 					try {
@@ -69,15 +72,30 @@ class BookingConcurrencyIntegrationTest extends BookingIntegrationTestBase {
 				"as demais devem receber BookingConflictException e nenhum outro erro: " + outcomes);
 	}
 
-	private BookingRequest slot(int dayOffset) {
-		return bookingRequest(providerSp, serviceSp, customer,
-				LocalDateTime.of(LocalDate.of(2026, 11, 17).plusDays(dayOffset), LocalTime.of(10, 0)));
+	/**
+	 * Pessoas DIFERENTES disputando o mesmo horário: é o cenário que a restrição de exclusão do banco existe para resolver. (O MESMO tutor repetindo o MESMO pedido não é uma
+	 * disputa: devolve a reserva que já existe, ADR 0035, e tem o próprio teste de concorrência em IdempotentBookingIntegrationTest.)
+	 */
+	private List<UUID> rivals(int n) {
+		List<UUID> people = new ArrayList<>();
+		for (int i = 0; i < n; i++) {
+			UUID person = user("rival" + i + "@exemplo.test", "CUSTOMER", true);
+			jdbc.update("INSERT INTO pets (customer_id, name, species) VALUES (?, 'Pet', 'DOG')", person);
+			people.add(person);
+		}
+		return people;
+	}
+
+	private List<BookingRequest> raceFor(List<UUID> people, int dayOffset) {
+		LocalDateTime start = LocalDateTime.of(LocalDate.of(2026, 11, 17).plusDays(dayOffset), LocalTime.of(10, 0));
+		return people.stream().map(person -> bookingRequest(providerSp, serviceSp, person, start)).toList();
 	}
 
 	@Test
 	void duasRequisicoesSimultaneasUmaVenceAOutraRecebeConflito() throws Exception {
+		List<UUID> people = rivals(2);
 		for (int round = 0; round < 20; round++) {
-			assertOneWinnerOthersConflict(race(2, slot(round)));
+			assertOneWinnerOthersConflict(race(raceFor(people, round)));
 		}
 
 		assertEquals(20, count("SELECT count(*) FROM appointments WHERE status <> 'CANCELLED'"));
@@ -86,7 +104,7 @@ class BookingConcurrencyIntegrationTest extends BookingIntegrationTestBase {
 
 	@Test
 	void muitasRequisicoesSimultaneasApenasUmaVence() throws Exception {
-		assertOneWinnerOthersConflict(race(8, slot(0)));
+		assertOneWinnerOthersConflict(race(raceFor(rivals(8), 0)));
 
 		assertEquals(1, count("SELECT count(*) FROM appointments"));
 		assertEquals(1, count("SELECT count(*) FROM appointment_events"));
