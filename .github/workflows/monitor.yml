@@ -1,0 +1,48 @@
+name: Monitor da API
+
+# ADR 0032. Custo zero: o GitHub Actions é gratuito em repositório público e nada aqui exige conta ou cartão.
+# Faz duas coisas: (1) mantém a API acordada no horário de atendimento, porque o Render gratuito dorme depois de ~15 min sem uso e o primeiro
+# tutor do dia esperaria ~1 min; (2) avisa se a API ou o banco caírem: um passo vermelho vira e-mail do GitHub para quem editou este agendamento.
+# É um esforço honesto, não uma garantia: o GitHub pode atrasar ou pular execuções agendadas.
+
+on:
+  schedule:
+    # A cada 10 min, das 08h às 19h50 (Brasília, UTC-3), de segunda a sábado. Fora disso a API dorme de propósito: o Render gratuito dá 750 h por mês
+    # para a CONTA toda (há outros serviços nela), então manter este 24 h por dia poderia suspender todos no fim do mês.
+    - cron: "*/10 11-22 * * 1-6"
+    # Uma vez por dia (07h17 em Brasília): o roteiro completo, que inclui o banco. Só uma vez, para não manter o Neon acordado o dia todo (cota de CU-horas).
+    - cron: "17 10 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: monitor-api
+  cancel-in-progress: false
+
+env:
+  API_URL: https://queuecare-api-z5dh.onrender.com
+  SITE_URL: https://queuecare-psi.vercel.app
+
+jobs:
+  acordar:
+    name: API acordada (liveness)
+    # O agendamento diário completo roda no job de baixo; este é o ping leve (não toca no banco).
+    if: github.event_name != 'schedule' || github.event.schedule == '*/10 11-22 * * 1-6'
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - name: Chamar a vivacidade (com tentativas, a API pode estar acordando)
+        run: bash ops/retry.sh -n 4 -w 20 -- curl --fail --silent --show-error --location --max-time 100 --output /dev/null "$API_URL/actuator/health/liveness"
+
+  completo:
+    name: Roteiro completo (API, banco e site)
+    if: github.event_name != 'schedule' || github.event.schedule == '17 10 * * *'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: ops/smoke.sh
+        run: bash ops/retry.sh -n 3 -w 30 -- bash ops/smoke.sh "$API_URL" "$SITE_URL"

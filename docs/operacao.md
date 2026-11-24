@@ -19,7 +19,8 @@ Dois fatos que explicam quase todo "está lento" no plano gratuito:
 
 - **`ops/smoke.sh <api> [site]`**: confere viva (liveness), fala com o banco (readiness), devolve `X-Request-Id`, responde 401 e não 500 numa rota protegida e o site responde. Sai com erro e diz o que falhou. Rode depois de cada deploy.
 - **`/actuator/health/liveness`**: só diz que o processo está vivo (não consulta o banco, então o banco dormindo não faz o Render reiniciar a API em loop). **`/actuator/health/readiness`**: inclui o banco.
-- **Monitor externo gratuito** (o dono descobre que caiu antes do tutor): em um serviço de monitoramento gratuito (por exemplo UptimeRobot, Better Stack ou cron-job.org), crie um monitor HTTP em `https://<api>/actuator/health/readiness`, intervalo de 5 minutos, alerta por e-mail. Efeito colateral útil e que merece atenção: a chamada periódica também **mantém a API acordada**. Confira as regras de uso do plano gratuito do Render antes de deixar isso ligado o dia todo.
+- **Monitor automático** ([ADR 0032](adr/0032-api-acordada-e-alerta.md), `.github/workflows/monitor.yml`): a cada 10 min no horário de atendimento (08h às 19h50, seg a sáb) o GitHub chama a vivacidade, o que **mantém a API acordada**; uma vez por dia roda o `ops/smoke.sh` completo. Se falhar, a execução fica vermelha na aba *Actions* e o GitHub manda e-mail. Fora do horário a API dorme de propósito (o Render gratuito dá 750 h por mês para a conta toda; o ping não toca no banco para poupar a cota do Neon). Para rodar na hora: *Actions → Monitor da API → Run workflow*.
+- **Monitor externo** (opcional, se quiser alerta em outro lugar): UptimeRobot, Better Stack ou cron-job.org em `https://<api>/actuator/health/liveness`. Não use `readiness` em intervalo curto: mantém o Neon acordado o dia todo e gasta a cota.
 
 ## 3. Achar a causa de um erro: o código da requisição
 
