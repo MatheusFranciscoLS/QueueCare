@@ -56,6 +56,10 @@ class SecurityConfig {
 						.requestMatchers(HttpMethod.DELETE, "/api/waitlist/*").hasAnyRole("CUSTOMER", "PROVIDER", "ATTENDANT")
 						.requestMatchers(HttpMethod.POST, "/api/waitlist/*/called").hasAnyRole("PROVIDER", "ATTENDANT")
 						.requestMatchers(HttpMethod.GET, "/api/providers/*/slots").hasAnyRole("CUSTOMER", "PROVIDER", "ATTENDANT")
+						// Direitos do tutor sobre os próprios dados (ADR 0027): a regra fica AQUI, nos filtros, e não só na anotação do método: a anotação roda depois da
+						// validação do corpo, e quem não é tutor receberia o 400 de validação em vez do 403 (a matriz de autorização exige o 403 primeiro).
+						.requestMatchers(HttpMethod.POST, "/api/me/delete-account").hasRole("CUSTOMER")
+						.requestMatchers(HttpMethod.GET, "/api/me/export").hasRole("CUSTOMER")
 						.requestMatchers(HttpMethod.POST, "/api/auth/change-password").authenticated()
 						.requestMatchers(HttpMethod.GET, "/api/public/**").permitAll()
 						.requestMatchers("/api/auth/**").permitAll()
