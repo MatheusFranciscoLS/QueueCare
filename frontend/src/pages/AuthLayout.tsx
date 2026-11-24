@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
+import { WakingBanner } from './WakingBanner'
 
 /**
  * Ilustração do painel de entrada: um cachorro dourado no banho, com o chuveiro, a espuma e a banheira. Formas vetoriais (poucos bytes,
@@ -120,7 +121,11 @@ export function AuthLayout({ children }: { children: ReactNode }) {
         <BathIllustration />
       </aside>
       <section className="pp-auth__panel">
-        <div className="pp-auth__card">{children}</div>
+        <div className="pp-auth__card">
+          {/* Entrar e Cadastrar são a PRIMEIRA chamada de quem chega com a API dormindo (até ~2 min): sem o aviso, o botão ficaria em "Entrando…" sem explicação (ADR 0037). */}
+          <WakingBanner />
+          {children}
+        </div>
       </section>
     </div>
   )
