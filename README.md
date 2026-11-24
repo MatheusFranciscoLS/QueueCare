@@ -76,17 +76,21 @@ Monólito modular (web, application, persistence, security) com contrato OpenAPI
 
 ## Decisões de engenharia
 
-- **Concorrência no banco, não na aplicação.** A aplicação valida, mas quem garante é o PostgreSQL; por isso a garantia vale mesmo com várias instâncias e pedidos simultâneos.
-- **Falha de rede não perde reserva.** Reserva idempotente, tela que mantém o horário escolhido quando a rede ou o servidor falham, e o site acorda a API enquanto a pessoa ainda lê a página ([ADR 0035](docs/adr/0035-reserva-idempotente.md), [ADR 0037](docs/adr/0037-acordar-a-api-ao-abrir-o-site.md)).
-- **Medir antes de otimizar.** A API gratuita dormia e a primeira chamada levava ~115 s. A medição mostrou que o custo era carregar classes numa CPU minúscula, e o **AppCDS** reduziu a partida de ~99 s para ~50 s, com o CI provando que o arquivo é usado ([ADR 0040](docs/adr/0040-partida-mais-rapida-com-appcds.md)).
-- **Operar e diagnosticar.** Código de requisição em cada resposta e em cada linha de log, **uma linha de acesso por chamada com rota, status e duração e sem dado pessoal**, roteiro de deploy e rollback ([ADR 0029](docs/adr/0029-identificador-de-requisicao-e-operacao.md), [ADR 0036](docs/adr/0036-log-de-acesso.md), [operação](docs/operacao.md)).
-- **Deploy automático sem susto.** O Render publica sozinho depois do CI verde e só quando o backend muda; por isso as migrações seguem o padrão expandir e contrair.
-- **Segurança de conteúdo e de dependências.** Política de segurança de conteúdo sem script em linha, Dependabot semanal e auditoria das dependências de produção em cada PR ([ADR 0038](docs/adr/0038-politica-de-seguranca-de-conteudo.md), [ADR 0039](docs/adr/0039-atualizacao-e-auditoria-de-dependencias.md)).
-- **Acessibilidade medida, não presumida.** axe-core, foco visível, alvos de toque de 44 px e ausência de rolagem horizontal, em claro e escuro ([ADR 0018](docs/adr/0018-redesign.md)).
-- **Demonstração pública sem abrir brecha.** Contas fictícias **sem senha utilizável**, rota que só existe com a demonstração ligada, dados repostos sozinhos (sem agendador) e as operações que mexeriam na conta compartilhada bloqueadas ([ADR 0041](docs/adr/0041-demonstracao-publica.md)).
-- **Teste verde não basta.** Os testes de navegador só rodavam na máquina de quem desenvolve. Ao levá-los ao CI, apareceu um teste que a própria demonstração pública tinha quebrado sem ninguém ver, e outro que dependia do estado deixado por um vizinho ([ADR 0042](docs/adr/0042-testes-de-navegador-no-ci.md)).
+As cinco que mais dizem sobre como o sistema foi pensado (cada uma com o que foi **descartado** e os **riscos conhecidos** no ADR):
 
-Cada decisão tem um [ADR](docs/adr/) com o que foi **descartado** e os **riscos conhecidos**.
+- **Concorrência no banco, não na aplicação.** A aplicação valida, mas quem garante é o PostgreSQL; por isso a garantia vale mesmo com várias instâncias e pedidos simultâneos ([ADR 0002](docs/adr/0002-controle-de-concorrencia.md)).
+- **Falha de rede não perde reserva.** Reserva idempotente, tela que mantém o horário escolhido quando a rede ou o servidor falham, e o site acorda a API enquanto a pessoa ainda lê a página ([ADR 0035](docs/adr/0035-reserva-idempotente.md), [ADR 0037](docs/adr/0037-acordar-a-api-ao-abrir-o-site.md)).
+- **Autorização na API, não na tela.** Quem pode chamar o quê é validado no servidor; o prestador de quem opera vem sempre do banco, nunca da requisição, e uma **matriz perfil × rota gerada do contrato OpenAPI** roda no CI: rota nova sem regra declarada quebra o build ([ADR 0004](docs/adr/0004-vinculo-atendente-prestador.md), [ADR 0012](docs/adr/0012-contrato-openapi.md)).
+- **Medir antes de otimizar.** A API gratuita dormia e a primeira chamada levava ~115 s. A medição mostrou que o custo era carregar classes numa CPU minúscula, e o **AppCDS** reduziu a partida de ~99 s para ~50 s, com o CI provando que o arquivo é usado ([ADR 0040](docs/adr/0040-partida-mais-rapida-com-appcds.md)).
+- **Demonstração pública sem abrir brecha.** Contas fictícias **sem senha utilizável**, rota que só existe com a demonstração ligada, dados repostos sozinhos (sem agendador) e as operações que mexeriam na conta compartilhada bloqueadas ([ADR 0041](docs/adr/0041-demonstracao-publica.md)).
+
+### Documentação complementar
+
+Outras decisões e práticas, cada uma com seu ADR: operação e diagnóstico ([0029](docs/adr/0029-identificador-de-requisicao-e-operacao.md), [0036](docs/adr/0036-log-de-acesso.md), [operação](docs/operacao.md)); deploy automático com migrações no padrão expandir e contrair; segurança de conteúdo e dependências ([0038](docs/adr/0038-politica-de-seguranca-de-conteudo.md), [0039](docs/adr/0039-atualizacao-e-auditoria-de-dependencias.md)); acessibilidade medida ([0018](docs/adr/0018-redesign.md)); testes de navegador no CI ([0042](docs/adr/0042-testes-de-navegador-no-ci.md)); backup e restauração ([0028](docs/adr/0028-backup-e-restauracao.md)); LGPD mínima ([0027](docs/adr/0027-lgpd-minima.md)). A lista completa está em [docs/adr](docs/adr/).
+
+## Nomes neste repositório
+
+**Pelo & Ponto** é o nome do produto; **peloeponto** é o nome do repositório; **QueueCare**, `com.queuecare` e `queuecare-api` são nomes técnicos herdados do início do projeto e foram mantidos de propósito (renomear pacotes e serviços não traria valor e arriscaria quebrar o que funciona).
 
 ## Limitações conhecidas
 
