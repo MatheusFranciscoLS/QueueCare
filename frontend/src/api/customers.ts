@@ -1,5 +1,6 @@
 import type { AuthApi } from '../auth/session'
 import type { CatalogService, FreeSlot } from './booking'
+import type { ImportRow } from './importCsv'
 import { formatMoney } from './money'
 import { petBody, type Pet, type PetInput } from './pets'
 
@@ -28,6 +29,17 @@ export interface CounterCustomer {
   name: string
   phone: string
   hasEmail: boolean
+}
+
+/** O resultado de uma importação (ADR 0034): só números e o motivo de cada linha, nunca o que veio na planilha. */
+export interface ImportResult {
+  created: number
+  duplicates: number
+  invalid: number
+  emailTaken: number
+  petsCreated: number
+  petsSkipped: number
+  rows: { row: number; status: 'CREATED' | 'DUPLICATE_PHONE' | 'INVALID' | 'EMAIL_TAKEN'; petCreated: boolean; petSkipped: boolean }[]
 }
 
 /** A reserva feita pelo balcão. O sinal por Pix, quando pedido, fica pendente até a equipe marcar como recebido. */
@@ -63,6 +75,8 @@ export function customersApi(request: Request) {
     exportData: (customerId: string) => request<unknown>(`/api/provider/customers/${encodeURIComponent(customerId)}/export`),
     /** Exclui (anonimiza) o cadastro a pedido do tutor; só vale enquanto ele nunca assumiu a conta (409 CUSTOMER_HAS_ACCESS). */
     anonymize: (customerId: string) => request<void>(`/api/provider/customers/${encodeURIComponent(customerId)}/anonymize`, { method: 'POST' }),
+    /** Importa até 200 linhas de uma planilha (só o dono). Cada linha é independente: as ruins são relatadas e as outras entram. */
+    importRows: (rows: ImportRow[]) => request<ImportResult>('/api/agenda/customers/import', { method: 'POST', body: { rows: rows.map((r) => ({ name: r.name, phone: r.phone, email: r.email === '' ? null : r.email, petName: r.petName === '' ? null : r.petName, petSpecies: r.petSpecies })) } }),
     resetPassword: (customerId: string) => request<{ temporaryPassword: string }>(`/api/provider/customers/${encodeURIComponent(customerId)}/reset-password`, { method: 'POST' }),
   }
 }
