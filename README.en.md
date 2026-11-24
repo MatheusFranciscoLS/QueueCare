@@ -32,20 +32,19 @@ It is built to the quality and feature level a real studio would use every day (
 
 ## Engineering decisions worth discussing
 
+The five that say the most about how the system was thought through (each ADR lists what was **rejected** and the **known risks**):
+
 | Challenge | How it was solved |
 |---|---|
 | **Two people book the same slot at the same time** | The guarantee lives in the **database**: a PostgreSQL exclusion constraint over time ranges (`tstzrange` + `btree_gist`), which also prevents overlaps between services of different durations. Tested with simultaneous requests ([ADR 0002](docs/adr/0002-controle-de-concorrencia.md), PT). |
 | **The booking response is lost and the user retries** | Repeating the same request returns the booking that already exists instead of a conflict with the user's own booking (matters when the free-tier API is waking up). Any difference is still a conflict ([ADR 0035](docs/adr/0035-reserva-idempotente.md), PT). |
-| **Who may call what** | Authorization in the API, not the UI. A **role × route matrix generated from the OpenAPI contract** runs in CI: a new route without a declared rule **fails the build**. Another user's resource answers 404, identical to a missing one. |
-| **Time zones and daylight saving** | Everything stored in UTC with the studio's IANA zone; nonexistent or ambiguous local times are rejected with a clear message. |
-| **Privacy (LGPD)** | Customers download their own data and delete their account (anonymized in place, history kept); versioned privacy policy ([ADR 0027](docs/adr/0027-lgpd-minima.md), PT). |
-| **Backups you know how to restore** | Encrypted backups with the **restore rehearsed on every PR** by CI, which has already caught real bugs ([ADR 0028](docs/adr/0028-backup-e-restauracao.md), PT). |
-| **Accessibility measured, not assumed** | axe-core, visible focus, 44 px touch targets and no horizontal scroll, in light and dark, on every screen ([ADR 0018](docs/adr/0018-redesign.md), PT). |
-| **Operating and diagnosing** | A request id on every response and log line, **one access line per call with route, status and duration and no personal data**, a deploy and rollback runbook, and automatic deploy after CI ([ADR 0029](docs/adr/0029-identificador-de-requisicao-e-operacao.md), [ADR 0036](docs/adr/0036-log-de-acesso.md), [operations](docs/operacao.md), PT). |
-| **The pieces work together, not just each one** | Browser tests (Playwright) walk every role's flows with the real API and PostgreSQL **on every PR** (19 tests, about 2 minutes). The first time they ran in CI they found a test the public demo had broken unnoticed ([ADR 0042](docs/adr/0042-testes-de-navegador-no-ci.md)). |
+| **Who may call what** | Authorization in the API, not the UI. A **role × route matrix generated from the OpenAPI contract** runs in CI: a new route without a declared rule **fails the build**. Another user's resource answers 404, identical to a missing one ([ADR 0004](docs/adr/0004-vinculo-atendente-prestador.md), [ADR 0012](docs/adr/0012-contrato-openapi.md), PT). |
+| **Measure before optimizing** | The free-tier API slept and the first call took ~115 s. Measuring showed the cost was class loading on a tiny CPU, and **AppCDS** cut startup from ~99 s to ~50 s, with CI proving the archive is actually used ([ADR 0040](docs/adr/0040-partida-mais-rapida-com-appcds.md), PT). |
 | **A public demo that opens no hole** | Fictional accounts with **no usable password** (only the button signs in), a route that exists only when the demo is on, data that resets itself without a scheduler, and the operations that would touch the shared account blocked ([ADR 0041](docs/adr/0041-demonstracao-publica.md)). |
 
-Every decision has an [ADR](docs/adr/) (in Portuguese) with what was **rejected** and the **known risks**, including the limits of running at zero cost ([ADR 0013](docs/adr/0013-hospedagem-custo-zero.md)).
+**Further documentation, each with its own ADR (in Portuguese):** time zones and daylight saving; privacy/LGPD ([0027](docs/adr/0027-lgpd-minima.md)); backups with rehearsed restore ([0028](docs/adr/0028-backup-e-restauracao.md)); accessibility measured ([0018](docs/adr/0018-redesign.md)); operating and diagnosing ([0029](docs/adr/0029-identificador-de-requisicao-e-operacao.md), [0036](docs/adr/0036-log-de-acesso.md)); browser tests in CI ([0042](docs/adr/0042-testes-de-navegador-no-ci.md)); zero-cost hosting and its limits ([0013](docs/adr/0013-hospedagem-custo-zero.md)). Full list: [docs/adr](docs/adr/).
+
+**Names in this repository:** **Pelo & Ponto** is the product; **peloeponto** is the repository; **QueueCare**, `com.queuecare` and `queuecare-api` are legacy technical names kept on purpose (renaming packages and services would add risk with no value).
 
 ## What it does
 
