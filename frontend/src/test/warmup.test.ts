@@ -13,7 +13,7 @@ describe('acordar a API ao abrir o site (ADR 0037)', () => {
     vi.stubGlobal('fetch', fetchMock)
     warmUpServer()
     expect(fetchMock).toHaveBeenCalledTimes(1)
-    expect(fetchMock).toHaveBeenCalledWith('https://api.exemplo.com/actuator/health/liveness', { method: 'GET', mode: 'no-cors', credentials: 'omit', cache: 'no-store' })
+    expect(fetchMock).toHaveBeenCalledWith('https://api.exemplo.com/actuator/health/readiness', { method: 'GET', mode: 'no-cors', credentials: 'omit', cache: 'no-store' })
   })
 
   it('em desenvolvimento (sem VITE_API_URL) não faz nada: a API local não dorme', () => {
