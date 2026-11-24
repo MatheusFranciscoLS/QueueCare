@@ -106,6 +106,15 @@ public interface AppointmentRepository extends JpaRepository<Appointment, UUID> 
 	boolean existsActiveOverlappingExcept(@Param("providerId") UUID providerId, @Param("start") Instant start, @Param("end") Instant end, @Param("ignoring") UUID ignoring);
 
 	/**
+	 * A MESMA reserva já feita (ADR 0035): mesmo estúdio, tutor, serviço, pet e instante de início, ainda ativa. Serve para tratar a repetição de um pedido (resposta perdida, tempo
+	 * esgotado, duplo envio) como o mesmo pedido, e não como um conflito de horário com a própria reserva do tutor.
+	 */
+	@Query("select a from Appointment a where a.providerId = :providerId and a.customerId = :customerId and a.serviceId = :serviceId and a.petId = :petId and a.startsAt = :startsAt "
+			+ "and a.status not in (com.queuecare.scheduling.persistence.AppointmentStatus.CANCELLED, com.queuecare.scheduling.persistence.AppointmentStatus.NO_SHOW) order by a.createdAt asc, a.id asc")
+	java.util.List<Appointment> findSameBooking(@Param("providerId") UUID providerId, @Param("customerId") UUID customerId, @Param("serviceId") UUID serviceId, @Param("petId") UUID petId,
+			@Param("startsAt") Instant startsAt);
+
+	/**
 	 * Há agendamento ativo (não cancelado) do prestador que se sobreponha a {@code [start, end)}?
 	 * Mesma condição de TimeRange.overlaps: {@code a < d} e {@code c < b}. Esta checagem só serve para dar uma
 	 * mensagem clara; quem GARANTE a exclusividade, mesmo sob concorrência, é o banco (ADR 0002).

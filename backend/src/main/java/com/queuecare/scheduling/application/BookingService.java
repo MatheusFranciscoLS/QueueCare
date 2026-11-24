@@ -18,6 +18,9 @@ import com.queuecare.scheduling.persistence.UserAccountRepository;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.util.Optional;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -78,11 +81,26 @@ public class BookingService {
 			// A transação termina (commit ou rollback) antes de qualquer tradução de erro abaixo.
 			return transaction.execute(status -> bookInTransaction(request));
 		} catch (RuntimeException e) {
-			if (SchedulingConflictDetector.isConflict(e)) {
-				throw new BookingConflictException(e);
+			boolean conflict = e instanceof BookingConflictException || SchedulingConflictDetector.isConflict(e);
+			if (conflict) {
+				// Reserva REPETIDA (ADR 0035): se o horário está ocupado pela MESMA reserva (mesmo tutor, pet, serviço e início), o pedido anterior deu certo e a resposta
+				// se perdeu (rede, API acordando, duplo envio). Devolve a reserva que já existe, em vez de dizer ao tutor que alguém ocupou o horário dele.
+				Optional<Appointment> same = existingSameBooking(request);
+				if (same.isPresent()) {
+					return same.get();
+				}
+				throw e instanceof BookingConflictException ? e : new BookingConflictException(e);
 			}
 			throw e;
 		}
+	}
+
+	/** A reserva idêntica já feita e ainda ativa, se houver. Só do próprio tutor do pedido: nunca revela a reserva de outra pessoa. */
+	private Optional<Appointment> existingSameBooking(BookingRequest request) {
+		return providers.findActiveById(request.providerId()).flatMap(provider -> {
+			Instant startsAt = ZonedDateTime.ofLocal(request.localStart(), ZoneId.of(provider.getTimeZone()), null).toInstant();
+			return appointments.findSameBooking(provider.getId(), request.customerId(), request.serviceId(), request.petId(), startsAt).stream().findFirst();
+		});
 	}
 
 	private Appointment bookInTransaction(BookingRequest request) {
