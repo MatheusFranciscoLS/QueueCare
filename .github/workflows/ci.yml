@@ -20,8 +20,8 @@ jobs:
       run:
         working-directory: backend
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-java@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: '21'
@@ -46,8 +46,8 @@ jobs:
       run:
         working-directory: frontend
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: '22'
           cache: npm
@@ -65,7 +65,7 @@ jobs:
     name: Backend (imagem Docker)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Construir a imagem de produção
         run: docker build -t queuecare-api:ci backend
       - name: A imagem sobe USANDO o arquivo AppCDS (ADR 0040)
@@ -82,10 +82,10 @@ jobs:
     name: Segredos (Gitleaks)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0   # examina também o histórico, não só os arquivos atuais
-      - uses: gitleaks/gitleaks-action@v2.3.9
+      - uses: gitleaks/gitleaks-action@v3.0.0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -118,7 +118,7 @@ jobs:
       # Frase-senha FICTÍCIA, só deste ensaio (montada em duas partes para o varredor de segredos não a confundir com um segredo real).
       BACKUP_PASSPHRASE: ${{ format('{0}{1}', 'frase-so-do-ensaio-', '0123456789') }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Cliente PostgreSQL 16 e GPG
         # O Ubuntu do runner traz só a versão mais nova do PostgreSQL (hoje a 18): o cliente 16 vem do repositório oficial do PostgreSQL (PGDG).
         run: |
