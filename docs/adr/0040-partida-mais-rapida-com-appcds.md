@@ -1,6 +1,6 @@
 # ADR 0040: partida mais rápida com AppCDS (arquivo de classes pré-carregadas)
 
-- **Status:** Accepted (implementado em 24/11/2026; o ganho em produção é conferido pelo log do Render depois do primeiro deploy, veja "Como conferir")
+- **Status:** Accepted (implementado e **medido em produção** em 24/11/2026: partida de 99 s para 58 s; veja "Resultado em produção")
 - **Data:** 24/11/2026
 - **Esforço:** MÉDIO (um script de treino, quatro linhas no Dockerfile, um passo no CI)
 
@@ -38,5 +38,14 @@ Usar **AppCDS** (*class data sharing* de aplicação): durante o `docker build` 
 - **O treino cobre o contexto sem banco**: as classes que só carregam com a conexão (Flyway executando, Hibernate validando) não estão no arquivo e continuam sendo carregadas normalmente.
 - **Não foi medido no Render antes de publicar** (não há como reproduzir a CPU de 0,1 localmente): o ganho local de 34% é uma estimativa, e a medição real vem do log do primeiro deploy.
 
-## Como conferir (depois do deploy)
+## Resultado em produção (medido em 24/11/2026)
+
+| | Antes (22 partidas) | Com AppCDS (1ª partida) |
+|---|---|---|
+| `Started ... in N seconds` | 85 a 104 s (média ~95 s; a anterior à troca, 99,1 s) | **58,3 s** |
+| Memória da instância (limite 512 MB) | ~315 a 322 MB | ~265 MB (ainda aquecendo) |
+
+Cerca de **−37 s (−39%)** na partida, um pouco acima da estimativa local (−34%), e **a memória não piorou**: o risco registrado acima não se confirmou. No CI, dentro da imagem, o mesmo teste deu 5 s sem o arquivo e 3 s com ele, e o JVM aceitou o arquivo com `-Xshare:on`. Uma amostra só: as próximas partidas dirão a variação (a linha de base variou de 85 a 104 s).
+
+## Como conferir (depois de um deploy)
 No painel do Render, o log da partida traz `Started QueuecareApiApplication in N seconds`. A linha de base é de 85 a 104 s (22 partidas). Se o valor não cair de forma clara, o arquivo não está sendo usado ou não ajuda ali, e o caminho é reverter este PR.

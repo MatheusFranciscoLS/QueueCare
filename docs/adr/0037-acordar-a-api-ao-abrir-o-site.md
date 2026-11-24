@@ -21,7 +21,7 @@ Detalhes que importam:
 ## O que foi descartado
 - **Manter só o monitor do GitHub Actions:** não roda de forma confiável (evidência acima). Continua no repositório como verificação manual e como tentativa extra, sem ninguém depender dele.
 - **Pingar 24 h por dia por um serviço externo:** estoura as 750 horas gratuitas da conta do Render e poderia suspender os outros projetos. Se o dono quiser um serviço externo, deve ser **restrito ao horário comercial** (veja `docs/operacao.md`).
-- **Reduzir o tempo de partida do Spring Boot:** é o ganho certo no longo prazo, mas não se mede localmente (a máquina de desenvolvimento é muitas vezes mais rápida que os 0,1 de CPU do plano gratuito) e arrisca esconder erros de inicialização (inicialização preguiçosa). Fica como candidato, a medir no ambiente real.
+- **Reduzir o tempo de partida do Spring Boot** (inicialização preguiçosa, AOT): arrisca esconder erros de inicialização ou fixar condições de configuração. **Feito depois, de forma segura, com AppCDS** ([ADR 0040](0040-partida-mais-rapida-com-appcds.md)): a partida caiu de ~99 s para 58 s, medida no Render.
 - **Plano pago do Render:** resolve de vez e quebra o custo zero (ADR 0013).
 
 ## Riscos conhecidos
