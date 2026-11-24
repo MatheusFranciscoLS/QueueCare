@@ -418,7 +418,8 @@
     font-size: 1rem;
   }
 
-  .pp-auth__demo {
+  /* No celular a marca é só uma faixa curta (a ilustração tomava a primeira tela inteira e empurrava o formulário e a demonstração para baixo). A regra apontava para uma classe antiga (.pp-auth__demo, renomeada no PR 62). */
+  .pp-auth__art {
     display: none;
   }
 

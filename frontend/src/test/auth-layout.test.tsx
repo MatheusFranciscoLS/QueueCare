@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
 import { screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it } from 'vitest'
@@ -54,5 +56,16 @@ describe('"Mostrar senha"', () => {
     renderApp('/entrar')
     await screen.findByLabelText('E-mail')
     expect(screen.getAllByRole('button', { name: /senha$/ })).toHaveLength(1)
+  })
+})
+
+describe('entrada no celular', () => {
+  it('a regra que esconde a ilustração no celular aponta para a classe que a ilustração realmente tem', () => {
+    // Regressão (PR 62 renomeou a classe e a regra ficou órfã): no celular a ilustração tomava a primeira tela inteira e empurrava o formulário
+    // e a demonstração para mais de uma tela abaixo. O jsdom não calcula layout, então o teste confere o CSS contra o componente.
+    const css = readFileSync(resolve(import.meta.dirname, '../ui/shell.css'), 'utf8')
+    const mobile = css.slice(css.indexOf('@media (max-width: 900px)'))
+    expect(mobile).toMatch(/\.pp-auth__art\s*\{\s*display:\s*none/)
+    expect(css).not.toMatch(/\.pp-auth__demo\s*\{/)
   })
 })
