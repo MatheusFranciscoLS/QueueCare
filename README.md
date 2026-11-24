@@ -1,6 +1,6 @@
 # QueueCare
 
-[![CI](https://github.com/MatheusFranciscoLS/QueueCare/actions/workflows/ci.yml/badge.svg)](https://github.com/MatheusFranciscoLS/QueueCare/actions/workflows/ci.yml)
+[![CI](https://github.com/MatheusFranciscoLS/peloeponto/actions/workflows/ci.yml/badge.svg)](https://github.com/MatheusFranciscoLS/peloeponto/actions/workflows/ci.yml)
 
 Agendamento e fila de atendimento para **estúdios de banho e tosa** (marca "Pelo & Ponto"). Projeto Full Stack de portfólio: **Java 21 + Spring Boot**, **React + TypeScript**, **PostgreSQL**. English version: [README.en.md](README.en.md).
 
@@ -8,7 +8,7 @@ O sistema foi construído com a qualidade e as funções que um estúdio de verd
 
 ## Veja funcionando
 
-- **Site publicado:** [queuecare-psi.vercel.app](https://queuecare-psi.vercel.app). A API roda no plano gratuito do Render e dorme quando ninguém usa: a primeira abertura depois de um período parado pode levar até 2 minutos (a tela avisa, e o site já começa a acordá-la ao abrir). Na tela de entrada, **"Conhecer sem cadastro"** abre um estúdio fictício com um clique (dona, atendente ou tutora), com agenda, fila e clientes de exemplo; também dá para criar uma conta de tutor de verdade. O mesmo estúdio de exemplo roda no seu computador com o comando abaixo.
+- **Site publicado:** [peloeponto.vercel.app](https://peloeponto.vercel.app). A API roda no plano gratuito do Render e dorme quando ninguém usa: a primeira abertura depois de um período parado pode levar até 2 minutos (a tela avisa, e o site já começa a acordá-la ao abrir). Na tela de entrada, **"Conhecer sem cadastro"** abre um estúdio fictício com um clique (dona, atendente ou tutora), com agenda, fila e clientes de exemplo; também dá para criar uma conta de tutor de verdade. O mesmo estúdio de exemplo roda no seu computador com o comando abaixo.
 - **Tudo em um comando, sem Docker** (JDK 21 e Node 22 ou superior; a primeira vez baixa as dependências):
 
   ```bash
