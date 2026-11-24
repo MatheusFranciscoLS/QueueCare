@@ -21,7 +21,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
  * dados FICTÍCIOS de demonstração: um estúdio com equipe, clientes, pets e agendamentos em todos os estados. Fica em {@code src/test}: nunca vai
  * para a imagem de produção. Todas as contas têm a mesma senha de teste (veja {@link #PASSWORD}); nada aqui é segredo.
  *
- * <p>Uso: {@code ./mvnw -o test-compile} e, no diretório {@code frontend}, {@code npm run dev:stack} (que monta o classpath e inicia este programa e o Vite).
+ * <p>Uso: {@code ./mvnw -o test-compile} e, no diretório {@code frontend}, {@code npm run demo} (que inicia este programa e o Vite).
  */
 public final class LocalDevServer {
 
