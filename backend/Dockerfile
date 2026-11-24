@@ -25,6 +25,12 @@ COPY --from=build /app/app.jar app.jar
 # Perfil de produção (application-prod.yml). A memória é uma HIPÓTESE inicial para 512 MB (ADR 0013): medir antes de publicar.
 ENV SPRING_PROFILES_ACTIVE=prod \
     JAVA_TOOL_OPTIONS="-Xms64m -Xmx256m -XX:MaxMetaspaceSize=128m -XX:+UseSerialGC -XX:+ExitOnOutOfMemoryError -XX:TieredStopAtLevel=1 -Xss512k"
+# AppCDS (ADR 0040): o JAR é extraído (o JVM só mapeia arquivo de classes de JARs soltos) e a API roda UMA vez, aqui no build, até o contexto Spring ficar pronto (sem banco),
+# para o JVM gravar em app/app.jsa as classes carregadas. Na partida de verdade ele mapeia o arquivo em vez de carregar e verificar tudo de novo: no Render gratuito (CPU fraca)
+# isso encurta dezenas de segundos. Se o treino falhar, o BUILD falha (a versão atual da API continua no ar); se o JVM recusar o arquivo na partida, ele segue sem ele.
+RUN java -Djarmode=tools -jar app.jar extract --destination app && rm app.jar
+COPY cds/treino.sh treino.sh
+RUN sh treino.sh criar
 EXPOSE 8080
 # A plataforma informa a porta em PORT (o perfil prod a lê). Segredos vêm SÓ do ambiente, nunca da imagem.
-ENTRYPOINT ["java", "-jar", "app.jar"]
+ENTRYPOINT ["java", "-XX:SharedArchiveFile=/home/queuecare/app/app.jsa", "-jar", "app/app.jar"]

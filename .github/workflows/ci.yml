@@ -68,6 +68,10 @@ jobs:
       - uses: actions/checkout@v4
       - name: Construir a imagem de produção
         run: docker build -t queuecare-api:ci backend
+      - name: A imagem sobe USANDO o arquivo AppCDS (ADR 0040)
+        run: |
+          # -Xshare:on faz o JVM FALHAR se recusar o arquivo: prova que o arquivo existe, é válido e é o que a partida usa. O tempo sem o arquivo vai nos logs só para comparar.
+          docker run --rm --entrypoint sh queuecare-api:ci -c 'test -s app/app.jsa && ls -l app/app.jsa && for modo in sem usar; do inicio=$(date +%s); sh treino.sh $modo; echo "partida ($modo o arquivo): $(( $(date +%s) - inicio )) s"; done'
       - name: A imagem não roda como root
         run: |
           uid="$(docker run --rm --entrypoint id queuecare-api:ci -u)"
