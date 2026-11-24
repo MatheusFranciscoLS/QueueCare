@@ -10,6 +10,12 @@ services:
     # Publica sozinho SÓ depois que os checks do GitHub passam (CI verde). Cada merge de backend roda as migrações em produção:
     # a regra de expandir e contrair (docs/operacao.md) é obrigação. Se mudar aqui, mude também no painel (Settings > Build & Deploy > Auto-Deploy).
     autoDeployTrigger: checksPass
+    # Só publica quando o que vai para a imagem da API muda (o backend e este arquivo): mudar README, docs ou o frontend NÃO reinicia a API de produção (cada reinício deixa a API
+    # fora do ar por ~2 min e zera o relógio do sono). Se mudar aqui, mude também no painel (Settings > Build & Deploy > Build Filters > Included Paths).
+    buildFilter:
+      paths:
+        - backend/**
+        - render.yaml
     envVars:
       - key: DB_URL          # URL do Neon COM pooler, ex.: jdbc:postgresql://HOST-pooler/DB?sslmode=require&prepareThreshold=0
         sync: false
