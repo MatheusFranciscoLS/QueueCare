@@ -207,6 +207,46 @@ describe('agendar: reservar', () => {
     expect(screen.getByRole('radio', { name: 'Oficina Central' })).not.toBeChecked()
   })
 
+  it('resposta perdida (sem conexão): mantém o horário escolhido e repetir o MESMO pedido confirma, sem duplicar (ADR 0035)', async () => {
+    let attempts = 0
+    const confirmed = { id: 'a-1', providerId: 'p-1', serviceId: 's-1', startsAt: '', endsAt: '', status: 'SCHEDULED', businessName: 'Oficina Central', timeZone: 'America/Sao_Paulo', serviceName: 'Troca de óleo', priceCents: null, petName: 'Rex', depositStatus: 'NONE' }
+    const { calls, user } = await loginAsCustomer({
+      [`GET /api/providers/p-1/slots?serviceId=s-1&date=${today}&petId=pet-1`]: () => json(200, [slot(today, '09:00')]),
+      'POST /api/appointments': () => {
+        attempts += 1
+        if (attempts === 1) throw new TypeError('Failed to fetch') // o servidor pode ter gravado; a resposta nunca chegou
+        return json(201, confirmed)
+      },
+    })
+    await reachSlots(user)
+    await user.click(await screen.findByRole('button', { name: '09:00' }))
+    await user.click(screen.getByRole('button', { name: 'Confirmar agendamento' }))
+
+    expect(await screen.findByText(/Não deu para confirmar o agendamento/)).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Confirmar agendamento' })).toBeEnabled() // a escolha ficou: dá para repetir
+    const slotCalls = calls.filter((c) => c.path.startsWith('/api/providers/p-1/slots')).length
+
+    await user.click(screen.getByRole('button', { name: 'Confirmar agendamento' }))
+    expect(await screen.findByRole('heading', { name: 'Agendamento confirmado' })).toBeInTheDocument()
+    expect(calls.filter((c) => c.path.startsWith('/api/providers/p-1/slots'))).toHaveLength(slotCalls) // NÃO refez a lista de horários
+    expect(calls.filter((c) => c.method === 'POST' && c.path === '/api/appointments').map((c) => c.body)).toEqual([
+      { providerId: 'p-1', serviceId: 's-1', localStart: `${today}T09:00:00`, petId: 'pet-1' },
+      { providerId: 'p-1', serviceId: 's-1', localStart: `${today}T09:00:00`, petId: 'pet-1' },
+    ]) // o MESMO pedido nas duas tentativas
+  })
+
+  it('erro do servidor (500) também deixa repetir o pedido, sem descartar o horário', async () => {
+    const { user } = await loginAsCustomer({
+      [`GET /api/providers/p-1/slots?serviceId=s-1&date=${today}&petId=pet-1`]: () => json(200, [slot(today, '09:00')]),
+      'POST /api/appointments': () => problem(500, 'erro interno'),
+    })
+    await reachSlots(user)
+    await user.click(await screen.findByRole('button', { name: '09:00' }))
+    await user.click(screen.getByRole('button', { name: 'Confirmar agendamento' }))
+    expect(await screen.findByText(/Não deu para confirmar o agendamento/)).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Confirmar agendamento' })).toBeEnabled()
+  })
+
   it('horário tomado por outra pessoa (409): mostra o motivo, descarta a escolha e refaz a lista', async () => {
     let taken = false
     const { calls, user } = await loginAsCustomer({

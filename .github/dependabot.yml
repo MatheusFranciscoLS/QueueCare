@@ -13,8 +13,12 @@ updates:
       - dependency-name: "*"
         update-types: ["version-update:semver-major"]
     groups:
+      # Correções e menores das bibliotecas, num PR só. O Spring Boot FICA DE FORA do grupo: um salto de versão dele (ex.: 4.1 para 4.2) pode quebrar o build e não deve bloquear
+      # as correções simples; ele chega em PR próprio e é uma decisão, com leitura das notas de versão.
       java-menores:
         update-types: ["minor", "patch"]
+        exclude-patterns:
+          - "org.springframework.boot:*"
   - package-ecosystem: npm
     directory: /frontend
     schedule:
@@ -27,14 +31,20 @@ updates:
     groups:
       js-menores:
         update-types: ["minor", "patch"]
+  # Ações do GitHub: versões MAIORES entram pelo PR do Dependabot, porque a própria CI do PR executa a ação nova (ela mesma prova que funciona). Já as maiores de Maven, npm
+  # e da imagem Docker mudam a API ou o ambiente de execução e pedem decisão.
   - package-ecosystem: github-actions
     directory: /
     schedule:
       interval: monthly
-    open-pull-requests-limit: 3
+    open-pull-requests-limit: 5
   # As imagens base do Dockerfile são fixadas por digest (reprodutível): o Dependabot propõe o digest novo, e a CI constrói a imagem para provar que continua válida.
   - package-ecosystem: docker
     directory: /backend
     schedule:
       interval: monthly
     open-pull-requests-limit: 3
+    # A imagem de execução (JRE) acompanha o JDK 21 do projeto: trocar a versão MAIOR (ex.: 21 para 25) muda o ambiente de execução inteiro e a CI só constrói a imagem, não roda a API nela.
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]

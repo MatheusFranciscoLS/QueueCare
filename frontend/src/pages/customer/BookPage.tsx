@@ -109,6 +109,13 @@ export function BookPage() {
         setWanted({ provider: null, service: null })
         setDone({ appointment, serviceName: sent.service.name, businessName: sent.provider.businessName, localStart: sent.slot.localStart, petName: sent.pet.name, studioPhone: sent.provider.phone ?? null })
       } catch (e) {
+        // RESULTADO DESCONHECIDO (sem conexão ou erro do servidor): o servidor pode ter gravado a reserva e a resposta se perdeu (rede, API acordando). Tratar como recusa limparia
+        // o horário e refaria a lista, que já não o traria (agora é da própria pessoa), e ela não conseguiria repetir o pedido. Mantém a escolha e deixa repetir o MESMO pedido, que é
+        // seguro: a API devolve a reserva que já existe, sem duplicar (ADR 0035).
+        if (e instanceof ApiError && (e.status === 0 || e.status >= 500)) {
+          setBookingError('Não deu para confirmar o agendamento (a conexão falhou ou o servidor demorou). Toque de novo em "Confirmar agendamento": se a reserva já tiver sido feita, ela aparece confirmada, sem duplicar.')
+          return
+        }
         // A API recusou este horário: mostra o motivo e refaz a lista de horários (o escolhido pode não existir mais).
         setBookingError(describeError(e))
         if (e instanceof ApiError && e.reason && PET_REASONS.has(e.reason)) {
