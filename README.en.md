@@ -1,10 +1,12 @@
-# QueueCare
+# Pelo & Ponto (QueueCare)
 
 [![CI](https://github.com/MatheusFranciscoLS/peloeponto/actions/workflows/ci.yml/badge.svg)](https://github.com/MatheusFranciscoLS/peloeponto/actions/workflows/ci.yml)
 
 Scheduling and attendance queue for **pet grooming studios** (brand "Pelo & Ponto"). A Full Stack portfolio project: **Java 21 + Spring Boot**, **React + TypeScript**, **PostgreSQL**. Versão em português: [README.md](README.md).
 
-It is built to the quality and feature level a real studio would use every day (agenda, queue, pet records, no-shows, waitlist, privacy, backups), but it is a portfolio project: there is no real studio behind it.
+It is built to the quality and feature level a real studio would use every day (agenda, queue, pet records, no-shows, waitlist, privacy, backups), but it is a portfolio project: there is no real studio behind it. "Pelo & Ponto" is the brand of the fictional studio; "QueueCare" is the project name, used in the documentation and the ADRs.
+
+> **Try it in 30 seconds:** open [peloeponto.vercel.app](https://peloeponto.vercel.app), tap **"Conhecer sem cadastro"** (explore without signing up) and enter as the studio owner, an attendant or a customer. No sign-up and no password; all data is fictional.
 
 ## See it working
 
@@ -12,7 +14,8 @@ It is built to the quality and feature level a real studio would use every day (
 - **Everything in one command, no Docker** (JDK 21 and Node 22+; the first run downloads dependencies):
 
   ```bash
-  cd frontend
+  git clone https://github.com/MatheusFranciscoLS/peloeponto.git
+  cd peloeponto/frontend
   npm ci
   npm run demo
   ```
@@ -39,6 +42,8 @@ It is built to the quality and feature level a real studio would use every day (
 | **Backups you know how to restore** | Encrypted backups with the **restore rehearsed on every PR** by CI, which has already caught real bugs ([ADR 0028](docs/adr/0028-backup-e-restauracao.md), PT). |
 | **Accessibility measured, not assumed** | axe-core, visible focus, 44 px touch targets and no horizontal scroll, in light and dark, on every screen ([ADR 0018](docs/adr/0018-redesign.md), PT). |
 | **Operating and diagnosing** | A request id on every response and log line, **one access line per call with route, status and duration and no personal data**, a deploy and rollback runbook, and automatic deploy after CI ([ADR 0029](docs/adr/0029-identificador-de-requisicao-e-operacao.md), [ADR 0036](docs/adr/0036-log-de-acesso.md), [operations](docs/operacao.md), PT). |
+| **The pieces work together, not just each one** | Browser tests (Playwright) walk every role's flows with the real API and PostgreSQL **on every PR** (19 tests, about 2 minutes). The first time they ran in CI they found a test the public demo had broken unnoticed ([ADR 0042](docs/adr/0042-testes-de-navegador-no-ci.md)). |
+| **A public demo that opens no hole** | Fictional accounts with **no usable password** (only the button signs in), a route that exists only when the demo is on, data that resets itself without a scheduler, and the operations that would touch the shared account blocked ([ADR 0041](docs/adr/0041-demonstracao-publica.md)). |
 
 Every decision has an [ADR](docs/adr/) (in Portuguese) with what was **rejected** and the **known risks**, including the limits of running at zero cost ([ADR 0013](docs/adr/0013-hospedagem-custo-zero.md)).
 
@@ -46,11 +51,20 @@ Every decision has an [ADR](docs/adr/) (in Portuguese) with what was **rejected*
 
 **Customers:** register pets (size, coat, weight, temperament, health, vaccines), book by service, pet, day and time (duration and price follow the pet's size and coat), see until when they can cancel for free, follow the attendance and join the waitlist when a day is full. **Studios:** daily and weekly agenda, attendance queue with states, pet record with a behavior warning, no-show tracking, counter registration and booking, time off and holidays, summary and clients. **Admins:** accounts. More detail in [`docs/features.en.md`](docs/features.en.md).
 
+## Known limitations
+
+Stated on purpose, each with its reason:
+
+- **One appointment at a time per studio.** The booking guarantee in the database covers the whole studio, so a studio with two groomers cannot book two pets at the same time. Changing it touches the core of scheduling and was left as a conscious decision ([ADR 0043](docs/adr/0043-um-atendimento-por-vez-por-estudio.md)).
+- **Free hosting.** The API sleeps when idle; startup takes about 50 seconds and the first call can take longer. The site says so and starts waking it as soon as it opens.
+- **Reminders are manual.** The studio contacts the customer on WhatsApp with one click (a ready link); there is no automatic sending, which would need a paid service.
+- **The public demo is shared.** Simultaneous visitors see each other's changes; data returns to the original on the first visit after 60 minutes ([ADR 0041](docs/adr/0041-demonstracao-publica.md)).
+
 ## Stack
 
 - **Backend:** Java 21, Spring Boot 4, Spring Security (JWT), JPA, Flyway, PostgreSQL 16. [OpenAPI](docs/openapi.json) contract generated from the code and checked by a test.
-- **Frontend:** React 19, TypeScript, Vite; Vitest and Playwright.
-- **Delivery:** GitHub Actions (tests, Docker image, backup restore, lint, secret scan), Vercel, Render and Neon, all on free plans.
+- **Frontend:** React 19, TypeScript, Vite; Vitest and, in a real browser, Playwright (also in CI).
+- **Delivery:** GitHub Actions (tests, browser tests, Docker image, backup restore, lint, secret scan), Vercel, Render and Neon, all on free plans.
 
 ## Run locally
 
