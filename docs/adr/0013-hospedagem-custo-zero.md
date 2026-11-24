@@ -1,6 +1,6 @@
 # ADR 0013: hospedagem com custo zero e sem cartão
 
-- **Status:** Proposed (depende de o Matheus criar as contas; nada foi cadastrado e nenhum cartão foi usado)
+- **Status:** Accepted (em uso: site na Vercel, API no Render Free e banco no Neon Free, sem cartão cadastrado; a Cloudflare Pages ficou como alternativa de site estático). Texto original da decisão (14/11/2026) abaixo.
 - **Imagens-base fixadas por digest** no Dockerfile (instruções de atualização no próprio arquivo).
 - **Data da pesquisa:** 14/11/2026. **Os planos gratuitos mudam: reconferir a página oficial de cada serviço na hora de criar a conta.**
 - **Quem decidiu:** o Matheus exigiu CUSTO ZERO e NENHUM CARTÃO (sem servidor comprado), o que descarta a AWS do roadmap (M5). Desenho de Claude, pesquisa e revisão do ChatGPT.

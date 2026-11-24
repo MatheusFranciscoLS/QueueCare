@@ -27,7 +27,7 @@ Spring Boot API (Java 21)  --JPA/Flyway-->  PostgreSQL 16
 | 0010 | Read-only catalog for customers |
 | 0011 | Check-in, completion and the daily queue (forward-only transitions, one event per type) |
 | 0012 | OpenAPI contract generated from the code and verified by a test |
-| 0013 | Zero-cost, no-credit-card hosting (Cloudflare Pages + Render Free + Neon Free) |
+| 0013 | Zero-cost, no-credit-card hosting (Vercel + Render Free + Neon Free in use; Cloudflare Pages kept as an alternative) |
 
 ## Concurrency and integrity (summary)
 Two layers: validation in the application (transaction) **and** a guarantee in the database (an exclusion constraint over `tstzrange`). Optimistic locking (`version`) on appointment transitions; row locks and a per-transaction `lock_timeout` on admin operations (all transactional, so they are compatible with connection poolers). History events are unique per appointment and type.
