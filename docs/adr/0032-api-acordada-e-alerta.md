@@ -1,6 +1,6 @@
 # ADR 0032: API acordada no horário de atendimento e alerta de queda
 
-- **Status:** Accepted (implementado em 23/11/2026); **premissa corrigida em 24/11/2026**, veja o aviso abaixo
+- **Status:** SUBSTITUÍDO em 24/11/2026 (decisão do dono). O agendamento que mantinha a API acordada foi **removido**: as 750 horas gratuitas do Render são da conta inteira e outros serviços do dono, usados no trabalho, gastam as mesmas horas; manter esta API acordada podia suspender todos no fim do mês. Hoje o workflow é só de execução manual e a API acorda apenas quando alguém abre o site (ADR 0037). O texto abaixo fica como registro da época.
 - **Data:** 23/11/2026
 - **Esforço:** BAIXO (um workflow, nenhuma linha de código da aplicação)
 

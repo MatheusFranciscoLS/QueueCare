@@ -127,7 +127,7 @@ peloeponto/
 ├── infra/                 # Docker Compose para banco local
 ├── ops/                   # backup, restauração e verificação pós-deploy
 ├── docs/                  # regras, modelo de dados, arquitetura, ADRs e operação
-├── .github/workflows/     # CI, backup diário e monitor
+├── .github/workflows/     # CI e verificações manuais (backup e API)
 └── render.yaml            # infraestrutura da API
 ```
 

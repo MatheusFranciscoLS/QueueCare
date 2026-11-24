@@ -1,4 +1,4 @@
-# Operação: deploy, rollback, monitoramento e incidentes
+# Operação: deploy, rollback, verificação manual e incidentes
 
 Roteiro curto para quem opera o QueueCare. Complementa `docs/publicacao.md` (como publicar do zero) e `docs/backup.md` (backup e restauração). Os limites dos planos gratuitos mudam: **confirme na página oficial de cada serviço** antes de depender de um número.
 
@@ -20,8 +20,7 @@ Dois fatos que explicam quase todo "está lento" no plano gratuito:
 - **`ops/smoke.sh <api> [site]`**: confere viva (liveness), fala com o banco (readiness), devolve `X-Request-Id`, responde 401 e não 500 numa rota protegida e o site responde. Sai com erro e diz o que falhou. Rode depois de cada deploy.
 - **`/actuator/health/liveness`**: só diz que o processo está vivo (não consulta o banco, então o banco dormindo não faz o Render reiniciar a API em loop). **`/actuator/health/readiness`**: inclui o banco.
 - **A API dorme e a primeira chamada leva até ~2 minutos** (medido: 115 s). O que a acorda é o **próprio site, ao abrir** ([ADR 0037](adr/0037-acordar-a-api-ao-abrir-o-site.md)): uma chamada de vivacidade sem dado nenhum, para a espera correr enquanto a pessoa lê a página.
-- **Monitor agendado no GitHub** ([ADR 0032](adr/0032-api-acordada-e-alerta.md), `.github/workflows/monitor.yml`): **não é confiável para manter a API acordada**: o GitHub atrasa por horas ou pula execuções agendadas deste repositório (medido em 24/11/2026: nenhuma execução agendada em 15 h). Serve como verificação **manual**: *Actions → Monitor da API → Run workflow* roda a vivacidade e o `ops/smoke.sh` completo, e fica vermelho se algo falhar.
-- **Pingador externo gratuito, restrito ao horário comercial** (opcional, só o dono pode criar a conta): no cron-job.org (ou similar), um job HTTP `GET https://<api>/actuator/health/liveness` **de 10 em 10 minutos, das 08h às 20h de Brasília, de segunda a sábado**. Nunca 24 h por dia: o Render gratuito dá 750 h por mês para a **conta inteira** (há outros projetos nela) e um serviço sempre acordado consome quase tudo. Não use `readiness`: mantém o Neon acordado e gasta a cota dele.
+- **Não há monitor nem pingador agendado, de propósito** ([ADR 0032](adr/0032-api-acordada-e-alerta.md), substituído em 24/11/2026): as 750 h gratuitas do Render são da **conta inteira** e outros serviços do dono (como o Vardão Central, usado no trabalho) gastam as mesmas horas; manter esta API acordada pode suspender todos no fim do mês. **Não crie** cron externo, ping do GitHub Actions nem ping do site além do aviso ao abrir (ADR 0037). Para conferir uma publicação, rode à mão *Actions → Verificação da API (manual) → Run workflow* (vivacidade e `ops/smoke.sh`), sabendo que isso acorda a API.
 
 ## 3. Achar a causa de um erro: o código da requisição
 

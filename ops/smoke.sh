@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Verificação rápida pós-deploy do QueueCare (ADR 0029). Serve para rodar na mão depois de publicar e como base de um monitor externo.
+# Verificação rápida pós-deploy do QueueCare (ADR 0029). Serve para rodar na mão depois de publicar. NÃO agende nem use como monitor periódico: acorda a API e gasta as horas gratuitas do Render, que são da conta toda.
 #
 # Uso:  ./ops/smoke.sh https://api-do-queuecare.onrender.com [https://site-na-vercel.app]
 #       (o primeiro argumento é a API; o segundo, opcional, é o site)
