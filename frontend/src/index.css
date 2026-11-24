@@ -2488,20 +2488,10 @@ label.check {
 
 /* Cadastro e reserva pelo balcão (ADR 0033): o formulário e o painel ficam acima da busca, separados dela por um respiro e uma linha. */
 .customers__new,
-.counter,
-.import {
+.counter {
   margin-bottom: 1.5rem;
   padding-bottom: 1.5rem;
   border-bottom: 1px solid var(--line);
-}
-
-.import__summary {
-  margin: 0.5rem 0 0.75rem;
-  padding-left: 1.25rem;
-}
-
-.import__problems {
-  margin: 0.5rem 0;
 }
 
 .customers__similar .rows {

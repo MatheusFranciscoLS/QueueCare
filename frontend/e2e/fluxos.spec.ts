@@ -305,29 +305,3 @@ test('o atendente cadastra o tutor pelo balcão, cadastra o pet e agenda por ele
   await expect(linha).toContainText('Pets: Bidu')
   await expect(linha.getByRole('button', { name: /Redefinir senha/ })).toHaveCount(0)
 })
-
-test('o dono importa clientes de uma planilha do Excel (CSV com ponto e vírgula e acentos em Windows-1252) e os vê em Clientes sem acesso ao app (ADR 0034)', async ({ page }) => {
-  await entrar(page, 'prestador')
-  await irPeloMenu(page, 'Clientes', 1280)
-  await page.getByRole('heading', { level: 1, name: 'Clientes' }).waitFor()
-  await page.getByRole('button', { name: 'Importar planilha' }).click()
-
-  // telefones sorteados: a API de demonstração guarda o que foi importado, e telefone repetido é (corretamente) pulado
-  const sufixo = String(Math.floor(1000 + Math.random() * 8999))
-  const csv = ['Nome;Telefone;E-mail;Pet;Espécie', `Conceição Álvares;(11) 9${sufixo}-1111;;Thor;Cachorro`, `Zé Sem Pet;(11) 9${sufixo}-2222;;;`, 'Sem Telefone;;;;'].join('\r\n')
-  // "ç", "ã", "Á" e "é" em Windows-1252, como o Excel brasileiro salva (não é UTF-8 válido)
-  const bytes = Buffer.from(csv, 'latin1')
-  await page.getByLabel('Arquivo CSV').setInputFiles({ name: 'clientes.csv', mimeType: 'text/csv', buffer: bytes })
-
-  await expect(page.getByText(/3 linhas:/)).toContainText('2 prontas, 1 com problema')
-  await expect(page.getByText('Linha 4: sem telefone')).toBeVisible()
-  await page.getByRole('button', { name: 'Importar 2 clientes' }).click()
-  await expect(page.getByRole('heading', { name: 'Importação concluída' })).toBeVisible()
-  await expect(page.getByRole('status')).toContainText('2 clientes cadastrados e 1 pet')
-  await page.getByRole('button', { name: 'Concluir' }).click()
-
-  await page.getByLabel('Buscar cliente').fill('conceicao')
-  const linha = page.getByRole('listitem').filter({ hasText: 'Conceição Álvares' }).first() // o acento sobreviveu à leitura em Windows-1252
-  await expect(linha).toContainText('Cadastrado no balcão · sem acesso ao app')
-  await expect(linha).toContainText('Pets: Thor')
-})

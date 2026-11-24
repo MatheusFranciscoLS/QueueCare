@@ -67,15 +67,6 @@ public class CounterCustomers {
 		if (!limiter.tryAcquire(key, CREATES_PER_HOUR, window)) {
 			throw new TooManyLoginAttemptsException(limiter.retryAfterSeconds(key, window));
 		}
-		return createUnlimited(providerId, staffUserId, name, phone, email);
-	}
-
-	/**
-	 * O mesmo cadastro, SEM o limite por hora: quem chama já aplica o seu (a importação tem o limite por importação, ADR 0034). Participa da transação do chamador, ou
-	 * abre a própria quando chamado de fora de uma.
-	 */
-	@Transactional
-	public UserAccount createUnlimited(UUID providerId, UUID staffUserId, String name, String phone, String email) {
 		// Telefone é obrigatório no balcão (é como o estúdio fala com a pessoa): vazio é o mesmo erro de formato.
 		String normalizedPhone = PhoneNumber.normalize(phone);
 		if (normalizedPhone == null) {
