@@ -78,6 +78,74 @@ jobs:
           echo "uid=$uid"
           test "$uid" = "10001"
 
+
+  # Fluxos de ponta a ponta em NAVEGADOR REAL (ADR 0042): API de verdade com PostgreSQL real e dados fictícios + o site, e o Chromium percorre os fluxos de cada perfil.
+  # Os testes unitários provam cada peça; este job prova que as peças juntas fazem o que o estúdio faz (agendar, chegar, faltar, lista de espera, balcão, senha temporária...).
+  # Em falha, o relatório do Playwright (com o rastro de cada teste que falhou) fica como artefato da execução.
+  e2e:
+    name: Navegador (fluxos de ponta a ponta)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+      - uses: actions/cache@v6
+        with:
+          path: ~/.m2/wrapper
+          key: maven-wrapper-${{ hashFiles('backend/.mvn/wrapper/maven-wrapper.properties') }}
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Dependências do site
+        working-directory: frontend
+        run: npm ci
+      # Chromium do próprio Playwright (a versão que a dependência pede), guardado por versão: só baixa quando o Playwright muda.
+      - name: Versão do Playwright
+        id: playwright
+        working-directory: frontend
+        run: echo "versao=$(node -p "require('@playwright/test/package.json').version")" >> "$GITHUB_OUTPUT"
+      - uses: actions/cache@v6
+        id: navegador
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-chromium-${{ steps.playwright.outputs.versao }}
+      - name: Baixar o Chromium
+        if: steps.navegador.outputs.cache-hit != 'true'
+        working-directory: frontend
+        run: npx playwright install --with-deps chromium
+      - name: Dependências do sistema do Chromium
+        if: steps.navegador.outputs.cache-hit == 'true'
+        working-directory: frontend
+        run: npx playwright install-deps chromium
+      # O teste do app instalável e offline (ADR 0030) só vale no BUILD de produção (o service worker nunca é registrado em desenvolvimento): o job o constrói e o serve numa porta própria.
+      - name: Build de produção servido para o teste do app instalável
+        working-directory: frontend
+        run: |
+          npm run build
+          nohup npx vite preview --host 127.0.0.1 --port 4173 --strictPort > "$RUNNER_TEMP/preview.log" 2>&1 &
+          for i in $(seq 1 30); do curl -sf http://127.0.0.1:4173/ > /dev/null && exit 0; sleep 1; done
+          cat "$RUNNER_TEMP/preview.log"; exit 1
+      # O script e2e/dev-api.mjs baixa o Maven e compila a API de desenvolvimento (PostgreSQL embutido); o webServer do Playwright sobe API e site.
+      # O script roda em DUAS execuções: as telas que só leem primeiro e, depois, os fluxos que ALTERAM contas (a senha temporária da tutora), cada uma com API e banco novos.
+      - name: Fluxos de ponta a ponta
+        working-directory: frontend
+        env:
+          QC_PWA_URL: http://127.0.0.1:4173
+        run: npm run e2e:ci
+      - name: Relatório do Playwright (só se algo falhou)
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: relatorio-e2e
+          path: frontend/e2e/saida/relatorio
+          retention-days: 7
+
   segredos:
     name: Segredos (Gitleaks)
     runs-on: ubuntu-latest

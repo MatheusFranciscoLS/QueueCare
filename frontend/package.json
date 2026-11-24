@@ -11,6 +11,7 @@
     "preview": "vite preview",
     "dev:api": "node e2e/dev-api.mjs",
     "demo": "node scripts/demo.mjs",
+    "e2e:ci": "playwright test e2e/gaveta.spec.ts e2e/pwa.spec.ts e2e/semana.spec.ts e2e/semana-curtos.spec.ts && playwright test e2e/fluxos.spec.ts",
     "e2e:capturas": "playwright test e2e/capturas.spec.ts",
     "e2e:verificar": "playwright test e2e/verificacoes.spec.ts",
     "e2e:verificador": "playwright test e2e/verificador.spec.ts",

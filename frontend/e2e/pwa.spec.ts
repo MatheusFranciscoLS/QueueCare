@@ -30,7 +30,7 @@ test('o service worker assume a página e o app abre SEM internet', async ({ pag
   // Entrar offline mostra a mensagem de sempre, em vez de quebrar.
   await page.getByLabel('E-mail').fill('x@exemplo.test')
   await page.getByLabel('Senha').fill('uma-senha-qualquer')
-  await page.getByRole('button', { name: 'Entrar' }).click()
+  await page.getByRole('button', { name: 'Entrar', exact: true }).click()
   await expect(page.getByRole('alert')).toContainText(/Sem conexão/)
 
   await context.setOffline(false)
