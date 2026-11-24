@@ -99,12 +99,13 @@ describe('service worker (ADR 0030)', () => {
     await Promise.all(waits)
     expect(sw.store.has('https://app.test/')).toBe(true)
     expect(sw.store.has('https://app.test/manifest.webmanifest')).toBe(true)
+    expect(sw.store.has('https://app.test/tema.js')).toBe(true) // o script do tema (ADR 0038) também abre sem internet
     expect(sw.fakeSelf.skipWaiting).toHaveBeenCalled()
 
     const activation: Promise<unknown>[] = []
     sw.listeners.activate({ waitUntil: (p: Promise<unknown>) => activation.push(p) })
     await Promise.all(activation)
-    expect([...sw.names]).toEqual(['pp-v1-app']) // o de versão antiga e o alheio saíram
+    expect([...sw.names]).toEqual(['pp-v2-app']) // o de versão antiga e o alheio saíram
     expect(sw.fakeSelf.clients.claim).toHaveBeenCalled()
   })
 
