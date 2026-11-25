@@ -97,7 +97,7 @@ The API needs `DB_URL`, `DB_USER`, `DB_PASSWORD` and `JWT_SECRET` (see `.env.exa
 [Architecture](docs/architecture.en.md) · [Features](docs/features.en.md) · [Business rules](docs/regras.md) (PT) · [ADRs](docs/adr/) (PT) · [Operations](docs/operacao.md) (PT) · [Study guides with interview questions](docs/estudo/) (PT) · [OpenAPI](docs/openapi.json).
 
 ## Authorship
-Developed under the direction of the product owner (Matheus Francisco) with **substantial AI assistance**: Claude implements the technical work (including business rules and tests) and ChatGPT performs an independent review of every change before it is merged; Matheus defines the product, approves the direction and receives a summary of each delivery. This is not a demonstration of individual implementation. The process is in [`CLAUDE.md`](CLAUDE.md).
+A portfolio project with **authorship and direction by Matheus Francisco**, built with **harness engineering**: I define the product, the business rules, the acceptance criteria and the review; AI agents execute under my specification and approval (Claude implements and ChatGPT performs an independent review of every change). AI use is stated on purpose, and I receive a summary of each delivery so I can explain and defend the decisions. The process is in [`CLAUDE.md`](CLAUDE.md).
 
 ## License
 [MIT](LICENSE).
